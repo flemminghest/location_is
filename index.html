@@ -385,6 +385,14 @@ p{line-height:1.55}
 .geo-field input:focus{border-color:#76abb9;box-shadow:0 0 0 3px #58a8b71c}
 .geo-field input[readonly]{background:#edf4f7;border-color:#dbe7ee;color:#416879;cursor:default}
 .geo-postcode{grid-column:span 2}
+.postcode-lookup-status{display:flex;align-items:center;gap:7px;min-height:17px;color:#2e6ca4;font-size:10px;line-height:1.35;font-weight:650}
+.postcode-lookup-status[hidden]{display:none}
+.postcode-spinner{width:13px;height:13px;flex:none;border:2px solid #cbdde8;border-top-color:#2e8caa;border-radius:50%;animation:postcodeSpin .7s linear infinite}
+@keyframes postcodeSpin{to{transform:rotate(360deg)}}
+.geo-postcode.is-loading input{border-color:#6bb6c4;box-shadow:0 0 0 3px #58a8b71c}
+.geo-postcode.is-success .postcode-lookup-status{color:#16815d}
+.geo-postcode.is-error .postcode-lookup-status{color:#ad5b35}
+.geo-postcode.is-success .postcode-spinner,.geo-postcode.is-error .postcode-spinner{display:none}
 .geo-city{grid-column:span 3}
 .geo-street{grid-column:span 5}
 .geo-number{grid-column:span 2}
@@ -528,7 +536,7 @@ p{line-height:1.55}
   <div class="advanced-search-inner">
    <div class="advanced-search-heading"><strong>Afgræns geografisk</strong><span>By eller postnummer begrænser alle forslag og opslag.</span></div>
    <div class="geo-fields">
-    <label class="geo-field geo-postcode"><span>1. Postnummer</span><input class="geo-address-input" id="geoPostnummer" inputmode="numeric" maxlength="4" autocomplete="postal-code" placeholder="Skriv 4 cifre, fx 4500" aria-describedby="geoScopeNote"></label>
+    <label class="geo-field geo-postcode"><span>1. Postnummer</span><input class="geo-address-input" id="geoPostnummer" inputmode="numeric" maxlength="4" autocomplete="postal-code" placeholder="Skriv 4 cifre, fx 4500" aria-describedby="geoScopeNote postcodeLookupStatus"><div class="postcode-lookup-status" id="postcodeLookupStatus" role="status" aria-live="polite" hidden><span class="postcode-spinner" aria-hidden="true"></span><span class="postcode-lookup-message">Henter bynavn…</span></div></label>
     <label class="geo-field geo-city"><span>2. By (udfyldes automatisk)</span><input class="geo-address-input" id="geoBy" autocomplete="off" placeholder="Udfyldes, når postnummeret er fundet" aria-controls="geoCitySuggestions" aria-expanded="false"><div class="geo-city-suggestions" id="geoCitySuggestions" role="listbox" aria-label="Byer og postnumre"></div></label>
     <label class="geo-field geo-street"><span>Gade / vej</span><input class="geo-address-input" id="geoVejnavn" autocomplete="off" placeholder="Fx Rolighedsvej"></label>
     <label class="geo-field geo-number"><span>Husnr.</span><input class="geo-address-input" id="geoHusnummer" autocomplete="off" placeholder="48"></label>
@@ -1012,13 +1020,26 @@ async function searchPostnumre(query){
   }
  }
 }
+function setPostcodeLookupState(state,message=''){
+ const field=geoPostnummer.closest('.geo-postcode');
+ const status=document.getElementById('postcodeLookupStatus');
+ if(!field||!status)return;
+ field.classList.toggle('is-loading',state==='loading');
+ field.classList.toggle('is-success',state==='success');
+ field.classList.toggle('is-error',state==='error');
+ status.hidden=!message;
+ const text=status.querySelector('.postcode-lookup-message');
+ if(text)text.textContent=message;
+ status.querySelector('.postcode-spinner').style.display=state==='loading'?'':'none';
+}
 async function resolvePostnummer(nr){
  const code=String(nr||'').trim();
- if(!/^\d{4}$/.test(code)){verifiedPostnummer='';selectedCity=null;geoBy.value='';return false;}
- if(verifiedPostnummer===code&&selectedCity&&geoBy.value===selectedCity.navn)return true;
+ if(!/^\d{4}$/.test(code)){verifiedPostnummer='';selectedCity=null;geoBy.value='';setPostcodeLookupState('error','Indtast et postnummer på 4 cifre.');return false;}
+ if(verifiedPostnummer===code&&selectedCity&&geoBy.value===selectedCity.navn){setPostcodeLookupState('success','By fundet: '+selectedCity.navn);return true;}
  if(postcodeController)postcodeController.abort();
  postcodeController=new AbortController();
  const controller=postcodeController;
+ setPostcodeLookupState('loading','Henter bynavn for '+code+'…');
  searchStatus.textContent='Verificerer postnummer '+code+'…';
  try{
   const response=await fetch('/api/postnummer?nr='+encodeURIComponent(code),{signal:controller.signal,headers:{Accept:'application/json'},cache:'no-store'});
@@ -1029,6 +1050,7 @@ async function resolvePostnummer(nr){
   selectedCity={nr:code,navn:String(data.navn)};
   geoPostnummer.dataset.verified=code;
   geoBy.value=String(data.navn);
+  setPostcodeLookupState('success','By fundet: '+data.navn);
   searchStatus.textContent='Geografisk filter valgt: '+data.navn+' ('+code+'). Resultater fra andre postnumre vises ikke.';
   return true;
  }catch(error){
@@ -1046,6 +1068,7 @@ async function resolvePostnummer(nr){
     const cityName=String(hit.postdistrikt).trim();
     verifiedPostnummer=code;selectedCity={nr:code,navn:cityName};
     geoPostnummer.dataset.verified=code;geoBy.value=cityName;
+    setPostcodeLookupState('success','By fundet: '+cityName);
     searchStatus.textContent='By udfyldt fra det officielle adresseopslag: '+cityName+' ('+code+').';
     return true;
    }
@@ -1055,6 +1078,7 @@ async function resolvePostnummer(nr){
   if(controller===postcodeController){
    verifiedPostnummer='';selectedCity=null;geoPostnummer.dataset.verified='';
    geoBy.value='';
+   setPostcodeLookupState('error','Kunne ikke hente bynavnet. Prøv igen.');
    searchStatus.textContent='Postnummeret kunne ikke verificeres, så byen kunne ikke udfyldes. Prøv igen om lidt.';
   }
   return false;
@@ -1340,6 +1364,7 @@ async function commitPostnummer(){
 }
 geoPostnummer.addEventListener('input',()=>{
  selectedCity=null;verifiedPostnummer='';geoPostnummer.dataset.verified='';geoBy.value='';
+ setPostcodeLookupState('idle','');
  if(cityController)cityController.abort();
  clearTimeout(postcodeTimer);
  const q=geoPostnummer.value.trim();
