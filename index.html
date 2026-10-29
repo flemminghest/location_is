@@ -786,7 +786,7 @@ function showCitySuggestions(items,message='',query=''){
   geoBy.setAttribute('aria-expanded',String(Boolean(message)));
   return;
  }
- const cityOnlyOption=query&&!/^\\d{4}$/.test(query)?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(query)+'</strong><small>Vis adresser i denne by på tværs af postnumre</small></button>':'';
+ const cityOnlyOption=query&&!/^\d{4}$/.test(query)?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(query)+'</strong><small>Vis adresser i denne by på tværs af postnumre</small></button>':'';
  citySuggestions.innerHTML=cityOnlyOption+items.map((item,i)=>'<button type="button" class="geo-city-option" role="option" data-city-index="'+i+'"><strong>'+esc(item.navn)+' · '+esc(item.nr)+'</strong><small>Begræns søgning til dette postnummer</small></button>').join('');
  citySuggestions.classList.add('is-open');
  geoBy.setAttribute('aria-expanded','true');
@@ -1216,7 +1216,7 @@ async function loadPlansForCoordinates(coords){
  noticeEl.textContent='Søger efter vedtagne lokalplaner, delområder, byggefelter og kommuneplanrammer omkring adressens adgangspunkt.';
  try{
   const url='/api/planer?x='+encodeURIComponent(coords.x)+'&y='+encodeURIComponent(coords.y)+'&crs='+encodeURIComponent(coords.crs||'EPSG:25832');
-  const response=await fetch(url,{headers:{Accept:'application/json'}});
+  const response=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(5000)});
   const data=await response.json();
   window.__measInfoPlanLookup={ok:response.ok,data};
   if(!response.ok)throw new Error(data.error||'Plandata-opslaget fejlede');
@@ -1259,7 +1259,7 @@ async function loadPropertyData(){
  try{
   const param=chosenAddress.type==='adresse'&&chosenAddress.husnummerId?'husnummerId':(chosenAddress.type==='husnummer'?'husnummerId':'adresseId');
   const lookupId=param==='husnummerId'&&chosenAddress.type==='adresse'?(chosenAddress.husnummerId||id):id;
-  const resp=await fetch('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),{headers:{Accept:'application/json'}});
+  const resp=await fetch('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(9500)});
   const data=await resp.json();
   if(!resp.ok)throw new Error(data.error||'Ejendomsopslaget kunne ikke gennemføres');
   currentPropertyData=data;
