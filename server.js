@@ -2,6 +2,8 @@ import express from "express";
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
+app.use(express.static(process.cwd(), { index: "index.html", extensions: ["html"] }));
+app.use(express.static(process.cwd(), { index: "index.html", extensions: ["html"] }));
 
 const PORT = Number(process.env.PORT || 3000);
 const GRAPHQL_URL = process.env.DATAFORDELER_GRAPHQL_URL || "https://graphql.datafordeler.dk/flexible/v3";
@@ -149,12 +151,23 @@ app.get("/api/ejendom", async (req, res) => {
 
     if (adresseId) {
       // Use the official flexible GraphQL model to resolve the address-to-house-number links.
-      const addressFields = await getSchemaFields("DAR_Adresse");
-      const fields = fieldSelection(addressFields, ["id_lokalId", "adressebetegnelse", "adresseHarHusnummer"]);
+      // DAR_Adresse links to DAR_Husnummer, which can provide BBR building and
+      // MAT parcel identifiers. Keep this explicit because relation fields need sub-selections.
       const addrData = await graphql(`query {
         DAR_Adresse(first: 5, registreringstid: "${now}", virkningstid: "${now}",
           where: { id_lokalId: { eq: "${adresseId}" } }) {
-          nodes { ${fields} }
+          nodes {
+            id_lokalId
+            adressebetegnelse
+            adresseHarHusnummer(first: 10) {
+              nodes {
+                id_lokalId
+                adgangsadressebetegnelse
+                adgangTilBygning
+                jordstykke
+              }
+            }
+          }
         }
       }`);
       address = addrData.DAR_Adresse?.nodes?.[0] || null;
