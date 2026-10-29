@@ -30,7 +30,7 @@ function numberValue(obj, keys) {
 function parseCoordinates(house) {
   const pos = house && (house.HusnummerHarAdgangspunkt && house.HusnummerHarAdgangspunkt.position || house.position);
   if (!pos || typeof pos.wkt !== "string") return null;
-  const match = pos.wkt.match(/POINT(?:\\s+Z)?\\s*\\(?\\s*([+-]?\\d+(?:\\.\\d+)?)\\s+([+-]?\\d+(?:\\.\\d+)?)/i);
+  const match = pos.wkt.match(/POINT(?:\s+Z)?\s*\(?\s*([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)/i);
   if (!match) return null;
   const x = Number(match[1]), y = Number(match[2]);
   if (!Number.isFinite(x) || !Number.isFinite(y) || x < 40000 || x > 1000000 || y < 5000000 || y > 7500000) return null;
