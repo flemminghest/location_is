@@ -85,39 +85,89 @@ export default async function handler(req, res) {
   if (addressId && !isId(addressId)) return res.status(400).json({error:"Ugyldigt adresse-ID."});
   if (houseId && !isId(houseId)) return res.status(400).json({error:"Ugyldigt husnummer-ID."});
   if (bfe && !/^\\d{1,20}$/.test(bfe)) return res.status(400).json({error:"Ugyldigt BFE-nummer."});
+
+  const now = new Date().toISOString();
+  let address = null, house = null, buildings = [], cadastral = null, estate = null;
+  const errors = {};
   try {
-    const now = new Date().toISOString();
-    let address = null, house = null;
-    if (addressId) { const result = await getAddressAndHouse(addressId, now); address = result.address; house = result.house; }
-    else if (houseId) house = await getHouseById(houseId, now);
-    let buildings = [];
-    if (house && house.id_lokalId) {
-      try { buildings = await getBuildingsForHouse(String(house.id_lokalId), now); }
-      catch (firstError) {
-        if (house.adgangTilBygning) { const direct = await getBuildingById(String(house.adgangTilBygning), now); buildings = direct ? [direct] : []; }
-        else throw firstError;
+    if (addressId) {
+      const result = await getAddressAndHouse(addressId, now);
+      address = result.address;
+      house = result.house;
+    } else if (houseId) {
+      house = await getHouseById(houseId, now);
+    }
+  } catch(error) {
+    return res.status(error.status || 502).json({
+      error:"Adressen kunne ikke slås op i DAR.",
+      detail:String(error.message || "DAR-opslag fejlede").slice(0,500),
+      source:"Datafordeler Flexible GraphQL v3",
+      setup:!process.env.DATAFORDELER_API_KEY
+    });
+  }
+
+  if (!house && !address && !bfe) {
+    return res.status(200).json({
+      source:"Datafordeler Flexible GraphQL v3",
+      fetchedAt:new Date().toISOString(),
+      address:null,house:null,bbr:null,bbrBuildings:[],cadastral:null,estate:null,coordinates:null,
+      areas:{groundArea:null,footprint:null,residentialArea:null,buildingArea:null},
+      completeness:{address:false,house:false,bbr:false,cadastral:false,estate:false},
+      errors:{dar:"Adresse-ID'et blev accepteret, men der blev ikke returneret en aktuel adresse/husnummerpost."},
+      note:"Der blev ikke returneret en aktuel DAR-post. Kontrollér adresse-ID og eventuel historik."
+    });
+  }
+
+  if (house && house.id_lokalId) {
+    try {
+      buildings = await getBuildingsForHouse(String(house.id_lokalId), now);
+      if (!buildings.length && house.adgangTilBygning) {
+        const direct = await getBuildingById(String(house.adgangTilBygning), now);
+        if (direct) buildings = [direct];
+      }
+    } catch(firstError) {
+      errors.bbr = String(firstError.message || "BBR-opslag fejlede").slice(0,500);
+      if (house.adgangTilBygning) {
+        try {
+          const direct = await getBuildingById(String(house.adgangTilBygning), now);
+          if (direct) { buildings=[direct]; delete errors.bbr; }
+        } catch(secondError) {
+          errors.bbr = String(secondError.message || errors.bbr).slice(0,500);
+        }
       }
     }
-    const bbr = buildings[0] || null;
-    const parcelId = house && (house.jordstykke || house.placeretPaaForeloebigtJordstykke) || null;
-    const cadastral = parcelId ? await getParcelById(String(parcelId), now) : null;
-    const estate = bfe ? await getEstateByBfe(bfe, now) : null;
-    const coords = parseCoordinates(house);
-    const groundArea = numberValue(cadastral, ["registreretAreal"]);
-    const footprint = numberValue(bbr, ["byg041BebyggetAreal"]);
-    const residentialArea = numberValue(bbr, ["byg039BygningensSamledeBoligAreal"]);
-    const buildingArea = numberValue(bbr, ["byg038SamletBygningsareal"]);
-    res.setHeader("Cache-Control","private, max-age=60");
-    return res.status(200).json({
-      source:"Datafordeler Flexible GraphQL v3", fetchedAt:new Date().toISOString(),
-      address:address?{id:address.id_lokalId,designation:address.adressebetegnelse||null,status:address.status||null}:null,
-      house:house?{id:house.id_lokalId,designation:house.adgangsadressebetegnelse||null,streetNumber:house.husnummertekst||null,status:house.status||null,buildingId:house.adgangTilBygning||null,parcelId:house.jordstykke||house.placeretPaaForeloebigtJordstykke||null}:null,
-      coordinates:coords, bbr, bbrBuildings:buildings, cadastral, estate,
-      areas:{groundArea,footprint,residentialArea,buildingArea},
-      completeness:{address:Boolean(address),house:Boolean(house),bbr:buildings.length>0,cadastral:Boolean(cadastral),estate:Boolean(estate)},
-      note:"Arealer vises kun, hvis de officielle registre returnerer dem. Registreret jordstykkeareal er et registerareal og er ikke nødvendigvis lig med geometrisk/opmålt areal."
-    });
-  } catch (error) {
-    return res.status(error.status || 502).json({error:String(error.message || "Dataopslag fejlede").slice(0,600),source:"Datafordeler Flexible GraphQL v3",setup:!process.env.DATAFORDELER_API_KEY});
+  } else {
+    errors.bbr = "Der blev ikke fundet et husnummer, som kan kobles til BBR.";
   }
+
+  const bbr = buildings[0] || null;
+  const parcelId = house && (house.jordstykke || house.placeretPaaForeloebigtJordstykke) || null;
+  if (parcelId) {
+    try { cadastral = await getParcelById(String(parcelId), now); }
+    catch(error) { errors.cadastral = String(error.message || "Matrikelopslag fejlede").slice(0,500); }
+  } else {
+    errors.cadastral = "DAR returnerede ikke et jordstykke-ID for adressen.";
+  }
+  if (bfe) {
+    try { estate = await getEstateByBfe(bfe, now); }
+    catch(error) { errors.estate = String(error.message || "BFE-opslag fejlede").slice(0,500); }
+  }
+
+  const coords = parseCoordinates(house);
+  const groundArea = numberValue(cadastral, ["registreretAreal","arealberegnet","samletAreal"]);
+  const footprint = numberValue(bbr, ["byg041BebyggetAreal"]);
+  const residentialArea = numberValue(bbr, ["byg039BygningensSamledeBoligAreal"]);
+  const buildingArea = numberValue(bbr, ["byg038SamletBygningsareal"]);
+  res.setHeader("Cache-Control","private, max-age=60");
+  return res.status(200).json({
+    source:"Datafordeler Flexible GraphQL v3",
+    fetchedAt:new Date().toISOString(),
+    address:address?{id:address.id_lokalId,designation:address.adressebetegnelse||null,status:address.status||null}:null,
+    house:house?{id:house.id_lokalId,designation:house.adgangsadressebetegnelse||null,streetNumber:house.husnummertekst||null,status:house.status||null,buildingId:house.adgangTilBygning||null,parcelId:house.jordstykke||house.placeretPaaForeloebigtJordstykke||null}:null,
+    coordinates:coords,bbr,bbrBuildings:buildings,cadastral,estate,
+    areas:{groundArea,footprint,residentialArea,buildingArea},
+    completeness:{address:Boolean(address),house:Boolean(house),bbr:buildings.length>0,cadastral:Boolean(cadastral),estate:Boolean(estate)},
+    errors,
+    note:"Arealer vises kun, hvis de officielle registre returnerer dem. Manglende BBR-/matrikeldata er ikke bevis for, at forholdet ikke findes."
+  });
 }
