@@ -13,42 +13,64 @@ async function requestSearch(path, params, limit=20) {
 }
 function normalize(hit, origin) {
   const type=String(hit.type||"").toLowerCase();
-  const labels={adresse:"Præcis adresse",husnummer:"Husnummer",navngivenvejpostnummer:"Vej og postnummer",vejnavn:"Vejnavn",vejnavnhusnummer:"Muligt husnummer"};
-  const label=hit.titel||hit.adgangsadressebetegnelse||hit.adressebetegnelse||[hit.vejnavn,hit.husnummer,hit.postnr,hit.postdistrikt].filter(Boolean).join(" ");
+  const labels={adresse:"Præcis adresse",husnummer:"Husnummer",navngivenvejpostnummer:"Vej og postnummer",navngivenvejpostnummerdel:"Vej og postnummer",vejnavn:"Vejnavn",vejnavnhusnummer:"Muligt husnummer"};
+  const label=hit.titel||hit.adgangsadressebetegnelse||hit.adressebetegnelse||[hit.vejnavn||hit.vejNavn,hit.husnummer||hit.husNummer,hit.postnr,hit.postdistrikt].filter(Boolean).join(" ");
   const detail=[];
   if(hit.postnr&&hit.postdistrikt)detail.push(hit.postnr+" "+hit.postdistrikt);
   else if(hit.postdistrikt)detail.push(hit.postdistrikt);
   if(hit.antal_husnumre!=null)detail.push(hit.antal_husnumre+" husnumre på vejen");
   if(type==="vejnavn")detail.push("Tilføj husnummer og postnummer for et præcist opslag");
+  if(type==="navngivenvejpostnummerdel")detail.push("Vælg husnummer for et præcist opslag");
   if(type==="vejnavnhusnummer")detail.push("Ikke entydig endnu · tilføj postnummer/by");
   const specific=type==="adresse"||type==="husnummer";
   return {id:hit.id||null,type,label:String(label||""),detail:detail.join(" · "),kindLabel:labels[type]||"Søgeforslag",source:"official-dar",husnummerId:hit.husnummerId||hit.husnummerid||null,vejnavn:hit.vejnavn||hit.vejNavn||null,husnummer:hit.husnummer||hit.husNummer||null,postnr:hit.postnr||null,postdistrikt:hit.postdistrikt||null,antal_husnumre:hit.antal_husnumre==null?null:Number(hit.antal_husnumre),specific,origin};
 }
 function score(hit,q) {
-  const clean=x=>String(x||"").toLocaleLowerCase("da").replace(/[.,]/g," ").replace(/\\s+/g," ").trim();
+  const clean=x=>String(x||"").toLocaleLowerCase("da").replace(/[.,]/g," ").replace(/\s+/g," ").trim();
   const query=clean(q),label=clean(hit.label);let n=0;
   if(label===query)n+=100;else if(label.startsWith(query))n+=35;else if(label.includes(query))n+=15;
-  if(hit.type==="adresse")n+=26;else if(hit.type==="husnummer")n+=20;else if(hit.type==="navngivenvejpostnummer")n+=3;
-  const zip=query.match(/\\b\\d{4}\\b/);if(zip&&hit.postnr===zip[0])n+=25;
+  if(hit.type==="adresse")n+=30;else if(hit.type==="husnummer")n+=24;else if(hit.type==="navngivenvejpostnummer")n+=5;
+  const zip=query.match(/\b\d{4}\b/);if(zip&&(hit.postnr===zip[0]||label.includes(zip[0])))n+=25;
   if(hit.specific)n+=10;return n;
+}
+function parseAddressQuery(q){
+ const s=String(q||"").trim();
+ // Common Danish form: street + number, then a four-digit postcode and optional city.
+ const m=s.match(/^(.+?)\s+(\d+[a-zA-Z]?(?:\s*[-/]\s*\d+[a-zA-Z]?)?)\s*,?\s+(\d{4})(?:\s+(.+))?$/);
+ if(!m)return null;
+ return {vejnavn:m[1].trim(),husnummer:m[2].replace(/\s+/g,""),postnummer:m[3],postdistrikt:m[4]?.trim()||null};
 }
 export default async function handler(req,res) {
   if(req.method!=="GET"){res.setHeader("Allow","GET");return res.status(405).json({error:"Method not allowed"});}
   const q=String(req.query.q||"").trim();
   if(q.length<2||q.length>73)return res.status(400).json({error:"Skriv mindst 2 tegn og højst 73 tegn."});
   try {
-    const [addressResults,houseResults]=await Promise.allSettled([
-      requestSearch("/adresser/soeg/",{tekst:q},20),
-      requestSearch("/husnumre/soeg/",{tekst:q},20)
-    ]);
+    const parsed=parseAddressQuery(q);
+    const tasks=[
+      requestSearch("/adresser/soeg/",{tekst:q},30).then(hits=>({kind:"address-text",hits})),
+      requestSearch("/husnumre/soeg/",{tekst:q},30).then(hits=>({kind:"house-text",hits}))
+    ];
+    // Structured search is more reliable for an exact Danish street + number + postcode query.
+    if(parsed){
+      tasks.push(requestSearch("/husnumre/soeg/",{vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer},30).then(hits=>({kind:"house-structured",hits})));
+      tasks.push(requestSearch("/adresser/soeg/",{vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer},30).then(hits=>({kind:"address-structured",hits})));
+    }
+    const searchResults=await Promise.allSettled(tasks);
     const raw=[];const errors=[];
-    if(addressResults.status==="fulfilled")raw.push(...addressResults.value.map(x=>normalize(x,"adresser/soeg")));else errors.push("Adresse: "+String(addressResults.reason?.message||"fejl").slice(0,100));
-    if(houseResults.status==="fulfilled")raw.push(...houseResults.value.map(x=>normalize(x,"husnumre/soeg")));else errors.push("Husnummer: "+String(houseResults.reason?.message||"fejl").slice(0,100));
-    // If the input only identifies a road + postcode, expand that choice into actual house-number suggestions.
-    const broad=raw.filter(x=>x.type==="navngivenvejpostnummer"&&x.vejnavn&&x.postnr).slice(0,3);
-    const expanded=await Promise.allSettled(broad.map(async road=>({road,hits:await requestSearch("/husnumre/soeg/",{vejnavn:road.vejnavn,postnummer:road.postnr},12)})));
+    for(const result of searchResults){
+      if(result.status==="fulfilled")raw.push(...result.value.hits.map(x=>normalize(x,result.value.kind)));
+      else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,120));
+    }
+    // If a result only identifies a road + postcode, expand it to actual house numbers.
+    const broad=raw.filter(x=>(x.type==="navngivenvejpostnummer"||x.type==="navngivenvejpostnummerdel")&&x.vejnavn&&x.postnr).slice(0,4);
+    const expanded=await Promise.allSettled(broad.map(async road=>({road,hits:await requestSearch("/husnumre/soeg/",{vejnavn:road.vejnavn,postnummer:road.postnr},20)})));
     for(const result of expanded){
       if(result.status==="fulfilled")raw.push(...result.value.hits.map(x=>normalize(x,"vejnavn+postnummer")));
+      else errors.push(String(result.reason?.message||"vej/postnummer-opslag fejlede").slice(0,100));
+    }
+    if(parsed){
+      const exactLabel=raw.filter(x=>["adresse","husnummer"].includes(x.type)&&x.label&&x.label.toLocaleLowerCase("da").includes(parsed.vejnavn.toLocaleLowerCase("da"))&&String(x.husnummer||"")===parsed.husnummer);
+      for(const hit of exactLabel){if(!hit.postnr){hit.postnr=parsed.postnummer;hit.postdistrikt=parsed.postdistrikt||hit.postdistrikt;}}
     }
     const unique=new Map();
     for(const hit of raw){
