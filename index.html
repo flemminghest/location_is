@@ -1175,8 +1175,14 @@ async function lookupAddressSuggestions(q){
    if(city&&normalizeAddressMatch(item.postdistrikt)!==normalizeAddressMatch(city))return false;
    return true;
   });
+  const sourceFailures=Array.isArray(data.details)?data.details.filter(Boolean):[];
+  if(data.partial&&!items.length){
+   throw new Error('En eller flere officielle adressekilder fejlede, og ingen brugbare forslag blev returneret. '+sourceFailures.join(' · '));
+  }
   if(items.length){
-   renderSuggestions(items,(zip||city)?'Forslag afgrænset til '+[city,zip].filter(Boolean).join(' · ')+'.':'Forslag fra Klimadatastyrelsens officielle Adressevælger.');
+   const scopeNote=(zip||city)?'Forslag afgrænset til '+[city,zip].filter(Boolean).join(' · ')+'.':'Forslag fra Klimadatastyrelsens officielle Adressevælger.';
+   const partialNote=data.partial?'Delvise resultater: '+(sourceFailures.join(' · ')||'En eller flere adressekilder svarede ikke.'):'';
+   renderSuggestions(items,[scopeNote,partialNote].filter(Boolean).join(' '));
    return items;
   }
   renderSuggestions([],(zip||city)?'Ingen match inden for det valgte geografiske område. Prøv et andet gadenavn eller kontrollér postnummeret.':'Ingen forslag fundet. Kontrollér stavningen eller tilføj husnummer og postnummer.');
