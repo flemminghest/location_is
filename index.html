@@ -1568,7 +1568,8 @@ async function loadPropertyData(){
  setLookupProgress(20,'TRIN 2 AF 5','Kontrollerer adressen','Registeropslag køres parallelt, hvor datagrundlaget tillader det. Hver kilde har sin egen fremdrift og tidsgrænse.');
  setLookupStep('address','running','Kontrollerer','Kontrollerer DAR-adresse og adgangsadresse');
  searchStatus.textContent='Kontakter de officielle registre…';
- const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og matrikelrelationer',()=>requestJson('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),10500));
+  setLookupStep('mat','running','Slår op','Henter matrikelrelationen samtidig med adresse og BBR');
+const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og matrikelrelationer',()=>requestJson('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),10500));
  const planPromise=(async()=>{
   setLookupStep('plan','running','Søger','Venter på adresseposition og søger derefter i Plandata.dk');
   setLookupStep('history','running','Søger','Venter på planversioner, forslag og aflysninger');
