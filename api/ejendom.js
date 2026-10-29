@@ -1,11 +1,22 @@
 const ENDPOINT = process.env.DATAFORDELER_GRAPHQL_URL || "https://graphql.datafordeler.dk/flexible/v3";
 
+function withDeadline(work, timeoutMs, message) {
+  let timer;
+  return Promise.race([
+    Promise.resolve().then(work),
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), timeoutMs); })
+  ]).finally(() => { if (timer) clearTimeout(timer); });
+}
+
 async function graphql(query) {
   const key = process.env.DATAFORDELER_API_KEY;
   if (!key) { const e = new Error("DATAFORDELER_API_KEY mangler i Vercel Production."); e.status = 503; throw e; }
   const url = new URL(ENDPOINT); url.searchParams.set("apiKey", key);
-  const response = await fetch(url, { method:"POST", headers:{"content-type":"application/json",accept:"application/json"}, body:JSON.stringify({query}), signal:AbortSignal.timeout(4000) });
-  const payload = await response.json().catch(() => ({}));
+  const {response,payload} = await withDeadline(async()=>{
+    const response = await fetch(url, { method:"POST", headers:{"content-type":"application/json",accept:"application/json"}, body:JSON.stringify({query}), signal:AbortSignal.timeout(4000) });
+    const payload = await response.json().catch(() => ({}));
+    return {response,payload};
+  },4500,"Datafordelerens svar overskred tidsgrænsen på 4,5 sekunder.");
   const errors = (payload.errors || []).map(x => x.message).join("; ");
   if (!response.ok || errors) { const e = new Error(errors || payload.message || ("Datafordeler HTTP " + response.status)); e.status = 502; throw e; }
   if (!payload.data) { const e = new Error("Datafordeleren returnerede ikke et data-resultat."); e.status = 502; throw e; }
