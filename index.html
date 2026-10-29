@@ -1323,19 +1323,36 @@ geoBy.addEventListener('keydown',event=>{
  const active=options[cityActiveIndex];
  if(active){geoBy.setAttribute('aria-activedescendant',active.id);active.scrollIntoView({block:'nearest'});}
 });
+async function commitPostnummer(){
+ clearTimeout(postcodeTimer);
+ const q=geoPostnummer.value.trim();
+ if(!/^\d{4}$/.test(q)){
+  selectedCity=null;verifiedPostnummer='';geoPostnummer.dataset.verified='';geoBy.value='';
+  return false;
+ }
+ if(verifiedPostnummer===q&&selectedCity&&geoBy.value===selectedCity.navn)return true;
+ const ok=await resolvePostnummer(q);
+ if(ok&&geoPostnummer.value.trim()===q){
+  closeCitySuggestions();
+  if(geoVejnavn.value.trim().length>=2)lookupAddressSuggestions(formatAddressQuery());
+ }
+ return ok;
+}
 geoPostnummer.addEventListener('input',()=>{
  selectedCity=null;verifiedPostnummer='';geoPostnummer.dataset.verified='';geoBy.value='';
  if(cityController)cityController.abort();
  clearTimeout(postcodeTimer);
  const q=geoPostnummer.value.trim();
  if(!/^\d{4}$/.test(q)){closeCitySuggestions();return;}
- postcodeTimer=setTimeout(async()=>{
-  const ok=await resolvePostnummer(q);
-  if(ok&&geoPostnummer.value.trim()===q){
-   closeCitySuggestions();
-   if(geoVejnavn.value.trim().length>=2){lookupAddressSuggestions(formatAddressQuery());}
-  }
- },170);
+ // Keep a short live lookup, but commit immediately when the user leaves the field with Tab/click.
+ postcodeTimer=setTimeout(()=>commitPostnummer(),500);
+});
+geoPostnummer.addEventListener('blur',()=>{commitPostnummer();});
+geoPostnummer.addEventListener('keydown',event=>{
+ if(event.key==='Enter'){
+  event.preventDefault();
+  commitPostnummer().then(ok=>{if(ok)geoVejnavn.focus();});
+ }
 });
 [geoVejnavn,geoHusnummer,geoEtage,geoDoer].forEach(input=>input.addEventListener('input',()=>{
  chosenAddress=null;updateDrawingButton();
