@@ -4,15 +4,27 @@ const ENDPOINT=process.env.DATAFORDELER_GRAPHQL_URL||"https://graphql.datafordel
 function normalized(v){return String(v||"").toLocaleLowerCase("da-DK").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
 function escapeGraphQL(v){return String(v).replace(/\\/g,"\\\\").replace(/"/g,'\\"');}
 async function queryPublicPostnummer(query){
- const url=new URL("https://api.dataforsyningen.dk/postnumre");
- if(/^\d{4}$/.test(query))url.searchParams.set("nr",query);
- else url.searchParams.set("navn_startswith",query);
- url.searchParams.set("per_side","100");
- const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(5000)});
- const payload=await response.json().catch(()=>null);
- if(!response.ok||!Array.isArray(payload))throw new Error("Dataforsyningen postnummer-API HTTP "+response.status);
- return payload.map(x=>({nr:String(x.nr||""),navn:String(x.navn||"").trim(),source:"Dataforsyningen postnumre"}))
-  .filter(x=>/^\d{4}$/.test(x.nr)&&x.navn&&(/^\d{4}$/.test(query)?x.nr===query:normalized(x.navn).startsWith(normalized(query))));
+ const code=String(query||"").trim();
+ const urls=[];
+ if(/^\\d{4}$/.test(code)){
+  urls.push(new URL("https://api.dataforsyningen.dk/postnumre?nr="+encodeURIComponent(code)));
+  urls.push(new URL("https://api.dataforsyningen.dk/postnumre/"+encodeURIComponent(code)));
+ }else{
+  urls.push(new URL("https://api.dataforsyningen.dk/postnumre?navn_startswith="+encodeURIComponent(code)));
+ }
+ const settled=await Promise.allSettled(urls.map(async url=>{
+  const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(4000),cache:"no-store"});
+  const payload=await response.json().catch(()=>null);
+  if(!response.ok)throw new Error("Dataforsyningen HTTP "+response.status);
+  const rows=Array.isArray(payload)?payload:(payload&&typeof payload==="object"?[payload]:[]);
+  return rows.map(x=>({nr:String(x.nr||""),navn:String(x.navn||x.postdistrikt||"").trim(),source:"Dataforsyningen postnumre"}))
+   .filter(x=>/^\\d{4}$/.test(x.nr)&&x.navn&&(/^\\d{4}$/.test(code)?x.nr===code:normalized(x.navn).startsWith(normalized(code))));
+ }));
+ for(const item of settled){
+  if(item.status==="fulfilled"&&item.value.length)return item.value;
+ }
+ const errors=settled.filter(x=>x.status==="rejected").map(x=>String(x.reason?.message||"Dataforsyningen fejlede"));
+ throw new Error(errors.join("; ")||"Dataforsyningen returnerede intet match");
 }
 async function queryPostnummer(query){
  const key=process.env.DATAFORDELER_API_KEY;
@@ -68,10 +80,20 @@ export default async function handler(req,res){
  const nr=String(req.query.nr||"").trim(),q=String(req.query.q||"").trim(),query=nr||q;
  if(!query||query.length<2||query.length>60)return res.status(400).json({ok:false,error:"Angiv et postnummer på fire cifre eller et bynavn."});
  if(nr&&!/^\d{4}$/.test(nr))return res.status(400).json({ok:false,error:"Postnummer skal bestå af fire cifre."});
- const [publicResult,primary,secondary]=await Promise.allSettled([queryPublicPostnummer(query),queryPostnummer(query),searchKds(query)]);
- const all=[];let primaryErrors=[];
- if(publicResult.status==="fulfilled")all.push(...publicResult.value);
- else primaryErrors.push(String(publicResult.reason?.message||"Dataforsyningen fejlede").slice(0,150));
+ let publicItems=[];
+ let publicError="";
+ if(nr){
+  try{
+   publicItems=await queryPublicPostnummer(nr);
+   const exact=publicItems.find(item=>item.nr===nr&&item.navn);
+   if(exact){
+    res.setHeader("Cache-Control","public, s-maxage=86400, stale-while-revalidate=604800");
+    return res.status(200).json({ok:true,...exact});
+   }
+  }catch(error){publicError=String(error?.message||error).slice(0,150);}
+ }
+ const [primary,secondary]=await Promise.allSettled([queryPostnummer(query),searchKds(query)]);
+ const all=[...publicItems];let primaryErrors=publicError?[publicError]:[];
  if(primary.status==="fulfilled"){all.push(...primary.value.items);primaryErrors.push(...primary.value.errors);}
  else primaryErrors.push(String(primary.reason?.message||"DAR_Postnummer fejlede").slice(0,150));
  if(secondary.status==="fulfilled")all.push(...secondary.value);
