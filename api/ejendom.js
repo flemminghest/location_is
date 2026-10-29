@@ -70,6 +70,23 @@ async function getParcelById(id, now) {
   const data = await graphql(rootQuery("MAT_Jordstykke", now, eqWhere("id_lokalId", id), fields));
   return data.MAT_Jordstykke && data.MAT_Jordstykke.nodes && data.MAT_Jordstykke.nodes[0] || null;
 }
+async function getEjerlavForParcel(id, now) {
+  if (!isId(id)) return null;
+  // Optional lookup is isolated so missing schema support cannot break the successful parcel lookup.
+  const relData = await graphql(rootQuery("MAT_Jordstykke", now, eqWhere("id_lokalId", id), "ejerlavLokalId"));
+  const rel = relData.MAT_Jordstykke && relData.MAT_Jordstykke.nodes && relData.MAT_Jordstykke.nodes[0];
+  const ejerlavId = rel && rel.ejerlavLokalId;
+  if (!isId(ejerlavId)) return rel ? {id:null,navn:null,kode:null} : null;
+  const data = await graphql(rootQuery("MAT_Ejerlav", now, eqWhere("id_lokalId", ejerlavId), "id_lokalId ejerlavskode ejerlavsnavn"));
+  const item = data.MAT_Ejerlav && data.MAT_Ejerlav.nodes && data.MAT_Ejerlav.nodes[0];
+  return item ? {id:item.id_lokalId||ejerlavId,navn:item.ejerlavsnavn||null,kode:item.ejerlavskode??null} : {id:ejerlavId,navn:null,kode:null};
+}
+async function getUnitsForBuilding(buildingId, now) {
+  if (!isId(buildingId)) return [];
+  const fields = "id_lokalId status enh020EnhedensAnvendelse enh026EnhedensSamledeAreal enh027ArealTilBeboelse enh028ArealTilErhverv bygning";
+  const data = await graphql(rootQuery("BBR_Enhed", now, eqWhere("bygning", buildingId), fields));
+  return data.BBR_Enhed && data.BBR_Enhed.nodes || [];
+}
 async function getEstateById(id, now) {
   if (!isId(id)) return null;
   const fields = "id_lokalId BFEnummer status senesteSagLokalId registreringFra virkningFra";
@@ -157,6 +174,19 @@ export default async function handler(req, res) {
     catch(error) { errors.estate = String(error.message || "Samlet fast ejendom kunne ikke slås op via jordstykket.").slice(0,500); }
   }
 
+  let bbrUnits = [], ejerlav = null;
+  if (buildings.length) {
+    const unitResults = await Promise.allSettled(buildings.map(item => getUnitsForBuilding(String(item.id_lokalId || ""), now)));
+    for (const result of unitResults) {
+      if (result.status === "fulfilled") bbrUnits.push(...(result.value || []));
+      else errors.units = String(result.reason?.message || "BBR-enheder kunne ikke slås op").slice(0,300);
+    }
+    bbrUnits = [...new Map(bbrUnits.filter(item=>item&&item.id_lokalId).map(item=>[item.id_lokalId,item])).values()];
+  }
+  if (cadastral && cadastral.id_lokalId) {
+    try { ejerlav = await getEjerlavForParcel(String(cadastral.id_lokalId), now); }
+    catch (error) { errors.ejerlav = String(error.message || "Ejerlav kunne ikke slås op").slice(0,300); }
+  }
   const coords = parseCoordinates(house);
   const groundArea = numberValue(cadastral, ["registreretAreal","arealberegnet","samletAreal"]);
   // Sum only actual values from all returned BBR buildings; null means no registered area was returned.
@@ -174,7 +204,7 @@ export default async function handler(req, res) {
     fetchedAt:new Date().toISOString(),
     address:address?{id:address.id_lokalId,designation:address.adressebetegnelse||null,status:address.status||null}:null,
     house:house?{id:house.id_lokalId,designation:house.adgangsadressebetegnelse||null,streetNumber:house.husnummertekst||null,status:house.status||null,buildingId:house.adgangTilBygning||null,parcelId:house.jordstykke||house.placeretPaaForeloebigtJordstykke||null}:null,
-    coordinates:coords,bbr,bbrBuildings:buildings,cadastral,estate,
+    coordinates:coords,bbr,bbrBuildings:buildings,bbrUnits,cadastral,ejerlav,estate,
     areas:{groundArea,footprint,primaryFootprint,residentialArea,buildingArea},
     completeness:{address:Boolean(address),house:Boolean(house),bbr:buildings.length>0,cadastral:Boolean(cadastral),estate:Boolean(estate)},
     errors,
