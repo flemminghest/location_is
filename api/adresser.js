@@ -11,6 +11,41 @@ async function requestSearch(path, params, limit=20) {
   if (data.status && data.status !== "ok") throw new Error(data.beskrivelse || "Adressevælgerens søgning fejlede");
   return Array.isArray(data.fund) ? data.fund : [];
 }
+async function requestAddressWash(address) {
+  const variants=[String(address||"").trim(),String(address||"").replace(/,\s*/g," ").trim()];
+  let lastError=null;
+  for(const variant of [...new Set(variants)].filter(Boolean)){
+    const url=new URL("/vask/",BASE);
+    url.searchParams.set("adresse",variant);
+    url.searchParams.set("token",TOKEN());
+    try{
+      const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(10000)});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error("Adressevask HTTP "+response.status);
+      if(data.status&&data.status!=="ok")throw new Error(data.beskrivelse||"Adressevask fejlede");
+      const result=data.vaskeresultat||{};
+      const code=Number(data.vaskestatus?.kode);
+      // Only accept a current register result with an ID and a positive validation code.
+      if(result.adresse_id_lokalid&&result.adressebetegnelse&&Number.isFinite(code)&&code>0){
+        return [{
+          id:result.adresse_id_lokalid,
+          type:"adresse",
+          titel:result.adressebetegnelse,
+          adressebetegnelse:result.adressebetegnelse,
+          status:result.status,
+          matchCode:code,
+          matchText:data.vaskestatus?.tekst||"Adresse valideret",
+          origin:"official-address-wash"
+        }];
+      }
+      // If only a historical version matches, do not treat it as a current address.
+      if(result.adresse_id_lokalid) return [];
+    }catch(error){lastError=error;}
+  }
+  if(lastError)throw lastError;
+  return [];
+}
+
 function normalize(hit, origin) {
   const type=String(hit.type||"").toLowerCase();
   const labels={adresse:"Præcis adresse",husnummer:"Husnummer",navngivenvejpostnummer:"Vej og postnummer",navngivenvejpostnummerdel:"Vej og postnummer",vejnavn:"Vejnavn",vejnavnhusnummer:"Muligt husnummer"};
@@ -54,6 +89,9 @@ export default async function handler(req,res) {
     if(parsed){
       tasks.push(requestSearch("/husnumre/soeg/",{vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer},30).then(hits=>({kind:"house-structured",hits})));
       tasks.push(requestSearch("/adresser/soeg/",{vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer},30).then(hits=>({kind:"address-structured",hits})));
+    }
+    if(parsed){
+      tasks.push(requestAddressWash(q).then(hits=>({kind:"address-wash",hits})));
     }
     const searchResults=await Promise.allSettled(tasks);
     const raw=[];const errors=[];
