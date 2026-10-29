@@ -486,6 +486,19 @@ p{line-height:1.55}
 .lookup-step.is-error .lookup-step-progress strong{color:#ad493d}
 @keyframes lookupStepSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.lookup-step-progress-label::before{animation:none}}
+
+/* City results are a viewport popover rather than a dropdown clipped by the animated panel */
+.geo-city-suggestions{position:fixed!important;top:0;left:0;right:auto;bottom:auto;width:min(420px,calc(100vw - 24px));max-height:min(320px,44vh);z-index:100050;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:#afc4d0 #f3f7f9;border:1px solid #cedfe8;border-radius:13px;background:#fff;box-shadow:0 18px 45px #142f4440;padding:6px;isolation:isolate}
+.geo-city-suggestions.is-open{display:block}
+.geo-city-option{min-height:47px;padding:10px 12px;border-bottom:1px solid #edf2f5;border-radius:8px;cursor:pointer;touch-action:manipulation}
+.geo-city-option:last-child{border-bottom:0}
+.geo-city-option strong{font-size:12px;line-height:1.4}
+.geo-city-option small{font-size:10px;line-height:1.35}
+.geo-city-option:hover,.geo-city-option:focus-visible,.geo-city-option[aria-selected="true"]{background:#eaf4f7;color:#214f68;outline:none}
+.geo-city-message{padding:12px;color:#718696;font-size:11px;line-height:1.5}
+.advanced-search-panel,.advanced-search-inner,.geo-field{overflow:visible}
+.advanced-search-panel{position:relative;z-index:20}
+@media(max-width:700px){.geo-city-suggestions{width:calc(100vw - 24px);max-height:42vh;border-radius:12px}.geo-city-option{min-height:50px}}
 </style>
 </head>
 <body><div class="app">
@@ -829,6 +842,9 @@ checkIntegrationStatus();
 const searchInput=document.getElementById('query'),suggestionsEl=document.getElementById('suggestions'),searchStatus=document.getElementById('searchStatus');
 const geoPostnummer=document.getElementById('geoPostnummer'),geoBy=document.getElementById('geoBy'),geoVejnavn=document.getElementById('geoVejnavn'),geoHusnummer=document.getElementById('geoHusnummer'),geoEtage=document.getElementById('geoEtage'),geoDoer=document.getElementById('geoDoer');
 const advancedPanel=document.getElementById('advancedSearchPanel'),advancedToggle=document.getElementById('toggleAdvancedSearch'),citySuggestions=document.getElementById('geoCitySuggestions');
+// City suggestions live at viewport level so scroll, panel animation, and overflow never clip them.
+document.body.appendChild(citySuggestions);
+let cityActiveIndex=-1;
 let addressTimer=null,postcodeTimer=null,cityTimer=null,postcodeController=null,cityController=null,activeSearchController=null,currentSuggestions=[],selectedSuggestion=-1,chosenAddress=null,currentPropertyData=null,verifiedPostnummer='',selectedCity=null,advancedOpen=false;
 
 function hasAdvancedValues(){
@@ -871,19 +887,51 @@ advancedToggle.addEventListener('click',()=>setAdvancedOpen(!advancedOpen));
 function closeCitySuggestions(){
  citySuggestions.classList.remove('is-open');
  citySuggestions.innerHTML='';
+ citySuggestions.style.top='';
+ citySuggestions.style.left='';
+ citySuggestions.style.width='';
+ citySuggestions.style.maxHeight='';
  geoBy.setAttribute('aria-expanded','false');
+ geoBy.removeAttribute('aria-activedescendant');
+ cityActiveIndex=-1;
 }
+function positionCitySuggestions(){
+ if(!citySuggestions.classList.contains('is-open'))return;
+ const rect=geoBy.getBoundingClientRect(),pad=12,gap=6;
+ const wanted=Math.min(320,Math.round(window.innerHeight*.44));
+ const width=Math.min(Math.max(rect.width,300),window.innerWidth-pad*2);
+ const left=Math.max(pad,Math.min(rect.left,window.innerWidth-pad-width));
+ const roomBelow=window.innerHeight-rect.bottom-gap-pad,roomAbove=rect.top-gap-pad;
+ let top,maxHeight;
+ if(roomBelow<145&&roomAbove>roomBelow){
+  maxHeight=Math.max(100,Math.min(wanted,roomAbove));
+  top=Math.max(pad,rect.top-gap-maxHeight);
+ }else{
+  maxHeight=Math.max(100,Math.min(wanted,roomBelow));
+  top=rect.bottom+gap;
+ }
+ citySuggestions.style.top=top+'px';
+ citySuggestions.style.left=left+'px';
+ citySuggestions.style.width=width+'px';
+ citySuggestions.style.maxHeight=maxHeight+'px';
+}
+window.addEventListener('resize',positionCitySuggestions);
+document.addEventListener('scroll',positionCitySuggestions,true);
 function showCitySuggestions(items,message='',query=''){
  if(!items.length){
   citySuggestions.innerHTML=message?'<div class="geo-city-message">'+esc(message)+'</div>':'';
   citySuggestions.classList.toggle('is-open',Boolean(message));
   geoBy.setAttribute('aria-expanded',String(Boolean(message)));
+  if(message){cityActiveIndex=-1;positionCitySuggestions();}
   return;
  }
- const cityOnlyOption=query&&!/^\d{4}$/.test(query)?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(query)+'</strong><small>Vis adresser i denne by på tværs af postnumre</small></button>':'';
+ const cityOnlyOption=query&&!/^\\d{4}$/.test(query)?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(query)+'</strong><small>Vis adresser i denne by på tværs af postnumre</small></button>':'';
  citySuggestions.innerHTML=cityOnlyOption+items.map((item,i)=>'<button type="button" class="geo-city-option" role="option" data-city-index="'+i+'"><strong>'+esc(item.navn)+' · '+esc(item.nr)+'</strong><small>Begræns søgning til dette postnummer</small></button>').join('');
  citySuggestions.classList.add('is-open');
  geoBy.setAttribute('aria-expanded','true');
+ cityActiveIndex=-1;
+ citySuggestions.querySelectorAll('.geo-city-option').forEach((button,index)=>button.id='geo-city-option-'+index);
+ positionCitySuggestions();
  citySuggestions.querySelector('[data-city-only]')?.addEventListener('click',()=>{
   selectedCity={nr:'',navn:query,cityOnly:true};
   verifiedPostnummer='';
@@ -1171,6 +1219,21 @@ geoBy.addEventListener('input',()=>{
  const q=geoBy.value.trim();
  if(q.length<2){closeCitySuggestions();return;}
  cityTimer=setTimeout(()=>searchPostnumre(q),220);
+});
+geoBy.addEventListener('keydown',event=>{
+ if(!citySuggestions.classList.contains('is-open'))return;
+ const options=[...citySuggestions.querySelectorAll('.geo-city-option')];
+ if(!options.length)return;
+ if(event.key==='ArrowDown'){event.preventDefault();cityActiveIndex=(cityActiveIndex+1)%options.length;}
+ else if(event.key==='ArrowUp'){event.preventDefault();cityActiveIndex=(cityActiveIndex-1+options.length)%options.length;}
+ else if(event.key==='Enter'){
+  if(cityActiveIndex>=0){event.preventDefault();options[cityActiveIndex].click();}
+  return;
+ }else if(event.key==='Escape'){event.preventDefault();closeCitySuggestions();return;}
+ else return;
+ options.forEach((option,index)=>option.setAttribute('aria-selected',String(index===cityActiveIndex)));
+ const active=options[cityActiveIndex];
+ if(active){geoBy.setAttribute('aria-activedescendant',active.id);active.scrollIntoView({block:'nearest'});}
 });
 geoPostnummer.addEventListener('input',()=>{
  selectedCity=null;verifiedPostnummer='';geoPostnummer.dataset.verified='';geoBy.value='';
