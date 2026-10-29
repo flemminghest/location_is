@@ -409,6 +409,13 @@ p{line-height:1.55}
  .geo-field input{height:42px;font-size:13px}
  .geo-example{margin-top:11px}
 }
+
+/* Muted action button with a clear search glyph */
+.geo-search-submit{background:linear-gradient(135deg,#657b8b 0%,#718797 100%)!important;border-color:#627989!important;color:#fff!important;box-shadow:0 4px 11px #2c465516!important;justify-content:space-between!important;padding-left:18px!important;padding-right:16px!important}
+.geo-search-submit .geo-search-icon{width:19px;height:19px;display:block;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.geo-search-submit:hover{background:linear-gradient(135deg,#526a7a 0%,#60798a 100%)!important;border-color:#526a7a!important;box-shadow:0 6px 14px #2c46551d!important}
+.geo-search-submit:focus-visible{outline:3px solid #93adbc;outline-offset:3px}
+@media(max-width:700px){.geo-search-submit{padding-left:17px!important;padding-right:15px!important}.geo-search-submit .geo-search-icon{width:18px;height:18px}}
 </style>
 </head>
 <body><div class="app">
@@ -423,7 +430,7 @@ p{line-height:1.55}
   <label class="geo-field geo-floor"><span>Etage <small>valgfri</small></span><input class="geo-address-input" id="geoEtage" placeholder="2."></label>
   <label class="geo-field geo-door"><span>Dør <small>valgfri</small></span><input class="geo-address-input" id="geoDoer" placeholder="th."></label>
   <div class="geo-scope-note" id="geoScopeNote"><span class="geo-scope-dot" aria-hidden="true"></span><span>Opslag afgrænses til det valgte postnummer.</span></div>
-  <button class="btn primary search-submit geo-search-submit" id="geoSearchSubmit" type="submit"><span>Søg</span></button>
+  <button class="btn primary search-submit geo-search-submit" id="geoSearchSubmit" type="submit"><span>Søg</span><svg class="geo-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"></circle><path d="m16 16 4.2 4.2"></path></svg></button>
  </div>
  <input id="query" type="hidden" aria-label="Samlet adresse">
  <div class="suggestions" id="suggestions" role="listbox" aria-label="Adresseforslag"></div>
