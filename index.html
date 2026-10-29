@@ -1768,7 +1768,7 @@ const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og mat
   setText('bbrBuildingCount',bbrBuildings.length?String(bbrBuildings.length)+' registrerede':'Ingen bygninger returneret');
   setText('bbrMaterials',(materialNames[mainWall]||('Ydervæg kode '+mainWall))+' / '+(roofNames[mainRoof]||('Tag kode '+mainRoof)));
   setText('bbrHeating',heatNames[mainHeat]||('Varmeinstallationskode '+mainHeat));
-  setText('bbrUnitCount',Array.isArray(data.bbrUnits)?(data.bbrUnits.length?String(data.bbrUnits.length)+' enhed(er)':'Ingen BBR-enheder returneret'):(data.errors?.units?'Kunne ikke hentes':'Ikke hentet'));
+  setText('bbrUnitCount',data.errors?.units?'Ikke tilgængeligt':(Array.isArray(data.bbrUnits)?(data.bbrUnits.length?String(data.bbrUnits.length)+' enhed(er)':'Ingen enheder returneret i dette opslag'):'Ikke hentet'));
   setText('propertyMatrikelnummer',m.matrikelnummer||'Ikke returneret');
   setText('propertyEjerlav',data.ejerlav?.navn||(data.ejerlav?.id?'Ejerlav-ID '+data.ejerlav.id:'Ikke returneret fra Matriklen'));
   const municipalityNames={'0561':'Esbjerg Kommune','0101':'Københavns Kommune','0147':'Frederiksberg Kommune','0461':'Odense Kommune','0751':'Aarhus Kommune','0851':'Aalborg Kommune'};
