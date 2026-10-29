@@ -229,6 +229,59 @@ p{line-height:1.55}
 .brand-name .brand-eyes{display:inline-flex;align-items:center;justify-content:center;width:25px;height:20px;margin:0 -1px 0 0;color:#dcebea;flex:none}
 .brand-eyes svg{display:block;width:25px;height:16px;overflow:visible}
 @media(max-width:1100px){.brand-name{font-size:0}.brand-name .brand-eyes{width:31px;height:24px;margin:0}.brand-eyes svg{width:30px;height:19px}}
+
+/* Section navigation: icon-led, responsive, expandable, and PDF-selectable */
+.section-navigator{margin:18px 0 16px;padding:18px 18px 14px;background:linear-gradient(145deg,#ffffff 0%,#f8fbfd 100%);border:1px solid #dfe8ef;border-radius:19px;box-shadow:0 8px 24px #17365008}
+.section-navigator-head{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:14px}
+.section-heading-copy{min-width:0}
+.section-kicker{display:block;font-family:var(--font-ui);font-size:9px;line-height:1.2;letter-spacing:.14em;font-weight:800;color:#67909b;margin-bottom:4px}
+.section-heading-copy h2{margin:0;font-family:var(--font-heading);font-size:19px;line-height:1.2;letter-spacing:-.04em;font-weight:800;color:#1a3043}
+.section-heading-copy p{margin:5px 0 0;color:#778898;font-size:12px;line-height:1.45}
+.section-toolbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.section-tool{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:9px 12px;border:1px solid #dce6ed;border-radius:11px;background:#fff;color:#425a6d;font-family:var(--font-ui);font-size:11px;font-weight:700;line-height:1.2;white-space:nowrap;transition:background .15s,border-color .15s,transform .15s,box-shadow .15s}
+.section-tool svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.section-tool:hover{border-color:#b5cbd8;box-shadow:0 4px 12px #163c510d;transform:translateY(-1px)}
+.section-tool.is-selected{background:#eaf5f5;color:#226c74;border-color:#c4e1df}
+.section-tool .tool-chevron{width:13px;height:13px;transition:transform .18s}
+.section-tool[aria-expanded="true"] .tool-chevron{transform:rotate(180deg)}
+.section-pdf-button{background:#17364b;color:white;border-color:#17364b;box-shadow:0 5px 14px #17364b18}
+.section-pdf-button:hover{background:#244c64;border-color:#244c64;color:white}
+.section-pdf-button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.pdf-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:7px;background:#ffffff20;font-size:10px;font-weight:800;font-variant-numeric:tabular-nums}
+#tabs.tabs{display:flex;align-items:stretch;gap:8px;padding:3px 1px 7px;margin:0;overflow-x:auto;overflow-y:hidden;background:transparent;border:0;border-radius:0;scrollbar-width:thin;scrollbar-color:#cbd9e2 transparent;scroll-snap-type:x proximity}
+#tabs.tabs>button{position:relative;display:flex;align-items:center;gap:10px;flex:0 0 auto;min-height:60px;max-width:240px;padding:10px 13px;border:1px solid #e0e8ee;border-radius:14px;background:#fff;color:#596e80;text-align:left;white-space:normal;box-shadow:0 2px 5px #102e4004;scroll-snap-align:start;transition:background .15s,border-color .15s,box-shadow .15s,transform .15s}
+#tabs.tabs>button:hover{border-color:#bdceda;transform:translateY(-1px);box-shadow:0 5px 14px #163c510b}
+#tabs.tabs>button.active{background:#edf6f6;border-color:#b6d9d9;color:#1b5965;box-shadow:inset 0 0 0 1px #d7ebea,0 4px 12px #2b72700a}
+.tab-icon{display:grid;place-items:center;width:37px;height:37px;flex:none;border-radius:12px;background:#f0f4f7;color:#58788a;transition:background .15s,color .15s}
+.tab-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+#tabs.tabs>button.active .tab-icon{background:#dcefee;color:#22717a}
+.tab-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.tab-copy strong{font-family:var(--font-ui);font-size:11px;line-height:1.3;font-weight:750;letter-spacing:-.015em;color:inherit}
+.tab-copy small{font-family:var(--font-ui);font-size:9px;line-height:1.25;font-weight:500;color:#8796a2}
+.tab-selection-mark{display:none;position:absolute;top:6px;right:6px;width:19px;height:19px;align-items:center;justify-content:center;border:1px solid #c2d2dc;border-radius:6px;background:#fff;color:#fff}
+.tab-selection-mark svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+#tabs.pdf-select-mode>button{padding-right:28px}
+#tabs.pdf-select-mode .tab-selection-mark{display:flex}
+#tabs.pdf-select-mode>button.selected-for-pdf{border-color:#69b9ac;background:#eff9f6;box-shadow:inset 0 0 0 1px #c8e8df}
+#tabs.pdf-select-mode>button.selected-for-pdf .tab-selection-mark{background:#21846d;border-color:#21846d;color:#fff}
+.section-selection-hint{display:flex;align-items:center;gap:9px;margin:10px 0 0;padding:10px 12px;border:1px solid #d9ece6;border-radius:11px;background:#f2faf7;color:#386d5c;font-size:11px;line-height:1.45}
+.section-selection-hint.hidden{display:none!important}
+.selection-hint-icon{display:grid;place-items:center;width:21px;height:21px;flex:none;border-radius:7px;background:#d7f0e6;color:#247a62;font-size:12px;font-weight:800}
+#tabs.is-expanded{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible;scroll-snap-type:none;padding-bottom:2px}
+#tabs.is-expanded>button{max-width:none;min-width:0;width:100%;min-height:74px}
+@media(min-width:1450px){#tabs.tabs:not(.is-expanded)>button{min-width:185px;flex:1 1 0}}
+@media(max-width:1100px){.section-navigator{padding:15px}.section-navigator-head{align-items:flex-start;flex-direction:column;gap:13px}.section-toolbar-actions{justify-content:flex-start;width:100%}#tabs.is-expanded{grid-template-columns:repeat(2,minmax(0,1fr))}#tabs.tabs>button{max-width:230px}}
+@media(max-width:700px){.section-navigator{margin:14px 0;padding:13px;border-radius:15px}.section-heading-copy h2{font-size:17px}.section-heading-copy p{font-size:11px}.section-toolbar-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.section-tool{min-width:0;padding:9px 8px;font-size:10px}.section-pdf-button{grid-column:1/-1;width:100%}#tabs.tabs>button{min-height:55px;gap:8px;padding:8px 10px;border-radius:12px;max-width:245px}#tabs.tabs>button .tab-icon{width:32px;height:32px;border-radius:10px}#tabs.tabs>button .tab-icon svg{width:18px;height:18px}#tabs.tabs>button .tab-copy strong{font-size:10px}#tabs.tabs>button .tab-copy small{font-size:8px}#tabs.is-expanded{grid-template-columns:1fr 1fr;gap:7px}#tabs.is-expanded>button{max-width:none;min-height:67px;padding:9px 7px}#tabs.pdf-select-mode>button{padding-right:24px}.section-selection-hint{font-size:10px}}
+@media print{
+ body.pdf-export-active .content>.demo,body.pdf-export-active .content>.grid,body.pdf-export-active .content>.stats{display:none!important}
+ body.pdf-export-active .tabpanel:not(.pdf-include){display:none!important}
+ body.pdf-export-active .tabpanel.pdf-include{display:grid!important}
+ body.pdf-export-active .section-navigator{display:none!important}
+ body.pdf-export-active .content{padding:0!important}
+ body.pdf-export-active .tabpanel.pdf-include .card{break-inside:avoid;box-shadow:none;border:1px solid #d7dfe5}
+ body.pdf-export-active .tabpanel.pdf-include .cardbody{font-size:11pt}
+ body.pdf-export-active footer{display:none!important}
+}
 </style>
 </head>
 <body><div class="app">
@@ -240,7 +293,27 @@ p{line-height:1.55}
 <section class="card"><div class="cardhead"><h2>Matrikel- og bygningskort</h2><span class="tiny">Illustrativt kort</span></div><div class="map"><div class="parcel" id="parcel"></div><div class="building" id="building"></div><div class="maplabel">Grund / matrikel</div><div class="maptools"><label><input type="checkbox" checked data-layer="parcel"> Matrikelgrænse</label><label><input type="checkbox" checked data-layer="building"> Bygning (BBR)</label><label><input type="checkbox" checked data-layer="plan"> Lokalplan</label><label><input type="checkbox" data-layer="terrain"> Terræn (demo)</label><label><input type="checkbox" data-layer="nature"> Natur / beskyttelse</label></div></div><div class="cardbody tiny">Kortet er en visuel pladsholder indtil officielle geodata forbindes.</div></section>
 <section class="card"><div class="cardhead"><h2>Lokalplan og rammer</h2><span class="pill">Afventer opslag</span></div><div class="cardbody"><div style="height:118px;border-radius:8px;background:repeating-linear-gradient(45deg,#f4dba5 0 24px,#f6e8bf 24px 48px,#d6e6ca 48px 72px);position:relative"><div style="position:absolute;left:24%;top:15%;width:50%;height:68%;border:2px solid #3783c4;background:#78b6e844;transform:rotate(-8deg)"></div><span style="position:absolute;top:42%;left:35%;font-weight:800">Planområde</span></div><h3 style="margin-top:13px">Planoplysninger</h3><div class="sub">Findes når plandata er tilsluttet</div><div class="kv"><span>Gældende lokalplan</span><strong id="planName">Afventer adresse</strong></div><div class="kv"><span>Plananvendelse</span><strong id="planUse">Afventer opslag</strong></div><div class="kv"><span>Bebyggelsesprocent</span><strong id="planCoverage">Se planbestemmelser</strong></div><div class="kv"><span>Kommuneplanramme</span><strong id="planFrame">Afventer opslag</strong></div><div class="kv"><span>Zonekort</span><strong id="planZone">Afventer opslag</strong></div><div class="warning" style="margin-top:12px" id="planNotice">Planoplysninger kræver en verificeret adresseposition og kontrol af den originale plan.</div><button class="btn" style="width:100%;margin-top:10px" data-go="planer">Undersøg planforhold →</button></div></section></div>
 <div class="stats"><div class="stat"><div class="eyebrow">Grundareal</div><div class="value" id="statGround">— <span style="font-size:13px">m²</span></div><div class="note">Kræver matrikeldata</div></div><div class="stat"><div class="eyebrow">Bebygget areal</div><div class="value" id="statFootprint">— <span style="font-size:13px">m²</span></div><div class="note">Kræver BBR-data</div></div><div class="stat"><div class="eyebrow">Boligareal</div><div class="value" id="statResidential">— <span style="font-size:13px">m²</span></div><div class="note">Kræver BBR-data</div></div><div class="stat"><div class="eyebrow">Beregnet bebyggelse</div><div class="value" id="statCoverage">—</div><div class="note">Beregnes når datagrundlag findes</div></div></div>
-<div class="tabs" id="tabs"><button class="active" data-tab="grund">Grund og bygninger</button><button data-tab="planer">Planer og zoner</button><button data-tab="krav">Byggeregler</button><button data-tab="miljo">Miljø og natur</button><button data-tab="infrastruktur">Infrastruktur</button><button data-tab="naeromraade">Nærområde</button><button data-tab="historik">Historik & område</button><button data-tab="dokumenter">Dokumenter og kilder</button></div>
+<section class="section-navigator" aria-label="Ejendomsrapportens sektioner">
+ <div class="section-navigator-head">
+  <div class="section-heading-copy"><span class="section-kicker">EJENDOMSANALYSE</span><h2>Sektioner</h2><p>Vælg et område, eller sammensæt din egen PDF-rapport.</p></div>
+  <div class="section-toolbar-actions">
+   <button class="section-tool" type="button" id="toggleTabView" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="7" height="6" rx="1.5"/><rect x="13.5" y="4" width="7" height="6" rx="1.5"/><rect x="3.5" y="14" width="7" height="6" rx="1.5"/><rect x="13.5" y="14" width="7" height="6" rx="1.5"/></svg><span>Vis alle</span><svg class="tool-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+   <button class="section-tool" type="button" id="togglePdfSelect" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4.5 4.5v13h-13v-17.5Z"/><path d="M14 3.5V8h4.5M8.5 13h7M8.5 16.5h4"/><path d="m15 17 2 2 4-4"/></svg><span>Vælg til PDF</span></button>
+   <button class="section-tool section-pdf-button hidden" type="button" id="downloadSelectedPdf" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M5 15v5h14v-5"/></svg><span>Hent valgte som PDF</span><span class="pdf-count" id="pdfSelectionCount">0</span></button>
+  </div>
+ </div>
+ <div class="tabs" id="tabs" role="group" aria-label="Vælg sektion">
+  <button class="active" data-tab="grund" aria-pressed="true"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10.5H3Z"/><path d="M8 20.5v-7h8v7M9 8h.01M15 8h.01"/></svg></span><span class="tab-copy"><strong>Grund og bygninger</strong><small>Arealer og BBR</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
+  <button data-tab="planer" aria-pressed="false"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"/><path d="M9 3v15M15 6v15"/></svg></span><span class="tab-copy"><strong>Planer og zoner</strong><small>Lokalplan og rammer</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
+  <button data-tab="krav" aria-pressed="false"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4.5 4.5v13h-13v-17.5Z"/><path d="M14 3.5V8h4.5M8.5 13h7M8.5 16.5h4M8.5 9.5h2"/></svg></span><span class="tab-copy"><strong>Byggeregler</strong><small>Krav og tjeklister</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
+  <button data-tab="miljo" aria-pressed="false"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5C11 3.5 5 7.5 5 14c0 3.5 2.5 6 5.5 6 6 0 10-6.5 10-16.5Z"/><path d="M3 21c2.5-5 6.5-8.5 12-12"/></svg></span><span class="tab-copy"><strong>Miljø og natur</strong><small>Risici og beskyttelse</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
+  <button data-tab="infrastruktur" aria-pressed="false"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M6 20V8l6-4 6 4v12"/><path d="M9 20v-5h6v5M8.5 10h.01M12 10h.01M15.5 10h.01"/></svg></span><span class="tab-copy"><strong>Infrastruktur</strong><small>Forsyning og adgang</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
+  <button data-tab="naeromraade" aria-pressed="false"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.3"/><path d="M3 20h4M17 20h4"/></svg></span><span class="tab-copy"><strong>Nærområde</strong><small>Lokale forhold</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
+  <button data-tab="historik" aria-pressed="false"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="tab-copy"><strong>Historik &amp; område</strong><small>Ændringer over tid</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
+  <button data-tab="dokumenter" aria-pressed="false"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4.5 4.5v13h-13v-17.5Z"/><path d="M14 3.5V8h4.5M8.5 12h7M8.5 15.5h7M8.5 19h4"/></svg></span><span class="tab-copy"><strong>Dokumenter og kilder</strong><small>Rapport og dokumentation</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
+ </div>
+ <div class="section-selection-hint hidden" id="pdfSelectionHint"><span class="selection-hint-icon">✓</span><span>Vælg de sektioner, der skal med i rapporten. Klik på sektionerne for at markere eller fravælge.</span></div>
+</section>
 <div id="tabContent">
 <div class="lower tabpanel" data-panel="grund"><section class="card"><div class="cardhead"><h2>Arealopgørelse</h2><span class="tag">Afventer data</span></div><div class="cardbody"><div class="kv"><span>Grundareal (matrikel)</span><strong id="areaGround">— m²</strong></div><div class="kv"><span>Bebygget areal</span><strong id="areaFootprint">— m²</strong></div><div class="kv"><span>Boligareal</span><strong id="areaResidential">— m²</strong></div><div class="kv"><span>Kælderareal</span><strong id="areaBasement">— m²</strong></div><div class="sectiontitle">Beregner: bebyggelsesprocent</div><label class="tiny">Grundareal (m²)</label><input id="plotInput" type="number" placeholder="Grundareal" min="1" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;margin:4px 0 10px"><label class="tiny">Etageareal (m²)</label><input id="floorInput" type="number" placeholder="Etageareal" min="0" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;margin:4px 0 10px"><div class="stat" style="padding:10px"><div class="eyebrow">Din beregning</div><div class="value" id="calcResult">—</div><div class="tiny">Forenklet regnestykke. Lovens beregningsregler og fradrag skal undersøges konkret.</div></div></div></section><section class="card"><div class="cardhead"><h2>Bygningsinformation (BBR)</h2><span class="tag">Liveopslag ved adressevalg</span></div><div class="cardbody"><div class="kv"><span>Bygninger</span><strong>—</strong></div><div class="kv"><span>Ydervæg / tag</span><strong>—</strong></div><div class="kv"><span>Varmeforsyning</span><strong>—</strong></div><div class="kv"><span>Boligenheder</span><strong>—</strong></div><div class="kv"><span>Energimærke</span><strong>—</strong></div><div class="warning" style="margin-top:12px">BBR-opslag foretages via Datafordeleren, når en specifik adresse er valgt. BBR er ikke i sig selv dokumentation for, at alle forhold er lovlige eller opmålt korrekt.</div></div></section><section class="card"><div class="cardhead"><h2>Matrikel og ejendomsforhold</h2></div><div class="cardbody"><div class="kv"><span>Matrikelnummer</span><strong>—</strong></div><div class="kv"><span>Ejerlav</span><strong>—</strong></div><div class="kv"><span>Kommune</span><strong>—</strong></div><div class="kv"><span>Zone</span><strong>—</strong></div><div class="kv"><span>Servitutter</span><strong>Ikke undersøgt</strong></div><div class="kv"><span>Adgangsforhold</span><strong>Ikke undersøgt</strong></div></div></section></div>
 <div class="lower tabpanel hidden" data-panel="planer"><section class="card"><div class="cardhead"><h2>Planforhold</h2></div><div class="cardbody"><div class="kv"><span>Lokalplan</span><strong>Afventer Plandata</strong></div><div class="kv"><span>Kommuneplanramme</span><strong>Afventer Plandata</strong></div><div class="kv"><span>Byzone / landzone</span><strong>Ikke verificeret</strong></div><div class="kv"><span>Byggelinjer / byggefelter</span><strong>Ikke undersøgt</strong></div></div></section><section class="card"><div class="cardhead"><h2>Planmæssig tjekliste</h2></div><div class="cardbody"><p>○ Find gældende lokalplan og tillæg</p><p>○ Læs anvendelsesbestemmelser</p><p>○ Kontrollér bebyggelsesprocent, højde og etager</p><p>○ Kontrollér afstande og byggelinjer</p></div></section><section class="card"><div class="cardhead"><h2>Officielle kilder</h2></div><div class="cardbody"><p><a href="https://www.plandata.dk/" target="_blank" rel="noreferrer">Plandata.dk ↗</a></p><p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Bygningsreglementet ↗</a></p></div></section></div>
@@ -783,8 +856,66 @@ document.getElementById('searchForm').addEventListener('submit',async e=>{
  resetLookupModal(q);
  await loadPropertyData();
 });
-document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));function setTab(n){document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===n));document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('hidden',p.dataset.panel!==n));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.section===n))}
-document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{let n=b.dataset.section==='overblik'?'grund':b.dataset.section;setTab(n);document.getElementById('tabs').scrollIntoView({behavior:'smooth',block:'start'})}));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{setTab(b.dataset.go);document.getElementById('tabs').scrollIntoView({behavior:'smooth'})}));
+let pdfSelectionMode=false;
+const pdfSelectedSections=new Set();
+const sectionInfo={
+ grund:{title:'Grund og bygninger'},planer:{title:'Planer og zoner'},krav:{title:'Byggeregler'},miljo:{title:'Miljø og natur'},
+ infrastruktur:{title:'Infrastruktur'},naeromraade:{title:'Nærområde'},historik:{title:'Historik & område'},dokumenter:{title:'Dokumenter og kilder'}
+};
+const toggleTabView=document.getElementById('toggleTabView'),togglePdfSelect=document.getElementById('togglePdfSelect'),downloadSelectedPdf=document.getElementById('downloadSelectedPdf'),pdfSelectionCount=document.getElementById('pdfSelectionCount'),pdfSelectionHint=document.getElementById('pdfSelectionHint');
+function refreshPdfSelectionUI(){
+ document.querySelectorAll('#tabs [data-tab]').forEach(b=>{
+  const chosen=pdfSelectedSections.has(b.dataset.tab);
+  b.classList.toggle('selected-for-pdf',chosen);
+  b.setAttribute('aria-pressed',String(pdfSelectionMode?chosen:b.classList.contains('active')));
+ });
+ const count=pdfSelectedSections.size;
+ pdfSelectionCount.textContent=String(count);
+ downloadSelectedPdf.classList.toggle('hidden',count===0);
+ downloadSelectedPdf.disabled=count===0;
+ pdfSelectionHint.classList.toggle('hidden',!pdfSelectionMode);
+ togglePdfSelect.classList.toggle('is-selected',pdfSelectionMode);
+ togglePdfSelect.setAttribute('aria-pressed',String(pdfSelectionMode));
+ const t=togglePdfSelect.querySelector('span');
+ if(t)t.textContent=pdfSelectionMode?'Afslut valg':'Vælg til PDF';
+}
+function setTab(n){
+ if(pdfSelectionMode)return;
+ document.querySelectorAll('#tabs [data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===n);b.setAttribute('aria-pressed',String(b.dataset.tab===n));});
+ document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('hidden',p.dataset.panel!==n));
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.section===n));
+}
+document.querySelectorAll('#tabs [data-tab]').forEach(b=>b.addEventListener('click',()=>{
+ const n=b.dataset.tab;
+ if(pdfSelectionMode){if(pdfSelectedSections.has(n))pdfSelectedSections.delete(n);else pdfSelectedSections.add(n);refreshPdfSelectionUI();return;}
+ setTab(n);
+}));
+toggleTabView.addEventListener('click',()=>{
+ const expanded=document.getElementById('tabs').classList.toggle('is-expanded');
+ toggleTabView.setAttribute('aria-expanded',String(expanded));
+ const spans=toggleTabView.querySelectorAll('span');
+ if(spans[0])spans[0].textContent=expanded?'Kompakt visning':'Vis alle';
+ toggleTabView.classList.toggle('is-selected',expanded);
+});
+togglePdfSelect.addEventListener('click',()=>{pdfSelectionMode=!pdfSelectionMode;refreshPdfSelectionUI();});
+downloadSelectedPdf.addEventListener('click',()=>{
+ if(!pdfSelectedSections.size)return;
+ document.body.classList.add('pdf-export-active');
+ document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('pdf-include',pdfSelectedSections.has(p.dataset.panel)));
+ const title='MeasLookUp · '+[...pdfSelectedSections].map(k=>sectionInfo[k]?.title).join(', ');
+ const oldTitle=document.title;document.title=title;
+ const cleanup=()=>{
+  document.body.classList.remove('pdf-export-active');
+  document.querySelectorAll('[data-panel]').forEach(p=>p.classList.remove('pdf-include'));
+  document.title=oldTitle;window.removeEventListener('afterprint',cleanup);
+ };
+ window.addEventListener('afterprint',cleanup);
+ window.print();
+ setTimeout(()=>{if(document.body.classList.contains('pdf-export-active'))cleanup();},1200);
+});
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{let n=b.dataset.section==='overblik'?'grund':b.dataset.section;setTab(n);document.getElementById('tabs').scrollIntoView({behavior:'smooth',block:'start'})}));
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{setTab(b.dataset.go);document.getElementById('tabs').scrollIntoView({behavior:'smooth'})}));
+refreshPdfSelectionUI();
 document.querySelectorAll('[data-layer]').forEach(c=>c.addEventListener('change',()=>{const el=document.getElementById(c.dataset.layer);if(el)el.style.opacity=c.checked?'1':'.12';if(['terrain','nature','plan'].includes(c.dataset.layer)&&c.checked)toast('Dette kortlag er kun illustrativt endnu.')}));
 function calc(){let p=+document.getElementById('plotInput').value,f=+document.getElementById('floorInput').value;document.getElementById('calcResult').textContent=p>0&&f>=0?(f/p*100).toLocaleString('da-DK',{maximumFractionDigits:2})+' %':'—'}document.getElementById('plotInput').addEventListener('input',calc);document.getElementById('floorInput').addEventListener('input',calc);document.getElementById('reportBtn').addEventListener('click',()=>window.print());document.getElementById('printBtn').addEventListener('click',()=>window.print());
 </script></body></html>
