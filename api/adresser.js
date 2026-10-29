@@ -71,7 +71,7 @@ function parseAddressQuery(q){
 function filterStrict(items, postcode, city){
  let output=items;
  if(postcode)output=output.filter(x=>String(x.postnr||"")===String(postcode));
- else if(city)output=output.filter(x=>normalized(x.postdistrikt)===normalized(city));
+ if(city)output=output.filter(x=>normalized(x.postdistrikt)===normalized(city));
  return output;
 }
 function sortAndDedupe(raw,q){
@@ -100,23 +100,48 @@ export default async function handler(req,res) {
   const doer=String(req.query.doer||"").trim();
   const structured=Boolean(vejnavn||husnummer||postnummer||etage||doer||by);
   if(postnummer&&!/^\d{4}$/.test(postnummer))return res.status(400).json({error:"Postnummer skal bestå af fire cifre."});
-  if(structured&&postnummer&&!vejnavn)return res.status(200).json({status:"ok",query:q,fund:[],requiresStreet:true,scopedToPostcode:postnummer,hint:"Postnummeret er verificeret. Skriv gadenavn for at hente adresser inden for postnummeret."});
+  if(structured&&postnummer&&!vejnavn&&!q)return res.status(200).json({status:"ok",query:q,fund:[],requiresStreet:true,scopedToPostcode:postnummer,hint:"Postnummeret er verificeret. Skriv gadenavn for at hente adresser inden for postnummeret."});
   if(!structured&&(q.length<2||q.length>73))return res.status(400).json({error:"Skriv mindst 2 tegn og højst 73 tegn."});
   try {
     let raw=[],errors=[];
     if(structured){
-      const params={};
-      if(vejnavn)params.vejnavn=vejnavn;
-      if(husnummer)params.husnummer=husnummer;
-      if(postnummer)params.postnummer=postnummer;
-      if(etage)params.etage=etage;
-      if(doer)params.doer=doer;
-      const paths=(etage||doer)?["/adresser/soeg/"]:(husnummer?["/husnumre/soeg/","/adresser/soeg/"]:["/husnumre/soeg/"]);
-      // Query house and address resources concurrently; never wait two timeout windows back-to-back.
-      const results=await Promise.allSettled(paths.map(path=>requestSearch(path,params,60).then(hits=>hits.map(x=>normalize(x,path.includes("adresser")?"structured-address":"structured-house")))));
-      for(const result of results){
-        if(result.status==="fulfilled")raw.push(...result.value);
-        else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
+      if(!vejnavn&&q){
+        // The visible one-field search remains usable even with a postcode/city filter selected.
+        // Search the user's phrase, then strictly retain only results inside the selected geography.
+        const results=await Promise.allSettled([
+          requestSearch("/adresser/soeg/",{tekst:q},50).then(hits=>hits.map(x=>normalize(x,"filtered-text-address"))),
+          requestSearch("/husnumre/soeg/",{tekst:q},50).then(hits=>hits.map(x=>normalize(x,"filtered-text-house")))
+        ]);
+        for(const result of results){
+          if(result.status==="fulfilled")raw.push(...result.value);
+          else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
+        }
+      }else if(vejnavn){
+        if(postnummer){
+          const params={vejnavn,postnummer};
+          if(husnummer)params.husnummer=husnummer;
+          if(etage)params.etage=etage;
+          if(doer)params.doer=doer;
+          const paths=(etage||doer)?["/adresser/soeg/"]:(husnummer?["/husnumre/soeg/","/adresser/soeg/"]:["/husnumre/soeg/"]);
+          const results=await Promise.allSettled(paths.map(path=>requestSearch(path,params,60).then(hits=>hits.map(x=>normalize(x,path.includes("adresser")?"structured-address":"structured-house")))));
+          for(const result of results){
+            if(result.status==="fulfilled")raw.push(...result.value);
+            else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
+          }
+        }else{
+          // By-only scope without an exact postcode uses a text query; returned hits are then city-filtered.
+          const text=[vejnavn,husnummer,etage,doer,by].filter(Boolean).join(" ");
+          const results=await Promise.allSettled([
+            requestSearch("/adresser/soeg/",{tekst:text},60).then(hits=>hits.map(x=>normalize(x,"city-filtered-address"))),
+            requestSearch("/husnumre/soeg/",{tekst:text},60).then(hits=>hits.map(x=>normalize(x,"city-filtered-house")))
+          ]);
+          for(const result of results){
+            if(result.status==="fulfilled")raw.push(...result.value);
+            else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
+          }
+        }
+      }else{
+        return res.status(200).json({status:"ok",query:q,fund:[],scopedToPostcode:postnummer||null,hint:"Skriv en adresse eller et gadenavn, så søgningen kan afgrænses."});
       }
       raw=filterStrict(raw,postnummer,by);
       const fund=sortAndDedupe(raw,q||[vejnavn,husnummer,postnummer,by,etage,doer].filter(Boolean).join(" ")).slice(0,100);
