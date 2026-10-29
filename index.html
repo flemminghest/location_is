@@ -521,12 +521,12 @@ p{line-height:1.55}
 @media(max-width:700px){.metric-icon{width:23px;height:23px}.metric-icon svg{width:14px;height:14px}.kv .metric-label{gap:6px}}
 @media(prefers-reduced-motion:reduce){.metric-counting{transition:none!important}}
 
-/* Expanded geographic-search panel: fresh indigo tint, preserving the existing text and icons. */
-.advanced-search-toggle{background:#edf0ff;border:1px solid #c3c9f0;color:#35437d;border-radius:11px}
-.advanced-search-toggle:hover{background:#e3e8ff;border-color:#9ea9e5}
+/* Expanded geographic-search panel: muted slate/teal, with existing labels and icons retained. */
+.advanced-search-toggle{background:transparent;border:1px solid transparent;color:#526f78;border-radius:9px}
+.advanced-search-toggle:hover{background:#edf3f3;border-color:#d5e2e1;color:#365860}
 .advanced-search-toggle svg{stroke:currentColor}
-.advanced-search-panel{background:#f0f2ff;border-color:#c5cdf1}
-.advanced-search-panel.is-open{background:linear-gradient(140deg,#eef2ff 0%,#f6f0ff 100%);border-color:#aeb9e8;box-shadow:0 8px 26px #5159a40d}
+.advanced-search-panel{background:#f1f6f5;border-color:#d4e2df}
+.advanced-search-panel.is-open{background:linear-gradient(140deg,#f0f6f4 0%,#edf4f7 100%);border-color:#c8dcd8;box-shadow:0 8px 26px #173b450b}
 .advanced-search-inner{background:transparent}
 /* Larger, readable property lookup dialog. */
 .lookup-modal{width:min(1440px,calc(100vw - 32px));max-height:calc(100vh - 24px)}
@@ -584,6 +584,17 @@ p{line-height:1.55}
  .lookup-step-icon{width:30px;height:30px;font-size:15px}
  .lookup-step-state{grid-column:2;font-size:10px;white-space:normal}
  .lookup-footer{padding:13px 16px 17px}
+}
+
+/* Search button: restrained petrol color, exactly the same height as the address input. */
+.primary-address-input{height:76px}
+.search-submit,.geo-search-submit{height:76px;min-height:76px;align-self:stretch;background:#607f84;border-color:#58767b;color:#fff;box-shadow:0 3px 10px #14263810;border-radius:17px}
+.search-submit:hover{background:#526f75;border-color:#526f75;box-shadow:0 5px 13px #14263815;transform:none}
+.search-submit:active{background:#49666c;transform:translateY(1px)}
+.advanced-search-toggle{box-shadow:none}
+@media(max-width:700px){
+ .primary-address-input{height:60px}
+ .search-submit,.geo-search-submit{height:60px;min-height:60px}
 }
 </style>
 </head>
