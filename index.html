@@ -176,6 +176,21 @@ body.modal-open{overflow:hidden}
    <div class="kv"><span><strong>7. Rapport med sporbare kilder</strong><br><span class="tiny">Dato, kilde, originalt dokument, sikkerhed og åbne spørgsmål på hvert resultat.</span></span><span class="tag">Høj værdi</span></div>
   </div>
  </section>
+ <section class="card">
+  <div class="cardhead"><h2>Bygningsændringer og tilstandsrapport</h2><span class="tag">BBR + dokumentkontrol</span></div>
+  <div class="cardbody">
+   <p class="tiny">Her vises de dokumenterede oplysninger fra BBR og eventuelle revisionsdatoer. En BBR-revision er et spor om registeret — ikke i sig selv bevis for, præcis hvad der blev bygget om.</p>
+   <div id="buildingChangeStatus" class="warning">Vælg en adresse og gennemfør et opslag for at se de registrerede bygningsoplysninger.</div>
+   <div id="buildingChangeList" style="margin-top:10px"><p class="tiny">Ingen bygningsdata hentet endnu.</p></div>
+   <div class="sectiontitle">Tilstandsrapport</div>
+   <div id="conditionReportStatus" class="warning">Ingen tilstandsrapport er hentet eller verificeret for denne ejendom.</div>
+   <p class="tiny" style="margin-top:9px">Tilstandsrapporter er ikke frit tilgængelige via det almindelige offentlige BBR-opslag. Boligejer oplyser, at ejeren skal logge ind med MitID for at læse rapporten. Vi viser derfor ikke en konstrueret rapport eller en vurdering af husets stand.</p>
+   <p><a href="https://boligejer.dk/om-at-se-tilstandsrapporter" target="_blank" rel="noreferrer">Find tilstandsrapport på Boligejer.dk ↗</a></p>
+   <p><a href="https://bbr.dk/bbr-meddelelsen" target="_blank" rel="noreferrer">Hent officiel BBR-meddelelse ↗</a></p>
+   <p><a href="https://www.borger.dk/handlingsside?selfserviceId=2cfcaab0-5874-4d75-a667-4d1fd6ccd302" target="_blank" rel="noreferrer">Find kommunens byggesagsarkiv ↗</a></p>
+   <p class="tiny">Byggesagsarkivet kan indeholde byggetilladelser, færdigmeldinger, tegninger og andre dokumenter, der kan hjælpe med at bekræfte faktiske ændringer. Tilgængeligheden afhænger af kommunen.</p>
+  </div>
+ </section>
 </div>
 <div class="lower tabpanel hidden" data-panel="dokumenter"><section class="card"><div class="cardhead"><h2>Kilder og dokumenter</h2></div><div class="cardbody"><div class="source"><span>Danmarks Adresseregister</span><em>Adresseforslag</em></div><div class="source"><span>BBR</span><em>Datafordeler API</em></div><div class="source"><span>Matrikel / Dataforsyningen</span><em>Datafordeler API</em></div><div class="source"><span>Plandata.dk</span><em>Eksternt link</em></div><div class="source"><span>Miljøportal</span><em>Eksternt link</em></div><button class="btn primary" style="margin-top:12px" id="printBtn">Udskriv / gem som PDF</button></div></section><section class="card"><div class="cardhead"><h2>Rapportindhold</h2></div><div class="cardbody"><p>✓ Adresse og søgestatus</p><p>✓ Arealopgørelse</p><p>✓ Plan- og myndighedstjekliste</p><p>✓ Datamangler og forbehold</p></div></section><section class="card"><div class="cardhead"><h2>Datakvalitet</h2></div><div class="cardbody"><p>Officielle ejendomsdata skal stadig kobles på.</p></div></section></div>
 </div><footer>ByggeInfo · Interaktiv konceptprototype · Brug ikke eksempeldata som grundlag for myndighedsprojekt eller byggeri.</footer></div></main></div>
@@ -408,6 +423,59 @@ function displayPlanDate(value){
  if(match){const dt=new Date(Number(match[1]),Number(match[2])-1,Number(match[3]));return dt.toLocaleDateString('da-DK');}
  const dt=new Date(raw);return Number.isNaN(dt.getTime())?raw:dt.toLocaleDateString('da-DK');
 }
+function renderBuildingChangeReport(data){
+ const statusEl=document.getElementById('buildingChangeStatus');
+ const listEl=document.getElementById('buildingChangeList');
+ const reportEl=document.getElementById('conditionReportStatus');
+ if(!statusEl||!listEl||!reportEl)return;
+ const buildings=(Array.isArray(data?.bbrBuildings)?data.bbrBuildings:[]).filter(Boolean);
+ const primary=data?.bbr||buildings[0]||null;
+ if(!primary&&!buildings.length){
+  statusEl.textContent='Der blev ikke returneret en BBR-bygning i dette opslag. Det betyder ikke nødvendigvis, at bygningen mangler; kontrollér den officielle BBR-meddelelse og kommunens byggesagsarkiv.';
+  listEl.innerHTML='<p class="tiny">Ingen verificerede BBR-felter at vise i dette opslag.</p>';
+  reportEl.textContent='Tilstandsrapport ikke undersøgt. Åbn Boligejer.dk for at se, om der er registreret rapporter; læsning af rapporten kræver ejeradgang med MitID.';
+  return;
+ }
+ const all=[...new Map([...(primary?[primary]:[]),...buildings].map((b)=>[String(b.id_lokalId||b.byg007Bygningsnummer||Math.random()),b])).values()];
+ const dateValue=(v)=>{
+  if(v===null||v===undefined||v==='')return null;
+  const raw=typeof v==='object'?(v.value??v.date??v.dato??JSON.stringify(v)):String(v);
+  const m=String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m?m[3]+'.'+m[2]+'.'+m[1]:String(raw);
+ };
+ const fmt=(v)=>v===null||v===undefined||v===''?'':String(v);
+ const facts=[];
+ all.forEach((b,i)=>{
+  const label=b.byg007Bygningsnummer?'Bygning '+b.byg007Bygningsnummer:(b.id_lokalId?'Bygningspost '+String(b.id_lokalId).slice(0,12):'Bygning '+(i+1));
+  const rev=dateValue(b.byg094Revisionsdato||b.revisionsdato||b.registreringFra);
+  const eff=dateValue(b.virkningFra||b.virkningstid);
+  const values=[
+   ['Registreret opførelsesår',b.byg026Opfoerelsesaar],
+   ['Anvendelse',b.byg021BygningensAnvendelse],
+   ['Samlet bygningsareal',b.byg038SamletBygningsareal!=null?fmt(b.byg038SamletBygningsareal)+' m²':null],
+   ['Bebygget areal',b.byg041BebyggetAreal!=null?fmt(b.byg041BebyggetAreal)+' m²':null],
+   ['Ydervægsmateriale',b.byg032YdervaeggensMateriale],
+   ['Tagdækningsmateriale',b.byg033Tagdaekningsmateriale],
+   ['Antal etager',b.byg054AntalEtager],
+   ['Varmeinstallation',b.byg056Varmeinstallation],
+   ['Opvarmningsmiddel',b.byg057Opvarmningsmiddel]
+  ].filter(([,v])=>v!==null&&v!==undefined&&v!=='');
+  if(rev)facts.push('<div class="source"><span><strong>'+escapeHtml(label)+'</strong><br><span class="tiny">Seneste registrerede BBR-revision</span></span><em>'+escapeHtml(rev)+'</em></div>');
+  else if(eff)facts.push('<div class="source"><span><strong>'+escapeHtml(label)+'</strong><br><span class="tiny">Registreringens virkning fra</span></span><em>'+escapeHtml(eff)+'</em></div>');
+  if(values.length){
+   facts.push('<div style="margin:10px 0 14px"><strong style="font-size:12px">'+escapeHtml(label)+' · aktuelle registreringer</strong>');
+   facts.push(values.map(([k,v])=>'<div class="kv"><span>'+escapeHtml(k)+'</span><strong>'+escapeHtml(v)+'</strong></div>').join('')+'</div>');
+  }
+ });
+ const hasRevision=all.some(b=>b.byg094Revisionsdato||b.revisionsdato||b.registreringFra||b.virkningFra||b.virkningstid);
+ if(hasRevision){
+  statusEl.textContent='Der er fundet en BBR-revisions-/registreringsdato. Den peger på opdatering af registerdata; vi kan ikke udlede konkrete før/efter-ændringer alene af datoen.';
+ }else{
+  statusEl.textContent='BBR har returneret aktuelle bygningsoplysninger, men ingen brugbar revisionsdato i dette opslag. Der er derfor ikke grundlag for at fastslå konkrete bygningsændringer automatisk.';
+ }
+ listEl.innerHTML=facts.length?facts.join(''):'<p class="tiny">Der blev ikke returneret relevante felter eller datoer for denne bygning.</p>';
+ reportEl.innerHTML='<strong>Ingen rapport indlæst.</strong> MeasINFO har ikke adgang til selve tilstandsrapportens indhold i det offentlige opslag. Se rapportoversigt og eventuel rapport på Boligejer.dk; ejeren skal logge ind med MitID for at læse den. Du kan også indhente rapporten fra sælger eller mægler.';
+}
 function renderAreaHistory(data){
  const storyEl=document.getElementById('areaStory'),timelineEl=document.getElementById('planTimeline');
  const planCount=document.getElementById('historyPlanCount'),editsCount=document.getElementById('historyEditsCount'),ageSignal=document.getElementById('agePlanSignal');
@@ -514,6 +582,7 @@ async function loadPropertyData(){
   const data=await resp.json();
   if(!resp.ok)throw new Error(data.error||'Ejendomsopslaget kunne ikke gennemføres');
   currentPropertyData=data;
+  renderBuildingChangeReport(data);
   const addressOk=Boolean(data.completeness?.address||data.completeness?.house||data.house);
   const bbrOk=Boolean(data.completeness?.bbr||data.bbrBuildings?.length||data.bbr?.id_lokalId);
   const matOk=Boolean(data.completeness?.cadastral||data.cadastral);
