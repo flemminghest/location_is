@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MeasINFO — Ejendomsanalyse</title>
+<title>MeasLookUp — Ejendomsanalyse</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="apple-touch-icon" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -223,10 +223,16 @@ p{line-height:1.55}
 .integration-alert-copy p{margin:3px 0 0;font-size:12px;line-height:1.5;overflow-wrap:anywhere;color:#8f4b46}
 .integration-alert-close{flex:none;width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:#8f4b46;font-size:21px;line-height:1}
 .integration-alert-close:hover{background:#fbe4e1}
+
+/* MeasLookUp eye wordmark: the double eye is the two 'o' characters in Look */
+.brand-name{display:inline-flex;align-items:center;gap:0;white-space:nowrap;font-size:21px;font-weight:820;letter-spacing:-.9px;color:#f7fbff;line-height:1}
+.brand-name .brand-eyes{display:inline-flex;align-items:center;justify-content:center;width:25px;height:20px;margin:0 -1px 0 0;color:#e9f5f4;flex:none}
+.brand-eyes svg{display:block;width:25px;height:16px;overflow:visible}
+@media(max-width:1100px){.brand-name{font-size:0}.brand-name .brand-eyes{width:31px;height:24px;margin:0}.brand-eyes svg{width:30px;height:19px}}
 </style>
 </head>
 <body><div class="app">
-<aside class="side"><div class="brand"><img class="brand-icon" src="/favicon.svg" alt="" aria-hidden="true"><span class="brand-name">Meas<span>INFO</span></span></div><div class="navlabel">Ejendomsanalyse</div><nav class="nav">
+<aside class="side"><div class="brand"><img class="brand-icon" src="/favicon.svg" alt="" aria-hidden="true"><span class="brand-name" aria-label="MeasLookUp">MeasL<span class="brand-eyes" aria-hidden="true"><svg viewBox="0 0 44 22" role="img"><path d="M2 11C6 3 12 2 17 6c2 1.5 3 3 5 5-2 2-4 5-8 6C8 19 4 15 2 11Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M22 11c2-2 3-3.5 5-5 5-4 11-3 15 5-2 4-6 8-12 6-4-1-6-4-8-6Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><circle cx="12" cy="11" r="3.2" fill="#65d1bc"/><circle cx="32" cy="11" r="3.2" fill="#65d1bc"/></svg></span>kUp</span></div><div class="navlabel">Ejendomsanalyse</div><nav class="nav">
 <button class="active" data-section="overblik"><span>⌂</span><span>Overblik</span></button><button data-section="grund"><span>▤</span><span>Ejendomsdata</span></button><button data-section="planer"><span>◈</span><span>Kort og planer</span></button><button data-section="planer"><span>▧</span><span>Lokalplan</span></button><button data-section="krav"><span>▣</span><span>Byggeregler</span></button><button data-section="miljo"><span>♧</span><span>Miljø og natur</span></button><button data-section="infrastruktur"><span>⇄</span><span>Infrastruktur</span></button><button data-section="naeromraade"><span>⌖</span><span>Nærområde</span></button><button data-section="historik"><span>◷</span><span>Historik & område</span></button><button data-section="dokumenter"><span>▤</span><span>Dokumenter</span></button></nav><div class="sidefoot">STUDIEVÆRKTØJ · PROTOTYPE<br>Eksempeldata – ingen live BBR</div></aside>
 <main class="main"><header class="top"><div><h1>Ejendomsanalyse</h1><div class="sub">Kortlæg ejendommen før du projekterer</div></div><div class="searchwrap"><form class="search" id="searchForm" autocomplete="off"><input id="query" aria-label="Adresse eller BBR-nummer" placeholder="Søg adresse, vej + husnr. eller postnummer" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false" role="combobox"><button class="btn primary">Søg ↗</button><div class="suggestions" id="suggestions" role="listbox"></div></form><div class="searchstatus" id="searchStatus">Tip: vejnavn + husnummer + postnummer giver de mest præcise forslag.</div></div><button class="btn" id="reportBtn">⇩ PDF-rapport</button></header>
 <div class="content"><div id="integrationAlert" class="integration-alert hidden" role="alert" aria-live="assertive"><span class="integration-alert-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 22 21H2L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg></span><div class="integration-alert-copy"><strong>Der er problemer med en datakilde</strong><p id="integrationAlertText">Forbindelsen kunne ikke kontrolleres.</p></div><button type="button" class="integration-alert-close" id="integrationAlertClose" aria-label="Luk advarsel">×</button></div>
@@ -298,7 +304,7 @@ p{line-height:1.55}
  </section>
 </div>
 <div class="lower tabpanel hidden" data-panel="dokumenter"><section class="card"><div class="cardhead"><h2>Kilder og dokumenter</h2></div><div class="cardbody"><div class="source"><span>Danmarks Adresseregister</span><em>Adresseforslag</em></div><div class="source"><span>BBR</span><em>Datafordeler API</em></div><div class="source"><span>Matrikel / Dataforsyningen</span><em>Datafordeler API</em></div><div class="source"><span>Plandata.dk</span><em>Eksternt link</em></div><div class="source"><span>Miljøportal</span><em>Eksternt link</em></div><button class="btn primary" style="margin-top:12px" id="printBtn">Udskriv / gem som PDF</button></div></section><section class="card"><div class="cardhead"><h2>Rapportindhold</h2></div><div class="cardbody"><p>✓ Adresse og søgestatus</p><p>✓ Arealopgørelse</p><p>✓ Plan- og myndighedstjekliste</p><p>✓ Datamangler og forbehold</p></div></section><section class="card"><div class="cardhead"><h2>Datakvalitet</h2></div><div class="cardbody"><p>Officielle ejendomsdata skal stadig kobles på.</p></div></section></div>
-</div><footer>ByggeInfo · Interaktiv konceptprototype · Brug ikke eksempeldata som grundlag for myndighedsprojekt eller byggeri.</footer></div></main></div>
+</div><footer>MeasLookUp · Interaktiv konceptprototype · Brug ikke eksempeldata som grundlag for myndighedsprojekt eller byggeri.</footer></div></main></div>
 <div class="lookup-overlay" id="lookupOverlay" aria-hidden="true">
  <section class="lookup-modal" role="dialog" aria-modal="true" aria-labelledby="lookupTitle" aria-describedby="lookupIntro">
   <div class="lookup-modal-head">
@@ -306,7 +312,7 @@ p{line-height:1.55}
    <div class="lookup-heading">
     <div class="lookup-eyebrow">Live ejendomsanalyse</div>
     <h2 id="lookupTitle">Vi undersøger ejendommen</h2>
-    <p id="lookupIntro">ByggeInfo kontrollerer de tilgængelige registre og samler de resultater, der kan knyttes sikkert til adressen.</p>
+    <p id="lookupIntro">MeasLookUp kontrollerer de tilgængelige registre og samler de resultater, der kan knyttes sikkert til adressen.</p>
    </div>
    <button class="lookup-x" id="lookupX" type="button" aria-label="Luk opslag" disabled>×</button>
   </div>
@@ -395,7 +401,7 @@ function resetLookupModal(address){
  lookupFinished=false;
  document.getElementById('lookupAddress').textContent=address||'Adresse ikke valgt';
  document.getElementById('lookupTitle').textContent='Vi undersøger ejendommen';
- document.getElementById('lookupIntro').textContent='ByggeInfo kontrollerer de tilgængelige registre og samler resultater, der kan knyttes sikkert til adressen.';
+ document.getElementById('lookupIntro').textContent='MeasLookUp kontrollerer de tilgængelige registre og samler resultater, der kan knyttes sikkert til adressen.';
  document.getElementById('lookupResult').classList.add('hidden');
  document.getElementById('lookupResult').classList.remove('is-warning');
  Object.keys(lookupStepIds).forEach(k=>setLookupStep(k,'','Afventer',({address:'Identificerer det valgte husnummer og adressepunkt',bbr:'Venter på svar fra BBR',mat:'Venter på svar fra matrikelregistret',plan:'Venter på svar fra Plandata.dk',history:'Venter på planversioner og historiske hændelser'}[k])));
