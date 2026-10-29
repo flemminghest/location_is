@@ -7,8 +7,8 @@ Dansk responsiv webapp til forundersøgelse af ejendomme for bygningskonstruktø
 - **Adresseforslag:** serverless-proxy til Klimadatastyrelsens Adressevælger, husnummersøgning i hele Danmark.
 - **BBR:** serverless endpoint forsøger at hente BBR-bygning via adressens DAR-husnummer/BBR-relation fra Datafordelerens Flexible GraphQL v3.
 - **Matrikel:** serverless endpoint forsøger at hente jordstykke/matrikel via DAR-husnummerets dokumenterede relation til MAT-jordstykke.
-- **Plandata.dk:** serverless WFS-opslag på vedtagne lokalplaner, delområder, byggefelter, kommuneplanrammer og zonekort i et lille søgevindue omkring adressepunktet.
-- **Status:** `GET /api/status` tester nu Datafordelerens forbindelse og om GraphQL-skemaer for DAR, BBR og MAT kan tilgås. At miljøvariablen findes er ikke i sig selv en live test.
+- **Plandata.dk:** serverless WFS-opslag på vedtagne lokalplaner, delområder, byggefelter, kommuneplanrammer og zonekort i et lille søgevindue omkring adressepunktet. WFS-lagene bruger den aktuelle `pdk:`-namespace.
+- **Status:** `GET /api/status` tester live adgang med tre separate GraphQL-forespørgsler — én for DAR, én for BBR og én for MAT. De bruger ikke introspektion, aliases eller flere rod-entiteter i samme forespørgsel, da Flexible GraphQL afviser disse mønstre. At miljøvariablen findes er ikke i sig selv en live test.
 - **Kildemærkning:** UI må kun vise arealer, når kilden returnerer en værdi; manglende data vises som manglende og må ikke udlægges som “forholdet findes ikke”.
 
 ## Officielle dokumentationer
