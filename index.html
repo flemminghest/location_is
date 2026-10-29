@@ -193,6 +193,72 @@ body.modal-open{overflow:hidden}
 <div class="toast" id="toast" role="status"></div>
 <script>
 const toastEl=document.getElementById('toast');let toastTimer;function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2800)}
+
+const lookupOverlay=document.getElementById('lookupOverlay');
+const lookupRing=document.getElementById('lookupRing');
+const lookupPercent=document.getElementById('lookupPercent');
+const lookupStageKicker=document.getElementById('lookupStageKicker');
+const lookupStageTitle=document.getElementById('lookupStageTitle');
+const lookupStageDesc=document.getElementById('lookupStageDesc');
+const lookupTrackFill=document.getElementById('lookupTrackFill');
+const lookupTrackCaption=document.getElementById('lookupTrackCaption');
+const lookupDoneBtn=document.getElementById('lookupDoneBtn');
+const lookupX=document.getElementById('lookupX');
+let lookupFinished=false;
+const lookupStepIds={address:'lookupStepAddress',bbr:'lookupStepBbr',mat:'lookupStepMat',plan:'lookupStepPlan',history:'lookupStepHistory'};
+function setLookupProgress(percent,kicker,title,description){
+ const p=Math.max(0,Math.min(100,Math.round(percent)));
+ lookupRing.style.setProperty('--progress',p);
+ lookupRing.setAttribute('aria-label',p+' procent færdig');
+ lookupPercent.textContent=p+'%';
+ lookupTrackFill.style.width=p+'%';
+ lookupTrackCaption.textContent=p+' af 100';
+ if(kicker)lookupStageKicker.textContent=kicker;
+ if(title)lookupStageTitle.textContent=title;
+ if(description)lookupStageDesc.textContent=description;
+}
+function setLookupStep(key,state,stateLabel,detail){
+ const el=document.getElementById(lookupStepIds[key]);if(!el)return;
+ el.classList.remove('is-running','is-done','is-warning','is-error');
+ if(state)el.classList.add('is-'+state);
+ const status=el.querySelector('.lookup-step-state');
+ if(status)status.textContent=stateLabel||({running:'I gang',done:'Kontrolleret',warning:'Ikke bekræftet',error:'Fejl'}[state]||'Afventer');
+ if(detail){const text=el.querySelector('.lookup-step-detail');if(text)text.textContent=detail;}
+ const icon=el.querySelector('.lookup-step-icon');
+ if(icon&&state==='done')icon.textContent='✓';
+ else if(icon)icon.textContent=({address:'⌖',bbr:'▤',mat:'⌑',plan:'▧',history:'◷'}[key]||'•');
+}
+function resetLookupModal(address){
+ lookupFinished=false;
+ document.getElementById('lookupAddress').textContent=address||'Adresse ikke valgt';
+ document.getElementById('lookupTitle').textContent='Vi undersøger ejendommen';
+ document.getElementById('lookupIntro').textContent='ByggeInfo kontrollerer de tilgængelige registre og samler resultater, der kan knyttes sikkert til adressen.';
+ document.getElementById('lookupResult').classList.add('hidden');
+ document.getElementById('lookupResult').classList.remove('is-warning');
+ Object.keys(lookupStepIds).forEach(k=>setLookupStep(k,'','Afventer',({address:'Identificerer det valgte husnummer og adressepunkt',bbr:'Venter på svar fra BBR',mat:'Venter på svar fra matrikelregistret',plan:'Venter på svar fra Plandata.dk',history:'Venter på planversioner og historiske hændelser'}[k])));
+ setLookupProgress(0,'KLAR TIL OPSLAG','Starter ejendomsanalysen','Vi undersøger først den valgte adresse og spørger derefter de relevante registre.');
+ lookupDoneBtn.disabled=true;lookupDoneBtn.textContent='Opslag kører…';lookupX.disabled=true;
+ lookupOverlay.classList.add('is-open');lookupOverlay.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
+}
+function finishLookup(title,description,warning){
+ lookupFinished=true;
+ setLookupProgress(100,warning?'OPSLAG AFSLUTTET · DELVIST':'OPSLAG AFSLUTTET','Resultaterne er klar',warning?'Nogle kilder returnerede ikke brugbare oplysninger. Se status nedenfor og kontrollér originalkilderne.':'De tilgængelige registre er gennemgået. Resultaterne er nu vist i ejendomsoversigten.');
+ document.getElementById('lookupTitle').textContent=warning?'Opslag afsluttet med forbehold':'Opslag gennemført';
+ document.getElementById('lookupIntro').textContent='Her er en kort opsummering af datadækningen for den valgte adresse.';
+ const box=document.getElementById('lookupResult');box.classList.remove('hidden');box.classList.toggle('is-warning',Boolean(warning));
+ document.getElementById('lookupResultTitle').textContent=title||'Opslag afsluttet';
+ document.getElementById('lookupResultText').textContent=description||'Kontrollér resultaterne i fanerne.';
+ lookupDoneBtn.disabled=false;lookupDoneBtn.textContent='Luk og se resultater';lookupX.disabled=false;
+}
+function closeLookupModal(){
+ if(!lookupFinished)return;
+ lookupOverlay.classList.remove('is-open');lookupOverlay.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');
+}
+lookupDoneBtn.addEventListener('click',closeLookupModal);
+lookupX.addEventListener('click',closeLookupModal);
+lookupOverlay.addEventListener('click',e=>{if(e.target===lookupOverlay)closeLookupModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&lookupFinished&&lookupOverlay.classList.contains('is-open'))closeLookupModal();});
+
 async function checkIntegrationStatus(){
  const statusEl=document.getElementById('integrationStatus');if(!statusEl)return;
  try{
