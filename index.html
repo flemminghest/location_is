@@ -33,7 +33,7 @@ const searchInput=document.getElementById('query'), suggestionsEl=document.getEl
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function closeSuggestions(){suggestionsEl.classList.remove('open');searchInput.setAttribute('aria-expanded','false');selectedSuggestion=-1}
 function renderSuggestions(items,note=''){currentSuggestions=items;selectedSuggestion=-1;if(!items.length){suggestionsEl.innerHTML='<div class="suggestion-note">Ingen forslag fundet. Prøv at skrive vejnavn, husnummer eller postnummer.</div>';suggestionsEl.classList.add('open');searchInput.setAttribute('aria-expanded','true');return}suggestionsEl.innerHTML=items.map((x,i)=>'<button type="button" role="option" aria-selected="false" class="suggestion" data-index="'+i+'"><span>'+((x.source==='official-dar')?'✓':'⌖')+'</span><span><strong>'+esc(x.label)+'</strong><small>'+esc(x.detail||'Dansk adresseforslag')+'</small></span></button>').join('')+(note?'<div class="suggestion-note">'+esc(note)+'</div>':'');suggestionsEl.classList.add('open');searchInput.setAttribute('aria-expanded','true');suggestionsEl.querySelectorAll('.suggestion').forEach(b=>b.addEventListener('click',()=>chooseSuggestion(+b.dataset.index)))}
-function chooseSuggestion(i){const s=currentSuggestions[i];if(!s)return;chosenAddress=s;searchInput.value=s.label+(s.detail?', '+s.detail:'');closeSuggestions();searchStatus.textContent=s.source==='official-dar'?'Adresse valgt fra Danmarks Adresseregister. BBR- og plandata kræver særskilte opslag.':'Adresse valgt. Officiel registervalidering mangler.';searchInput.focus()}
+function chooseSuggestion(i){const s=currentSuggestions[i];if(!s)return;chosenAddress=s;searchInput.value=s.label+(s.detail?', '+s.detail:'');closeSuggestions();searchStatus.textContent=s.source==='official-dar'?'Officielt adresseforslag valgt ('+(s.type||'adresse')+'). Vælg Søg for ejendomsopslag.':'Adresse valgt. Officiel registervalidering mangler.';searchInput.focus()}
 async function lookupAddressSuggestions(q){if(activeSearchController)activeSearchController.abort();activeSearchController=new AbortController();searchStatus.textContent='Søger i det danske adresseregister…';
 try{
  // Official nationwide address API. If deployment policy/CORS changes, use a same-origin server proxy.
@@ -52,9 +52,11 @@ document.addEventListener('click',e=>{if(!document.getElementById('searchForm').
 async function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){searchStatus.textContent='Vælg et forslag fra den officielle danske adressekilde for at slå BBR og matrikel op.';toast('Vælg et officielt adresseforslag først.');return}
+ if(!['adresse','husnummer'].includes(chosenAddress?.type)){searchStatus.textContent='Dette forslag er et vejnavn/område. Skriv vejnavn og husnummer, og vælg en specifik adresse.';toast('Vælg en specifik husnummer- eller adressepost.');return}
  searchStatus.textContent='Henter BBR- og matrikeldata fra Datafordeleren…';
  try{
-  const resp=await fetch('/api/ejendom?adresseId='+encodeURIComponent(id),{headers:{Accept:'application/json'}});
+  const param=chosenAddress.type==='husnummer'?'husnummerId':'adresseId';
+  const resp=await fetch('/api/ejendom?'+param+'='+encodeURIComponent(id),{headers:{Accept:'application/json'}});
   const data=await resp.json();
   if(!resp.ok)throw new Error(data.error||'Ejendomsopslaget kunne ikke gennemføres');
   const b=data.bbr||{},m=data.cadastral||{};
@@ -66,7 +68,7 @@ async function loadPropertyData(){
   document.getElementById('buildingUse').textContent=val(b.byg021BygningensAnvendelse);
   document.getElementById('buildYear').textContent=val(b.byg026Opfoerelsesaar);
   document.getElementById('bbrArea').textContent=b.byg038SamletBygningsareal!=null?num(b.byg038SamletBygningsareal)+' m²':'—';
-  const ground=m.arealberegnet??m.areal??null,foot=b.byg041BebyggetAreal??null,res=b.byg039BygningensSamledeBoligAreal??null,basement=null;
+  const ground=data.areas?.groundArea??m.arealberegnet??m.areal??null,foot=data.areas?.footprint??b.byg041BebyggetAreal??null,res=data.areas?.residentialArea??b.byg039BygningensSamledeBoligAreal??null,basement=null;
   for(const [key,v] of [['areaGround',ground],['areaFootprint',foot],['areaResidential',res],['areaBasement',basement]])document.getElementById(key).textContent=v==null?'— m²':num(v)+' m²';
   for(const [key,v] of [['statGround',ground],['statFootprint',foot],['statResidential',res]])document.getElementById(key).innerHTML=v==null?'— <span style="font-size:13px">m²</span>':num(v)+' <span style="font-size:13px">m²</span>';
   const coverage=(ground>0&&foot>=0)?(foot/ground*100):null;
