@@ -1,32 +1,65 @@
 # ByggeInfo — ejendomsanalyseprototype
 
-Dansk, responsiv prototype rettet mod bygningskonstruktør-studerende. Søgning efter danske adresser, ejendomsoverblik, arealer, kortlag, lokalplaner, byggeregler, miljø, infrastruktur og kildestatus.
+Dansk responsiv webprototype for ejendomsopslag, særligt til brug i studier og forprojektering for bygningskonstruktører.
 
-## Status
-- Adresseforslag: primært fra Danmarks Adresseregister/ Dataforsyningens adresse-autocomplete API, med OpenStreetMap/Photon som fallback.
-- BBR: **ikke endnu live-integreret**. UI viser ingen opdigtede BBR-oplysninger.
-- Matrikel: **ikke endnu live-integreret**. Grundareal, matrikelgrænser og matrikelidentifikation kræver integration til Dataforsyningen/Matrikeldata.
-- Lokalplan, miljø, terræn og andre forhold: kildelinks og tjeklister findes, men der er ikke endnu live-data.
-- Alle oplysninger som ikke er hentet fra en officiel kilde, skal vises som manglende/ikke verificerede.
+## Integrationer i repoet
 
-## BBR og matrikel — arkitektur for næste trin
-Tilslut offentlige tjenester gennem et backend-proxy, hvor nødvendigt:
-1. Adresse -> officiel adresseidentifikator (DAR).
-2. Adresseidentifikator -> BFE-/ejendomsidentifikation og BBR-enheder/bygningsoplysninger.
-3. BFE-/matrikelidentifikation -> matrikelnummer, ejerlav og registreret matrikelareal.
-4. Vis kilde, tidspunkt, datadækning og status på hvert felt.
-5. Skeln tydeligt mellem registrerede arealer, beregnede værdier og juridisk vurdering.
+- **Adressesøgning:** Backend-proxy til Dataforsyningens officielle danske adresse-autocomplete. OpenStreetMap/Photon bruges kun som fallback i browseren.
+- **BBR:** Endpoint `GET /api/ejendom?adresseId=<DAR-adresse-id>` forsøger at følge adresse → husnummer → BBR-bygning via Datafordelerens Flexible GraphQL API.
+- **Matrikel:** Samme ejendomsopslag forsøger at følge adressens relation til MAT-jordstykke og hente matrikelattributter. Der findes også et separat `GET /api/matrikel?q=...` endpoint, som kan tilpasses det aktuelle MAT-skema.
+- **Status:** Backend og datakobling er implementeret i denne commit, men integrationen kan først returnere registrets rigtige oplysninger, når den er konfigureret med en gyldig Datafordeler API-nøgle og afprøvet mod den adgang, der er givet til API-nøglen. Den viste prototype må ikke opfattes som bevis på, at hvert felt allerede er hentet.
 
-Undgå at lægge private API-nøgler i frontend. Kontrollér gældende adgangsvilkår, CORS, rate limits og autentifikation hos de offentlige datatjenester før produktionsbrug.
+Kilde: Datafordelerens BBR GraphQL og Flexible GraphQL-dokumentation:
+- https://datafordeler.dk/dataoversigt/bygnings-og-boligregistret-bbr/bbr-graphql/
+- https://confluence.kds.dk/display/DML/Udvalgte%2BREST-tjenester%2Bomsat%2Btil%2BGraphQL-queries
+- https://docs.dataforsyningen.dk/
 
-## Kørsel
-Åbn `index.html` i en browser eller udgiv den som en statisk webside. Adresseforslag kræver internetadgang. Der er i øjeblikket ingen backend og ingen live BBR-/matrikelintegration.
+## Kør lokalt
 
-## Officielle udgangspunkter
+Kræver Node.js 20 eller nyere.
+
+```bash
+npm install
+cp .env.example .env
+# Redigér .env og indsæt din egen API key fra Datafordelerens portal
+npm start
+```
+
+Åbn derefter `http://localhost:3000`.
+
+## Konfiguration af BBR og matrikel
+
+1. Opret/brug en konto og et IT-system på https://portal.datafordeler.dk/.
+2. Opret en API key til de relevante registre/tjenester.
+3. Sæt nøglen i serverens miljøvariabel `DATAFORDELER_API_KEY`.
+4. Hvis hostingen understøtter det, opret miljøvariablen i hostingens Secret/Environment settings. **Læg aldrig nøglen i `index.html`, en offentlig fil eller Git.**
+5. Genstart serveren og kontrollér `GET /api/status`.
+6. Afprøv med adresser fra flere kommuner. Kontrollér hvert areal, bygningsattribut og matrikel-id mod de officielle registre. Datafordelerens GraphQL-skemaer og relationer kan ændre sig, så dette bør være en del af vedligeholdelsen.
+
+Den officielle Datafordeler-dokumentation beskriver BBR GraphQL som adgangsstyret med API key/OAuth, og den nye model kan returnere bygninger, enheder, grunde og ejendomsrelationer. Den konkrete adgang kan afhænge af brugerens opsætning og tildelte rettigheder.
+
+## API-endpoints
+
+- `GET /api/health` — sundhedstjek
+- `GET /api/status` — viser om API key er konfigureret
+- `GET /api/adresser?q=<tekst>` — officielle adresseforslag
+- `GET /api/ejendom?adresseId=<id>` — forsøg på at hente BBR- og matrikeldata for adresse
+- `GET /api/ejendom?bfe=<BFE-nummer>` — matrikelrelateret opslag via BFE
+- `GET /api/matrikel?q=<matrikelnummer>` — matrikelsøgning
+
+## Vigtige forbehold
+
+- BBR-arealer er registeroplysninger; de er ikke nødvendigvis det samme som opmålte arealer.
+- Matrikel, BBR, planforhold og andre kilder beskriver forskellige juridiske/faglige forhold. Værdier må ikke blandes uden at vise kilde og betydning.
+- Manglende API-resultat må aldrig omsættes til “forholdet findes ikke”. Prototypen skal vise tomme værdier og kildestatus.
+- Datafordelerens brugsvilkår og eventuelle regler for personoplysninger skal overholdes.
+- Denne prototype er ikke en myndighedsafgørelse eller dokumentation for lovlighed. Kontrollér altid original kilde og gældende regler.
+
+## Officielle kilder
+
+- Datafordeleren: https://www.datafordeler.dk/
 - Dataforsyningen: https://dataforsyningen.dk/
 - BBR: https://bbr.dk/
 - Plandata: https://www.plandata.dk/
 - Bygningsreglementet: https://www.bygningsreglementet.dk/
-- Danmarks Miljøportal / Arealinformation: https://arealinformation.miljoeportal.dk/
-
-**Fagligt forbehold:** Denne prototype er ikke en myndighedsafgørelse eller dokumentation for lovlighed. Kontroller altid originale registerdata og gældende plan- og byggeregler.
+- Danmarks Arealinformation: https://arealinformation.miljoeportal.dk/
