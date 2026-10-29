@@ -15,7 +15,7 @@ export default async function handler(req,res){
     const url=new URL(DAWA);
     url.searchParams.set("nr",nr);
     url.searchParams.set("format","json");
-    const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(3000)});
+    const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(2200)});
     if(response.ok){
       const data=await response.json();
       const found=resultFor(data,nr);
