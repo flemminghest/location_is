@@ -1,6 +1,14 @@
 const BASE = "https://adressevaelger.dk";
 const TOKEN = () => process.env.ADRESSEVAELGER_TOKEN || "adressevaelger123";
 
+function withDeadline(work, timeoutMs, message) {
+  let timer;
+  return Promise.race([
+    Promise.resolve().then(work),
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), timeoutMs); })
+  ]).finally(() => { if (timer) clearTimeout(timer); });
+}
+
 function normalized(value){
   return String(value||"").toLocaleLowerCase("da-DK").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[.,]/g," ").replace(/\s+/g," ").trim();
 }
@@ -11,31 +19,34 @@ async function requestSearch(path, params, limit=40) {
   }
   url.searchParams.set("maksimum",String(Math.min(200,limit)));
   url.searchParams.set("token",TOKEN());
-  const response = await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(6500)});
-  const data = await response.json().catch(()=>({}));
-  if (!response.ok) throw new Error("Adressevælger HTTP "+response.status);
-  if (data.status && data.status !== "ok") throw new Error(data.beskrivelse || "Adressevælgerens søgning fejlede");
-  return Array.isArray(data.fund) ? data.fund : [];
+  return withDeadline(async()=>{
+    const response = await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(6500)});
+    const data = await response.json().catch(()=>({}));
+    if (!response.ok) throw new Error("Adressevælger HTTP "+response.status);
+    if (data.status && data.status !== "ok") throw new Error(data.beskrivelse || "Adressevælgerens søgning fejlede");
+    return Array.isArray(data.fund) ? data.fund : [];
+  },7000,"Adressevælgerens svar overskred tidsgrænsen på 7 sekunder.");
 }
 async function requestAddressWash(address) {
   const url=new URL("/vask/",BASE);
   url.searchParams.set("adresse",String(address||"").trim());
   url.searchParams.set("token",TOKEN());
-  const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(6500)});
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw new Error("Adressevask HTTP "+response.status);
-  if(data.status&&data.status!=="ok")throw new Error(data.beskrivelse||"Adressevask fejlede");
-  const result=data.vaskeresultat||{};
-  // Only exact current matches are accepted for automatic property lookup.
-  if(Number(data.vaskestatus?.kode)!==1000||!result.adresse_id_lokalid||!result.adressebetegnelse)return [];
-  return [{
-    id:result.adresse_id_lokalid,type:"adresse",label:result.adressebetegnelse,
-    adressebetegnelse:result.adressebetegnelse,postnr:result.adressebetegnelse.match(/(?:,\s*|\s)(\d{4})\s/)?.[1]||null,
-    postdistrikt:result.adressebetegnelse.match(/\d{4}\s+(.+)$/)?.[1]||null,
-    matchCode:1000,matchText:data.vaskestatus.tekst||"Eksakt match",origin:"address-wash"
-  }];
+  return withDeadline(async()=>{
+    const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(6500)});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error("Adressevask HTTP "+response.status);
+    if(data.status&&data.status!=="ok")throw new Error(data.beskrivelse||"Adressevask fejlede");
+    const result=data.vaskeresultat||{};
+    if(Number(data.vaskestatus?.kode)!==1000||!result.adresse_id_lokalid||!result.adressebetegnelse)return [];
+    return [{
+      id:result.adresse_id_lokalid,type:"adresse",label:result.adressebetegnelse,
+      adressebetegnelse:result.adressebetegnelse,
+      postnr:result.adressebetegnelse.match(/(?:,\s*|\s)(\d{4})\s/)?.[1]||null,
+      postdistrikt:result.adressebetegnelse.match(/\d{4}\s+(.+)$/)?.[1]||null,
+      matchCode:1000,matchText:data.vaskestatus.tekst||"Eksakt match",origin:"address-wash"
+    }];
+  },7000,"Adressevasken overskred tidsgrænsen på 7 sekunder.");
 }
-
 const GRAPHQL_ENDPOINT=process.env.DATAFORDELER_GRAPHQL_URL||"https://graphql.datafordeler.dk/flexible/v3";
 function rootQuery(type, now, where, nodes){
  const args='first:10, registreringstid:"'+now+'", virkningstid:"'+now+'"'+(where?', where:{'+where+'}':'');
@@ -50,21 +61,23 @@ async function requestExactHouseFromDar(parsed){
  const where='adgangsadressebetegnelse:{eq:"'+escape(designation)+'"},status:{in:["2","3"]}';
  const query=rootQuery("DAR_Husnummer",now,where,"id_lokalId adgangsadressebetegnelse husnummertekst status adgangTilBygning jordstykke placeretPaaForeloebigtJordstykke");
  const url=new URL(GRAPHQL_ENDPOINT);url.searchParams.set("apiKey",key);
- const response=await fetch(url,{method:"POST",headers:{"content-type":"application/json",accept:"application/json"},body:JSON.stringify({query}),signal:AbortSignal.timeout(6500)});
- const payload=await response.json().catch(()=>({}));
- const errors=(payload.errors||[]).map(x=>x.message).join("; ");
- if(!response.ok||errors)throw new Error(errors||"Datafordeler DAR HTTP "+response.status);
- const nodes=payload.data?.DAR_Husnummer?.nodes;
- if(!Array.isArray(nodes))throw new Error("DAR returnerede ikke en husnummerliste");
- return nodes.map(node=>{
-  const label=node.adgangsadressebetegnelse||designation;
-  const zip=label.match(/(?:,\s*|\s)(\d{4})\s/)?.[1]||parsed.postnummer;
-  const town=label.match(/\d{4}\s+(.+)$/)?.[1]||parsed.postdistrikt||"";
-  return {id:node.id_lokalId,type:"husnummer",label,detail:[zip,town].filter(Boolean).join(" "),
-    kindLabel:"Verificeret i DAR",source:"official-dar",origin:"Datafordeler DAR GraphQL",
-    husnummerId:node.id_lokalId,vejnavn:parsed.vejnavn,husnummer:node.husnummertekst||parsed.husnummer,
-    postnr:zip,postdistrikt:town,specific:true,properties:node};
- });
+ return withDeadline(async()=>{
+   const response=await fetch(url,{method:"POST",headers:{"content-type":"application/json",accept:"application/json"},body:JSON.stringify({query}),signal:AbortSignal.timeout(6500)});
+   const payload=await response.json().catch(()=>({}));
+   const errors=(payload.errors||[]).map(x=>x.message).join("; ");
+   if(!response.ok||errors)throw new Error(errors||"Datafordeler DAR HTTP "+response.status);
+   const nodes=payload.data?.DAR_Husnummer?.nodes;
+   if(!Array.isArray(nodes))throw new Error("DAR returnerede ikke en husnummerliste");
+   return nodes.map(node=>{
+     const label=node.adgangsadressebetegnelse||designation;
+     const zip=label.match(/(?:,\s*|\s)(\d{4})\s/)?.[1]||parsed.postnummer;
+     const town=label.match(/\d{4}\s+(.+)$/)?.[1]||parsed.postdistrikt||"";
+     return {id:node.id_lokalId,type:"husnummer",label,detail:[zip,town].filter(Boolean).join(" "),
+       kindLabel:"Verificeret i DAR",source:"official-dar",origin:"Datafordeler DAR GraphQL",
+       husnummerId:node.id_lokalId,vejnavn:parsed.vejnavn,husnummer:node.husnummertekst||parsed.husnummer,
+       postnr:zip,postdistrikt:town,specific:true,properties:node};
+   });
+ },7000,"Datafordelerens DAR-opslag overskred tidsgrænsen på 7 sekunder.");
 }
 function normalize(hit, origin) {
   const type=String(hit.type||"").toLowerCase();
