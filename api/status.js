@@ -9,7 +9,7 @@ async function probe(type, fields, now) {
   const url = new URL(ENDPOINT);
   url.searchParams.set("apiKey", key);
   try {
-    const response = await fetch(url, { method:"POST", headers:{"content-type":"application/json",accept:"application/json"}, body:JSON.stringify({query}), signal:AbortSignal.timeout(12000) });
+    const response = await fetch(url, { method:"POST", headers:{"content-type":"application/json",accept:"application/json"}, body:JSON.stringify({query}), signal:AbortSignal.timeout(3500) });
     const payload = await response.json().catch(() => ({}));
     const root = payload.data && payload.data[type];
     const errors = (payload.errors || []).map(x => x.message).join("; ");
