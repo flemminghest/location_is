@@ -345,6 +345,7 @@ function renderAreaHistory(data){
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 async function loadPlansForCoordinates(coords){
+ window.__measInfoPlanLookup=null;
  const nameEl=document.getElementById('planName'),useEl=document.getElementById('planUse'),coverageEl=document.getElementById('planCoverage'),frameEl=document.getElementById('planFrame'),zoneEl=document.getElementById('planZone'),noticeEl=document.getElementById('planNotice');
  if(!coords||!Number.isFinite(Number(coords.x))||!Number.isFinite(Number(coords.y))){
   nameEl.textContent='Position ikke tilgængelig';useEl.textContent='Afventer opslag';coverageEl.textContent='Se planbestemmelser';frameEl.textContent='Afventer opslag';zoneEl.textContent='Afventer opslag';
@@ -358,6 +359,7 @@ async function loadPlansForCoordinates(coords){
   const url='/api/planer?x='+encodeURIComponent(coords.x)+'&y='+encodeURIComponent(coords.y)+'&crs='+encodeURIComponent(coords.crs||'EPSG:25832');
   const response=await fetch(url,{headers:{Accept:'application/json'}});
   const data=await response.json();
+  window.__measInfoPlanLookup={ok:response.ok,data};
   if(!response.ok)throw new Error(data.error||'Plandata-opslaget fejlede');
   const plans=data.localPlans||[],subAreas=data.subAreas||[],fields=data.buildingFields||[],frames=data.municipalFrames||[],zones=data.zoneMap||[];
   const errors=data.errors||{};
