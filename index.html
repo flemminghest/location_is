@@ -886,10 +886,10 @@ async function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){searchStatus.textContent='Vælg et forslag fra den officielle danske adressekilde for at slå BBR og matrikel op.';toast('Vælg et officielt adresseforslag først.');return}
  if(!['adresse','husnummer'].includes(chosenAddress?.type)){searchStatus.textContent='Dette forslag er et vejnavn/område. Skriv vejnavn og husnummer, og vælg en specifik adresse.';toast('Vælg en specifik husnummer- eller adressepost.');return}
- setLookupProgress(10,'TRIN 1 AF 5','Kontrollerer adressen','Det officielle adresseforslag er valgt. Vi følger registerrelationen til husnummer, bygning og jordstykke.');
+ setLookupProgress(24,'TRIN 2 AF 5','Kontrollerer adressen','Det officielle adresseforslag er valgt. Vi følger registerrelationen til husnummer, bygning og jordstykke.');
  setLookupStep('address','running','Kontrollerer','Kontrollerer DAR-adresse og adgangsadresse');
  searchStatus.textContent='Henter BBR- og matrikeldata fra Datafordeleren…';
- setLookupProgress(18,'TRIN 2 AF 5','Kontakter Datafordeleren','Vi anmoder om de tilgængelige BBR- og matrikeloplysninger fra de officielle registre.');
+ setLookupProgress(31,'TRIN 2 AF 5','Kontakter Datafordeleren','Vi anmoder om de tilgængelige BBR- og matrikeloplysninger fra de officielle registre.');
  setLookupStep('bbr','running','Slår op','Anmoder om bygningsoplysninger');
  setLookupStep('mat','running','Slår op','Anmoder om jordstykke og matrikeldata');
  try{
@@ -905,7 +905,7 @@ async function loadPropertyData(){
   const bbrOk=Boolean(data.completeness?.bbr||data.bbrBuildings?.length||data.bbr?.id_lokalId);
   const matOk=Boolean(data.completeness?.cadastral||data.cadastral);
   setLookupStep('address',addressOk?'done':'warning',addressOk?'Identificeret':'Delvist',addressOk?'Registerrelation returneret':'Adressevalget kunne ikke fuldt bekræftes i Datafordeleren');
-  setLookupProgress(43,'TRIN 2 AF 5','Behandler registerresultater','BBR- og matrikelresultater er modtaget. Kun oplysninger, som registrene faktisk returnerer, bliver vist.');
+  setLookupProgress(49,'TRIN 3 AF 5','Behandler registerresultater','BBR- og matrikelresultater er modtaget. Kun oplysninger, som registrene faktisk returnerer, bliver vist.');
   setLookupStep('bbr',bbrOk?'done':'warning',bbrOk?'Data fundet':'Intet match',bbrOk?'En eller flere BBR-bygninger returneret':'Ingen BBR-bygning returneret; kontrollér originalkilden');
   setLookupStep('mat',matOk?'done':'warning',matOk?'Data fundet':'Intet match',matOk?'Matrikel-/jordstykkedata returneret':'Ingen matrikelrelation returneret; kontrollér ejerlav og original kilde');
   const b=data.bbr||{},m=data.cadastral||{};
@@ -923,7 +923,7 @@ async function loadPropertyData(){
   const coverage=(ground>0&&foot>=0)?(foot/ground*100):null;
   document.getElementById('statCoverage').textContent=coverage==null?'—':coverage.toLocaleString('da-DK',{maximumFractionDigits:1})+' %';
   searchStatus.textContent='Data hentet '+new Date(data.fetchedAt).toLocaleString('da-DK')+' · BBR: '+(bbrOk?'fundet':'intet resultat')+' · Matrikel: '+(matOk?'fundet':'intet resultat');
-  setLookupProgress(68,'TRIN 4 AF 5','Undersøger planforhold','Vi søger i Plandata.dk efter lokalplaner, kommuneplanrammer, byggefelter og planhistorik omkring adressepunktet.');
+  setLookupProgress(72,'TRIN 4 AF 5','Undersøger planforhold','Vi søger i Plandata.dk efter lokalplaner, kommuneplanrammer, byggefelter og planhistorik omkring adressepunktet.');
   setLookupStep('plan','running','Søger','Henter planlag og rammer fra Plandata.dk');
   setLookupStep('history','running','Søger','Henter planversioner, forslag og aflysninger');
   await loadPlansForCoordinates(data.coordinates);
@@ -935,7 +935,7 @@ async function loadPropertyData(){
   setLookupStep('plan',planFailed?'error':(hasPlans?'done':'warning'),planFailed?'Kildefejl':(hasPlans?'Søgning udført':'Intet match'),planFailed?(planLookup.error||'Et eller flere plandatalag fejlede'):(hasPlans?'Plandata returnerede planobjekter i søgevinduet':'Ingen planobjekter fundet i søgevinduet; kontrollér originalkort og plan'));
   setLookupStep('history',hasHistory?'done':'warning',hasHistory?'Historik fundet':'Ingen historik',hasHistory?'Daterede planhændelser/versioner returneret':'Ingen daterede historikhændelser fundet; kommunearkiv kan stadig have materiale');
   const partial=!addressOk||!bbrOk||!matOk||planFailed||!hasPlans||!hasHistory;
-  setLookupProgress(94,'TRIN 5 AF 5','Samler datadækningen','Vi skelner mellem fund, ingen match og tekniske fejl, før oversigten åbnes.');
+  setLookupProgress(96,'TRIN 5 AF 5','Samler datadækningen','Vi skelner mellem fund, ingen match og tekniske fejl, før oversigten åbnes.');
   const events2025=(pd.planHistory||[]).filter(ev=>/^2025/.test(String(ev.date||'')));
   const summary='Adresse: '+(addressOk?'identificeret':'delvist verificeret')+' · BBR: '+(bbrOk?'data fundet':'ingen bygning returneret')+' · Matrikel: '+(matOk?'data fundet':'ingen matrikelrelation returneret')+' · Planer: '+(planLookup.ok?((pd.localPlans||[]).length+' lokalplan(er) i søgevinduet'):'ikke gennemført')+' · Historik: '+(hasHistory?'hændelser fundet':'ingen historik fundet')+' · 2025: '+events2025.length+' dateret(e) hændelse(r)';
   finishLookup(partial?'Opslag afsluttet med forbehold':'Alle kilder svarede',summary,partial);
@@ -966,18 +966,37 @@ function getExactSuggestion(query,items){
  }).sort((a,b)=>(a.type==='adresse'?0:1)-(b.type==='adresse'?0:1));
  return exact.length?exact[0]:null;
 }
+function normalizeAddressMatch(value){
+ return String(value||'').toLocaleLowerCase('da-DK').normalize('NFC').replace(/[.,]/g,' ').replace(/\\s+/g,' ').trim();
+}
+function getExactSuggestion(query,items){
+ const q=normalizeAddressMatch(query),qTokens=new Set(q.split(' '));
+ if(!/\\d/.test(q))return null;
+ const precise=items.filter(x=>x.source==='official-dar'&&['adresse','husnummer'].includes(x.type)&&x.id);
+ const exact=precise.filter(x=>{
+  const label=normalizeAddressMatch(x.label);
+  if(label===q||q.startsWith(label+' '))return true;
+  const tokens=label.split(' ').filter(Boolean);
+  return tokens.length>=3&&tokens.some(t=>/\\d/.test(t))&&tokens.every(t=>qTokens.has(t));
+ }).sort((a,b)=>(a.type==='adresse'?0:1)-(b.type==='adresse'?0:1));
+ return exact.length?exact[0]:null;
+}
 document.getElementById('searchForm').addEventListener('submit',async e=>{
  e.preventDefault();
  const q=searchInput.value.trim();
  if(!q){toast('Skriv en adresse eller et vejnavn');searchInput.focus();return}
  closeSuggestions();
  if(chosenAddress?.source==='official-dar'&&['adresse','husnummer'].includes(chosenAddress?.type)&&chosenAddress?.id){
+  resetLookupModal(q);
+  setLookupProgress(7,'TRIN 1 AF 5','Kontrollerer adressen','Det valgte officielle adresse-ID kontrolleres før BBR- og matrikelopslag.');
   setPropertyAddressDisplay(q);
   document.getElementById('addressId').textContent=chosenAddress.id;
-  resetLookupModal(q);
   await loadPropertyData();
   return;
  }
+ resetLookupModal(q);
+ setLookupProgress(5,'TRIN 1 AF 5','Søger i adresseregisteret','MeasLookUp undersøger den officielle Adressevælger og validerer den fulde adresse, før ejendomsdata hentes.');
+ setLookupStep('address','running','Søger','Adressevask og præcise husnummer-/adresseforslag');
  searchStatus.textContent='Finder den præcise adresse i det officielle adresseregister…';
  const items=await lookupAddressSuggestions(q);
  const match=getExactSuggestion(q,items);
@@ -987,27 +1006,38 @@ document.getElementById('searchForm').addEventListener('submit',async e=>{
   setPropertyAddressDisplay(match.label);
   document.getElementById('addressId').textContent=match.id;
   updateDrawingButton();
+  setLookupStep('address','done','Adresse bekræftet',match.properties?.matchText||'Adresse fundet i den officielle Adressevælger');
+  setLookupProgress(22,'TRIN 1 AF 5','Adresse bekræftet','Den officielle adresse er fundet. Nu hentes BBR-, matrikel- og planoplysninger.');
   searchStatus.textContent='Præcis adresse fundet · henter ejendomsoplysninger…';
   closeSuggestions();
-  resetLookupModal(match.label);
   await loadPropertyData();
   return;
  }
  const official=items.filter(x=>x.source==='official-dar'&&['adresse','husnummer'].includes(x.type)&&x.id);
  if(official.length){
-  searchStatus.textContent='Vælg den præcise adresse blandt forslagene. Vi fandt flere mulige matches.';
+  searchStatus.textContent='Flere mulige adresser fundet. Vælg den præcise adresse i listen.';
   suggestionsEl.classList.add('open');
   searchInput.setAttribute('aria-expanded','true');
+  setLookupStep('address','warning','Vælg adresse','Der er flere mulige officielle matches; vælg det rigtige husnummer.');
+  finishLookup('Vælg den præcise adresse','Flere officielle adresseforslag matcher søgningen. Vælg det konkrete husnummer/adresse i listen for at hente BBR, matrikel og planer.',true);
   return;
  }
  if(items.length){
-  searchStatus.textContent='Der kom kun vej- eller kortforslag tilbage. Tilføj husnummer og postnummer, eller vælg et officielt husnummerforslag.';
+  searchStatus.textContent='Der blev fundet vej-/kortforslag, men ingen entydig officiel adresse. Tilføj husnummer og postnummer, eller vælg et officielt husnummerforslag.';
   suggestionsEl.classList.add('open');
   searchInput.setAttribute('aria-expanded','true');
+  setLookupStep('address','warning','Ikke entydig','Forslagene kan ikke bruges som sikkert grundlag for registeropslag endnu.');
+  finishLookup('Adresse ikke entydigt bekræftet','Der er vist forslag i søgefeltet, men ingen konkret officiel adresse kunne knyttes sikkert til opslaget. Vælg et officielt husnummerforslag eller tilføj postnummer.',true);
   return;
  }
- searchStatus.textContent='Ingen præcis adresse fundet. Prøv vejnavn + husnummer + postnummer, eller vælg et af forslagene.';
+ setLookupStep('address','error','Intet match','Adressevælgeren returnerede ingen match på hele søgeteksten.');
+ setLookupStep('bbr','warning','Ikke kørt','BBR slås først op, når et officielt adresse-ID er fundet.');
+ setLookupStep('mat','warning','Ikke kørt','Matriklen slås først op, når et officielt adresse-ID er fundet.');
+ setLookupStep('plan','warning','Ikke kørt','Planer kræver et verificeret adressepunkt.');
+ setLookupStep('history','warning','Ikke kørt','Historik kræver et verificeret adressepunkt.');
+ finishLookup('Ingen officiel adresse fundet','Prøv fx “Lorents Møllers Vej 48, 6700 Esbjerg”, eller vælg vejnavn, husnummer og postnummer fra forslagene. Der bliver ikke lavet et BBR-opslag på et gættet adressepunkt.',true);
 });
+
 let pdfSelectionMode=false;
 const pdfSelectedSections=new Set();
 const sectionInfo={
