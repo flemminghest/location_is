@@ -710,7 +710,7 @@ const lookupX=document.getElementById('lookupX');
 let lookupFinished=false,lookupCloseTimer=null;
 const lookupStepIds={address:'lookupStepAddress',bbr:'lookupStepBbr',mat:'lookupStepMat',plan:'lookupStepPlan',history:'lookupStepHistory'};
 const lookupStepTimers=Object.create(null),lookupStepStartedAt=Object.create(null);
-let lookupWatchdogTimer=null,lookupHardStopTimer=null;
+let lookupWatchdogTimer=null;
 const lookupStepBudgets={address:6500,bbr:9500,mat:9500,plan:6000,history:6000};
 
 // A real deadline around the entire operation (including response-body parsing), not just the fetch connection.
@@ -809,7 +809,6 @@ function resetLookupModal(address){
  lookupFinished=false;
  Object.keys(lookupStepIds).forEach(stopLookupStepTimer);
  if(lookupWatchdogTimer){clearTimeout(lookupWatchdogTimer);lookupWatchdogTimer=null;}
- if(lookupHardStopTimer){clearTimeout(lookupHardStopTimer);lookupHardStopTimer=null;}
  document.getElementById('lookupAddress').textContent=address||'Adresse ikke valgt';
  document.getElementById('lookupTitle').textContent='Vi undersøger ejendommen';
  document.getElementById('lookupIntro').textContent='MeasLookUp kontrollerer de tilgængelige registre og samler resultater, der kan knyttes sikkert til adressen.';
@@ -820,34 +819,23 @@ function resetLookupModal(address){
  if(lookupCloseTimer){clearTimeout(lookupCloseTimer);lookupCloseTimer=null;}
  lookupDoneBtn.disabled=true;lookupDoneBtn.textContent='Opslag kører…';lookupX.disabled=true;
  lookupOverlay.classList.add('is-open');lookupOverlay.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
- // At 22 seconds, warn but do not finish the lookup: late sources may still return useful data.
+ // End the modal at the 22-second limit instead of leaving the user on an endless 86% spinner.
  lookupWatchdogTimer=setTimeout(()=>{
   if(lookupFinished)return;
   Object.keys(lookupStepIds).forEach(key=>{
    const step=document.getElementById(lookupStepIds[key]);
-   if(step&&step.classList.contains('is-running'))setLookupStep(key,'warning','Langsomt svar','Denne kilde er stadig i gang. Resultatet bevares, hvis svaret kommer senere.');
-  });
-  searchStatus.textContent='Opslaget tager længere tid end normalt. Vi venter videre på de kilder, der stadig svarer.';
-  setLookupProgress(86,'LANGSOMT KILDESVAR','Venter stadig på datakilder','Vi afbryder ikke hele analysen ved 22 sekunder. Allerede fundne data bevares, mens langsomme kilder afslutter.');
- },22000);
- // Last-resort guard only. Source requests have their own shorter deadlines and should normally finish first.
- lookupHardStopTimer=setTimeout(()=>{
-  if(lookupFinished)return;
-  Object.keys(lookupStepIds).forEach(key=>{
-   const step=document.getElementById(lookupStepIds[key]);
    const state=step?.querySelector('.lookup-step-state')?.textContent||'';
-   if(step&&(step.classList.contains('is-running')||state==='Langsomt svar'))setLookupStep(key,'error','Tidsgrænse','Kilden nåede ikke sin tidsgrænse. Eventuelle data fra de øvrige kilder bevares.');
-   else if(step&&state==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Ingen forespørgsel blev gennemført for denne kilde.');
+   if(step&&(step.classList.contains('is-running')||state==='Langsomt svar'))setLookupStep(key,'error','Tidsgrænse','Kilden svarede ikke i tide. Hvis der kommer et sent svar, gemmes det i oversigten.');
+   else if(step&&state==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Denne kilde blev ikke færdig inden for den samlede tidsgrænse.');
   });
-  searchStatus.textContent='Opslaget blev afsluttet med delresultater efter 28 sekunder.';
-  finishLookup('Opslag afsluttet med delresultater','Nogle kilder svarede ikke inden for 28 sekunder. Resultater fra de øvrige kilder er bevaret; du kan prøve igen for at hente manglende data.',true);
- },28000);
+  searchStatus.textContent='Opslaget blev afsluttet med delresultater efter 22 sekunder. Kontrollér datastatus og prøv igen for manglende oplysninger.';
+  finishLookup('Opslag afsluttet med delresultater','Vi fik ikke svar fra alle kilder inden for 22 sekunder. Brugbare resultater fra andre kilder bevares; langsomme kilder er markeret som tidsoverskredet.',true);
+ },22000);
 }
 function finishLookup(title,description,warning){
  if(lookupFinished)return;
  lookupFinished=true;
  if(lookupWatchdogTimer){clearTimeout(lookupWatchdogTimer);lookupWatchdogTimer=null;}
- if(lookupHardStopTimer){clearTimeout(lookupHardStopTimer);lookupHardStopTimer=null;}
  Object.keys(lookupStepIds).forEach(stopLookupStepTimer);
  setLookupProgress(100,warning?'OPSLAG AFSLUTTET · DELVIST':'OPSLAG AFSLUTTET','Resultaterne er klar',warning?'Nogle kilder returnerede ikke brugbare oplysninger. Se status nedenfor og kontrollér originalkilderne.':'De tilgængelige registre er gennemgået. Resultaterne er nu vist i ejendomsoversigten.');
  document.getElementById('lookupTitle').textContent=warning?'Opslag afsluttet med forbehold':'Opslag gennemført';
@@ -1268,8 +1256,11 @@ async function lookupAddressSuggestions(q){
  }
  searchStatus.textContent=(zip||city)?'Søger kun i '+[city,zip?'('+zip+')':''].filter(Boolean).join(' ')+'…':'Søger efter adressen…';
  try{
-  const response=await fetch('/api/adresser?'+params.toString(),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8500)]),headers:{Accept:'application/json'},cache:'no-store'});
-  const data=await response.json().catch(()=>({}));
+  const {response,data}=await withSourceDeadline(async()=>{
+   const response=await fetch('/api/adresser?'+params.toString(),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8500)]),headers:{Accept:'application/json'},cache:'no-store'});
+   const data=await response.json().catch(()=>({}));
+   return {response,data};
+  },9000,'Adresseopslaget overskred tidsgrænsen på 9 sekunder.');
   if(controller!==activeSearchController)return [];
   if(!response.ok){
    const detail=Array.isArray(data.details)?data.details.join(' · '):'';
@@ -1694,11 +1685,11 @@ async function loadPropertyData(){
   if(!response.ok)throw new Error(data.error||data.detail||('HTTP '+response.status));
   return data;
  };
- const timedSource=async(key,label,detail,work)=>{
+ const timedSource=async(key,label,detail,work,timeoutMs=11500)=>{
   setLookupStep(key,'running',label,detail);
   const started=performance.now();
   try{
-   const result=await withSourceDeadline(work,11500,'Kilden svarede ikke inden for 11,5 sekunder.');
+   const result=await withSourceDeadline(work,timeoutMs,'Kilden svarede ikke inden for '+String(timeoutMs/1000).replace('.',',')+' sekunder.');
    if(!lookupFinished)setLookupStep(key,'done','Kilde svarede','Afsluttet på '+((performance.now()-started)/1000).toFixed(1).replace('.',',')+' sek.');
    return {ok:true,result};
   }catch(error){
@@ -1710,7 +1701,7 @@ async function loadPropertyData(){
  setLookupStep('address','running','Kontrollerer','Kontrollerer DAR-adresse og adgangsadresse');
  searchStatus.textContent='Kontakter de officielle registre…';
   setLookupStep('mat','running','Slår op','Henter matrikelrelationen samtidig med adresse og BBR');
-const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og matrikelrelationer',()=>requestJson('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),10500));
+const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og matrikelrelationer',()=>requestJson('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),17500),18000);
  const planPromise=(async()=>{
   setLookupStep('plan','running','Søger','Venter på adresseposition og søger derefter i Plandata.dk');
   setLookupStep('history','running','Søger','Venter på planversioner, forslag og aflysninger');
