@@ -11,7 +11,7 @@ async function requestSearch(path, params, limit=40) {
   }
   url.searchParams.set("maksimum",String(Math.min(200,limit)));
   url.searchParams.set("token",TOKEN());
-  const response = await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(4500)});
+  const response = await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(6500)});
   const data = await response.json().catch(()=>({}));
   if (!response.ok) throw new Error("Adressevælger HTTP "+response.status);
   if (data.status && data.status !== "ok") throw new Error(data.beskrivelse || "Adressevælgerens søgning fejlede");
@@ -21,7 +21,7 @@ async function requestAddressWash(address) {
   const url=new URL("/vask/",BASE);
   url.searchParams.set("adresse",String(address||"").trim());
   url.searchParams.set("token",TOKEN());
-  const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(4500)});
+  const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(6500)});
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error("Adressevask HTTP "+response.status);
   if(data.status&&data.status!=="ok")throw new Error(data.beskrivelse||"Adressevask fejlede");
@@ -163,7 +163,7 @@ export default async function handler(req,res) {
       }
       raw=filterStrict(raw,postnummer,by);
       const fund=sortAndDedupe(raw,q||[vejnavn,husnummer,postnummer,by,etage,doer].filter(Boolean).join(" ")).slice(0,100);
-      if(!fund.length&&errors.length&&raw.length===0)return res.status(502).json({error:"Den officielle adressekilde kunne ikke svare inden for tidsgrænsen.",details:errors,scopedToPostcode:postnummer||null});
+      if(!fund.length&&errors.length&&raw.length===0)return res.status(502).json({error:"Den officielle adressekilde kunne ikke svare inden for tidsgrænsen.",details:errors,scopedToPostcode:postnummer||null,retryable:true});
       res.setHeader("Cache-Control","private, max-age=15");
       return res.status(200).json({
         status:"ok",query:q,fund,partial:errors.length>0,details:errors,
@@ -196,7 +196,7 @@ export default async function handler(req,res) {
       }
     }
     const fund=sortAndDedupe(raw,q).slice(0,60);
-    if(!fund.length&&errors.length>=(parsed?4:2))return res.status(502).json({error:"Alle tilgængelige adresseopslag fejlede inden for tidsgrænsen.",details:errors});
+    if(!fund.length&&errors.length>=(parsed?4:2))return res.status(502).json({error:"Alle tilgængelige adresseopslag fejlede inden for tidsgrænsen.",details:errors,retryable:true});
     res.setHeader("Cache-Control","private, max-age=15");
     return res.status(200).json({status:"ok",query:q,fund,partial:errors.length>0,details:errors,source:"Klimadatastyrelsens Adressevælger",hint:fund.length?"Vælg en præcis officiel adresse eller et husnummer.":"Ingen adresse fundet; kontrollér stavning og postnummer."});
   }catch(error){
