@@ -1,10 +1,10 @@
 const WFS = "https://geoserver.plandata.dk/geoserver/wfs";
 const LAYERS = {
-  localPlans: "theme_pdk_lokalplan_vedtaget",
-  subAreas: "theme_pdk_lokalplandelomraade_vedtaget",
-  buildingFields: "theme_pdk_byggefelt_vedtaget",
-  municipalFrames: "theme_pdk_kommuneplanramme_alle",
-  zoneMap: "theme_pdk_zonekort"
+  localPlans: "pdk:theme_pdk_lokalplan_vedtaget",
+  subAreas: "pdk:theme_pdk_lokalplandelomraade_vedtaget",
+  buildingFields: "pdk:theme_pdk_byggefelt_vedtaget",
+  municipalFrames: "pdk:theme_pdk_kommuneplanramme_alle_vedtaget_v",
+  zoneMap: "pdk:theme_pdk_zonekort_v"
 };
 async function fetchLayer(layer, bbox) {
   const url = new URL(WFS);
