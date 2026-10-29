@@ -15,7 +15,7 @@
 <div class="content"><div class="demo"><strong>⚠ Datakilder og verificering</strong><span id="integrationStatus">Kontrollerer forbindelsen til Datafordeleren…</span><span>Adresseforslag er live; arealer vises kun, når de officielle BBR-/MAT-opslag returnerer dem.</span></div>
 <div class="grid"><section class="card"><div class="photo"><div class="roof"></div><div class="house"></div></div><div class="cardbody"><div class="eyebrow">Ejendomsprofil <span class="pill">Eksempeldata</span></div><h2 class="address" id="propertyAddress">Vælg en adresse i søgefeltet</h2><div class="kv"><span>Adresse-ID</span><strong id="addressId">Ikke valgt</strong></div><div class="kv"><span>BBR-status</span><strong id="bbrNumber">Afventer opslag</strong></div><div class="kv"><span>Matrikel</span><strong id="matrikelId">Afventer opslag</strong></div><div class="kv"><span>Bygningsanvendelse</span><strong id="buildingUse">Afventer opslag</strong></div><div class="kv"><span>Opførelsesår</span><strong id="buildYear">Afventer opslag</strong></div><div class="kv"><span>BBR bygningsareal</span><strong id="bbrArea">—</strong></div><div class="kv"><span>Datastatus</span><strong><span class="tag">Ikke verificeret</span></strong></div></div></section>
 <section class="card"><div class="cardhead"><h2>Matrikel- og bygningskort</h2><span class="tiny">Illustrativt kort</span></div><div class="map"><div class="parcel" id="parcel"></div><div class="building" id="building"></div><div class="maplabel">Grund / matrikel</div><div class="maptools"><label><input type="checkbox" checked data-layer="parcel"> Matrikelgrænse</label><label><input type="checkbox" checked data-layer="building"> Bygning (BBR)</label><label><input type="checkbox" checked data-layer="plan"> Lokalplan</label><label><input type="checkbox" data-layer="terrain"> Terræn (demo)</label><label><input type="checkbox" data-layer="nature"> Natur / beskyttelse</label></div></div><div class="cardbody tiny">Kortet er en visuel pladsholder indtil officielle geodata forbindes.</div></section>
-<section class="card"><div class="cardhead"><h2>Lokalplan og rammer</h2><span class="pill">Afventer opslag</span></div><div class="cardbody"><div style="height:118px;border-radius:8px;background:repeating-linear-gradient(45deg,#f4dba5 0 24px,#f6e8bf 24px 48px,#d6e6ca 48px 72px);position:relative"><div style="position:absolute;left:24%;top:15%;width:50%;height:68%;border:2px solid #3783c4;background:#78b6e844;transform:rotate(-8deg)"></div><span style="position:absolute;top:42%;left:35%;font-weight:800">Planområde</span></div><h3 style="margin-top:13px">Planoplysninger</h3><div class="sub">Findes når plandata er tilsluttet</div><div class="kv"><span>Gældende lokalplan</span><strong>Ikke hentet</strong></div><div class="kv"><span>Anvendelse</span><strong>Ikke hentet</strong></div><div class="kv"><span>Bebyggelsesprocent</span><strong>Ikke hentet</strong></div><div class="warning" style="margin-top:12px">Ingen myndighedsoplysninger er verificeret endnu.</div><button class="btn" style="width:100%;margin-top:10px" data-go="planer">Undersøg planforhold →</button></div></section></div>
+<section class="card"><div class="cardhead"><h2>Lokalplan og rammer</h2><span class="pill">Afventer opslag</span></div><div class="cardbody"><div style="height:118px;border-radius:8px;background:repeating-linear-gradient(45deg,#f4dba5 0 24px,#f6e8bf 24px 48px,#d6e6ca 48px 72px);position:relative"><div style="position:absolute;left:24%;top:15%;width:50%;height:68%;border:2px solid #3783c4;background:#78b6e844;transform:rotate(-8deg)"></div><span style="position:absolute;top:42%;left:35%;font-weight:800">Planområde</span></div><h3 style="margin-top:13px">Planoplysninger</h3><div class="sub">Findes når plandata er tilsluttet</div><div class="kv"><span>Gældende lokalplan</span><strong id="planName">Afventer adresse</strong></div><div class="kv"><span>Plananvendelse</span><strong id="planUse">Afventer opslag</strong></div><div class="kv"><span>Bebyggelsesprocent</span><strong id="planCoverage">Se planbestemmelser</strong></div><div class="warning" style="margin-top:12px" id="planNotice">Planoplysninger kræver en verificeret adresseposition og kontrol af den originale plan.</div><button class="btn" style="width:100%;margin-top:10px" data-go="planer">Undersøg planforhold →</button></div></section></div>
 <div class="stats"><div class="stat"><div class="eyebrow">Grundareal</div><div class="value" id="statGround">— <span style="font-size:13px">m²</span></div><div class="note">Kræver matrikeldata</div></div><div class="stat"><div class="eyebrow">Bebygget areal</div><div class="value" id="statFootprint">— <span style="font-size:13px">m²</span></div><div class="note">Kræver BBR-data</div></div><div class="stat"><div class="eyebrow">Boligareal</div><div class="value" id="statResidential">— <span style="font-size:13px">m²</span></div><div class="note">Kræver BBR-data</div></div><div class="stat"><div class="eyebrow">Beregnet bebyggelse</div><div class="value" id="statCoverage">—</div><div class="note">Beregnes når datagrundlag findes</div></div></div>
 <div class="tabs" id="tabs"><button class="active" data-tab="grund">Grund og bygninger</button><button data-tab="planer">Planer og zoner</button><button data-tab="krav">Byggeregler</button><button data-tab="miljo">Miljø og natur</button><button data-tab="infrastruktur">Infrastruktur</button><button data-tab="naeromraade">Nærområde</button><button data-tab="dokumenter">Dokumenter og kilder</button></div>
 <div id="tabContent">
@@ -67,6 +67,42 @@ try{
 searchInput.addEventListener('input',()=>{chosenAddress=null;clearTimeout(addressTimer);const q=searchInput.value.trim();if(q.length<2){closeSuggestions();searchStatus.textContent='Skriv mindst 2 tegn for at søge i Danmark.';return}addressTimer=setTimeout(()=>lookupAddressSuggestions(q),300)});
 searchInput.addEventListener('keydown',e=>{if(!suggestionsEl.classList.contains('open'))return;if(e.key==='ArrowDown'){e.preventDefault();selectedSuggestion=Math.min(selectedSuggestion+1,currentSuggestions.length-1)}else if(e.key==='ArrowUp'){e.preventDefault();selectedSuggestion=Math.max(selectedSuggestion-1,0)}else if(e.key==='Escape'){closeSuggestions();return}else if(e.key==='Enter'&&selectedSuggestion>=0){e.preventDefault();chooseSuggestion(selectedSuggestion);return}else return;suggestionsEl.querySelectorAll('.suggestion').forEach((b,i)=>{b.setAttribute('aria-selected',i===selectedSuggestion?'true':'false');if(i===selectedSuggestion)b.scrollIntoView({block:'nearest'})})});
 document.addEventListener('click',e=>{if(!document.getElementById('searchForm').contains(e.target))closeSuggestions()});
+async function loadPlansForCoordinates(coords){
+ const nameEl=document.getElementById('planName'),useEl=document.getElementById('planUse'),coverageEl=document.getElementById('planCoverage'),noticeEl=document.getElementById('planNotice');
+ if(!coords||!Number.isFinite(Number(coords.x))||!Number.isFinite(Number(coords.y))){
+  nameEl.textContent='Position ikke tilgængelig';useEl.textContent='Afventer opslag';coverageEl.textContent='Se planbestemmelser';
+  noticeEl.textContent='Datafordeleren returnerede ikke en læsbar adresseposition. Lokalplan kan derfor ikke kobles sikkert til adressen.';
+  return;
+ }
+ nameEl.textContent='Søger i Plandata.dk…';useEl.textContent='Afventer opslag';coverageEl.textContent='Se planbestemmelser';
+ noticeEl.textContent='Søger efter vedtagne lokalplaner, delområder og byggefelter omkring adressens adgangspunkt.';
+ try{
+  const url='/api/planer?x='+encodeURIComponent(coords.x)+'&y='+encodeURIComponent(coords.y)+'&crs='+encodeURIComponent(coords.crs||'EPSG:25832');
+  const response=await fetch(url,{headers:{Accept:'application/json'}});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Plandata-opslaget fejlede');
+  const plans=data.localPlans||[],subAreas=data.subAreas||[],fields=data.buildingFields||[];
+  if(!plans.length){
+   nameEl.textContent='Ingen match i søgevinduet';useEl.textContent='Ikke fundet';coverageEl.textContent='Se kommuneplan / plan';
+   noticeEl.textContent='Der blev ikke fundet en vedtaget lokalplan i det lille søgevindue omkring adressen. Det beviser ikke, at ejendommen er uden planbindinger; kontrollér kortet og de officielle dokumenter.';
+   searchStatus.textContent='Adresseopslag gennemført. BBR: afventer/ikke fundet · Plandata WFS: ingen lokalplan i søgevinduet.';
+   return;
+  }
+  const first=plans[0],p=first.properties||{};
+  const planNo=p.plannr||p.plannummer||p.planid||p.lokalplanid||p.plan_id||first.id||'Lokalplan fundet';
+  const planTitle=p.plannavn||p.plannavnkort||p.plantitel||p.titel||p.navn||'Vedtaget lokalplan fundet';
+  nameEl.textContent=(planNo&&planTitle&&planTitle!=='Vedtaget lokalplan fundet')?String(planNo)+' · '+String(planTitle):String(planNo||planTitle);
+  const use=p.anvendelse||p.anvendelseskategori||p.generelanvendelse||p.anvgen||p.plananvendelse||p.anvendelsekategori;
+  useEl.textContent=use?String(use):'Se original plan';
+  const coverage=p.bebyggelsesprocent||p.bebygprocent||p.bebyggelsesgrad||p.maxbebyggelse;
+  coverageEl.textContent=coverage?String(coverage):'Se planbestemmelser';
+  noticeEl.textContent='Plandata.dk WFS: '+plans.length+' vedtaget lokalplan(er), '+subAreas.length+' delområde(r) og '+fields.length+' byggefelt(er) inden for søgevinduet. Dette er et nærhedsopslag; kontrollér planens faktiske geometri, status og bestemmelser i originalkilden.';
+  searchStatus.textContent='Data hentet '+new Date(data.fetchedAt).toLocaleString('da-DK')+' · lokalplaner fundet: '+plans.length+' · delområder: '+subAreas.length;
+ }catch(e){
+  nameEl.textContent='Plandata kunne ikke hentes';useEl.textContent='Ikke verificeret';coverageEl.textContent='Se original plan';
+  noticeEl.textContent='Fejl ved Plandata WFS: '+String(e.message||'ukendt fejl').slice(0,180);
+ }
+}
 async function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){searchStatus.textContent='Vælg et forslag fra den officielle danske adressekilde for at slå BBR og matrikel op.';toast('Vælg et officielt adresseforslag først.');return}
@@ -93,6 +129,7 @@ async function loadPropertyData(){
   document.getElementById('statCoverage').textContent=coverage==null?'—':coverage.toLocaleString('da-DK',{maximumFractionDigits:1})+' %';
   document.querySelector('.demo span').textContent='Adresseopslag gennemført. Hvert felt vises kun når datakilden returnerer en værdi. Manglende oplysninger er ikke bevis for, at forholdet ikke findes.';
   searchStatus.textContent='Data hentet '+new Date(data.fetchedAt).toLocaleString('da-DK')+' · BBR: '+(data.completeness?.bbr?'fundet':'intet resultat')+' · Matrikel: '+(data.completeness?.cadastral?'fundet':'intet resultat');
+  await loadPlansForCoordinates(data.coordinates);
   toast('Ejendomsopslag gennemført. Kontrollér kilder og registreringsstatus.');
  }catch(err){searchStatus.textContent='Adresse valgt, men BBR/matrikelopslag fejlede: '+err.message;toast('Data kunne ikke hentes. Se status under søgefeltet.')}
 }
