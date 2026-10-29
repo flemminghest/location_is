@@ -106,30 +106,30 @@ app.get("/api/adresser", async (req, res) => {
 });
 
 app.get("/api/matrikel", async (req, res) => {
-  const q = String(req.query.q || "").trim();
-  if (q.length < 2 || q.length > 120) return res.status(400).json({ error: "Indtast et matrikelnummer, BFE-nummer eller andet søgeord (2–120 tegn)." });
+  const bfe = String(req.query.bfe || req.query.q || "").trim();
+  if (!/^\\d{1,20}$/.test(bfe)) {
+    return res.status(400).json({
+      error: "Søg med et numerisk BFE-nummer i dette endpoint. Opslag direkte på matrikelbetegnelse kræver også korrekt ejerlav.",
+      hint: "Brug /api/ejendom?adresseId=<DAR-id> for at finde matrikelrelationen fra en valgt adresse."
+    });
+  }
   try {
-    const query = q.replaceAll('"', '\"');
-    const matFields = await getSchemaFields("MAT_Jordstykke");
-    const selection = fieldSelection(matFields, [
-      "id_lokalId", "matrikelnummer", "arealberegnet", "areal", "ejerlavLokalId",
-      "BFEnummer", "status", "registreringFra", "virkningFra", "datafordelerOpdateringstid",
-      "geometri", "jordstykkeLokalId", "kommunekode"
+    const fields = await getSchemaFields("MAT_SamletFastEjendom");
+    const selection = fieldSelection(fields, [
+      "id_lokalId", "BFEnummer", "senesteSagLokalId", "kommunekode", "status",
+      "datafordelerOpdateringstid", "registreringFra", "virkningFra", "ejerlavLokalId",
+      "jordstykkeLokalId", "samletFastEjendomAreal", "tinglystAreal"
     ]);
-    // Search by cadastral number or local ID. When using BFE, use /api/ejendom?bfe=...
     const now = new Date().toISOString();
-    const gql = `query {
-      MAT_Jordstykke(first: 10, registreringstid: "${now}", virkningstid: "${now}",
-        where: { matrikelnummer: { startsWith: "${query}" } }) {
-        pageInfo { hasNextPage }
+    const data = await graphql(`query {
+      MAT_SamletFastEjendom(first: 5, registreringstid: "${now}", virkningstid: "${now}",
+        where: { BFEnummer: { eq: "${bfe}" } }) {
         nodes { ${selection} }
       }
-    }`;
-    const data = await graphql(gql);
-    res.json({ source: "Datafordeleren/MAT", fetchedAt: new Date().toISOString(), results: data.MAT_Jordstykke?.nodes || [] });
+    }`);
+    res.json({ source: "Datafordeleren/MAT", fetchedAt: new Date().toISOString(), results: data.MAT_SamletFastEjendom?.nodes || [] });
   } catch (error) {
-    const status = error.status || 502;
-    res.status(status).json({ error: cleanErrorMessage(error.message), source: "Datafordeleren/MAT", setup: !API_KEY });
+    res.status(error.status || 502).json({ error: cleanErrorMessage(error.message), source: "Datafordeleren/MAT", setup: !API_KEY });
   }
 });
 
