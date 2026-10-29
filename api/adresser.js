@@ -50,7 +50,7 @@ async function requestExactHouseFromDar(parsed){
  const where='adgangsadressebetegnelse:{eq:"'+escape(designation)+'"},status:{in:["2","3"]}';
  const query=rootQuery("DAR_Husnummer",now,where,"id_lokalId adgangsadressebetegnelse husnummertekst status adgangTilBygning jordstykke placeretPaaForeloebigtJordstykke");
  const url=new URL(GRAPHQL_ENDPOINT);url.searchParams.set("apiKey",key);
- const response=await fetch(url,{method:"POST",headers:{"content-type":"application/json",accept:"application/json"},body:JSON.stringify({query}),signal:AbortSignal.timeout(4500)});
+ const response=await fetch(url,{method:"POST",headers:{"content-type":"application/json",accept:"application/json"},body:JSON.stringify({query}),signal:AbortSignal.timeout(6500)});
  const payload=await response.json().catch(()=>({}));
  const errors=(payload.errors||[]).map(x=>x.message).join("; ");
  if(!response.ok||errors)throw new Error(errors||"Datafordeler DAR HTTP "+response.status);
