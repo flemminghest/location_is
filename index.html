@@ -1033,9 +1033,29 @@ async function resolvePostnummer(nr){
   return true;
  }catch(error){
   if(error.name==='AbortError')return false;
+  if(controller!==postcodeController)return false;
+  // Fallback: derive the matching city from official address suggestions if the postcode endpoint fails.
+  try{
+   const fallbackController=controller;
+   const fallbackResponse=await fetch('/api/adresser?q='+encodeURIComponent(code),{signal:fallbackController.signal,headers:{Accept:'application/json'},cache:'no-store'});
+   const fallbackData=await fallbackResponse.json().catch(()=>({}));
+   if(fallbackController!==postcodeController)return false;
+   const hits=Array.isArray(fallbackData.fund)?fallbackData.fund:[];
+   const hit=hits.find(item=>String(item.postnr||'')===code&&String(item.postdistrikt||'').trim());
+   if(fallbackResponse.ok&&hit){
+    const cityName=String(hit.postdistrikt).trim();
+    verifiedPostnummer=code;selectedCity={nr:code,navn:cityName};
+    geoPostnummer.dataset.verified=code;geoBy.value=cityName;
+    searchStatus.textContent='By udfyldt fra det officielle adresseopslag: '+cityName+' ('+code+').';
+    return true;
+   }
+  }catch(fallbackError){
+   if(fallbackError.name==='AbortError')return false;
+  }
   if(controller===postcodeController){
-   verifiedPostnummer='';selectedCity=null;geoPostnummer.dataset.verified='';geoBy.value='';
-   searchStatus.textContent='Postnummeret kunne ikke verificeres hos de officielle kilder. Prøv igen.';
+   verifiedPostnummer='';selectedCity=null;geoPostnummer.dataset.verified='';
+   geoBy.value='';
+   searchStatus.textContent='Postnummeret kunne ikke verificeres, så byen kunne ikke udfyldes. Prøv igen om lidt.';
   }
   return false;
  }
