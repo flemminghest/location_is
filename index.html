@@ -709,6 +709,24 @@ async function lookupAddressSuggestions(q){
    searchStatus.textContent=precise?precise+' konkrete adresse-/husnummerforslag fundet.':'Søgningen fandt veje/postnumre. Tilføj husnummer eller postnummer for at indsnævre.';
    return items;
   }
+  // On a fully-qualified address, also show secondary map candidates if the official service returns no direct hit.
+  // Secondary map candidates are display-only; they are never used to query BBR/MAT without an official address ID.
+  if(q.length>=12&&/\b\d{4}\b/.test(q)&&/\d/.test(q)){
+   try{
+    const u='https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&limit=8&lang=da';
+    const r=await fetch(u,{signal:controller.signal,headers:{Accept:'application/json'}});
+    if(r.ok){
+     const d=await r.json();
+     const secondary=(d.features||[]).map(f=>{const p=f.properties||{};return{label:p.name||(p.street?[p.street,p.housenumber].filter(Boolean).join(' '):''),detail:[p.postcode,p.city||p.town||p.village||p.county].filter(Boolean).join(' · '),kindLabel:'SEKUNDÆRT KORTMATCH',source:'osm',properties:p}}).filter(x=>x.label);
+     if(controller!==activeSearchController)return [];
+     if(secondary.length){
+      renderSuggestions(secondary,'Kortforslag – ikke endnu verificeret i det officielle adresseregister. De kan vises i feltet, men bruges ikke til BBR-/matrikelopslag uden et officielt adresse-ID.');
+      searchStatus.textContent='Ingen officielt match endnu · viser supplerende kortforslag.';
+      return secondary;
+     }
+    }
+   }catch(f){if(f.name==='AbortError')return [];}
+  }
   renderSuggestions([],'Prøv vejnavn + husnummer + postnummer/by, eller ret stavningen lidt.');
   searchStatus.textContent='Ingen match i det officielle adresseregister.';
   return [];
