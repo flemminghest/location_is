@@ -66,6 +66,13 @@ body{background:linear-gradient(180deg,#f6f8fb 0%,#eef3f7 100%);color:var(--ink)
 body.modal-open{overflow:hidden}
 @media(max-width:740px){.lookup-overlay{padding:10px}.lookup-modal{max-height:calc(100vh - 20px);border-radius:18px}.lookup-modal-head{padding:19px 18px}.lookup-modal-head h2{font-size:20px}.lookup-body{padding:15px 16px 8px}.lookup-main{grid-template-columns:1fr;gap:12px;padding-top:14px}.lookup-progress-column{display:grid;grid-template-columns:86px 1fr;grid-template-rows:auto auto auto;column-gap:13px;text-align:left;padding:12px}.lookup-ring{width:78px;height:78px;grid-row:1/4;margin:auto}.lookup-ring:before{inset:5px}.lookup-ring-inner strong{font-size:21px}.lookup-ring-inner small{font-size:7px}.lookup-progress-column .lookup-track,.lookup-progress-column .lookup-track-caption{grid-column:1/3}.lookup-progress-column p{min-height:0}.lookup-step{padding:9px 10px;grid-template-columns:30px minmax(0,1fr) auto}.lookup-step-icon{width:28px;height:28px}.lookup-footer{padding:13px 16px 17px;align-items:flex-start;flex-direction:column}.lookup-action{width:100%}}
 @media print{.lookup-overlay{display:none!important}}
+.recent-2025{margin:12px 0 14px;padding:13px 14px;border:1px solid #efdaa8;border-left:4px solid #d59a24;border-radius:12px;background:linear-gradient(135deg,#fff8e7,#fffdf8)}
+.recent-2025 h3{font-size:13px;letter-spacing:-.2px;margin:0 0 5px;color:#795213}
+.recent-2025 p{font-size:11px;line-height:1.5;color:#755f39;margin:0 0 8px}
+.recent-2025 ul{margin:0;padding-left:18px;display:grid;gap:7px}
+.recent-2025 li{font-size:11px;line-height:1.45;color:#4e4535}
+.recent-2025 li strong{color:#684b15}
+.timeline-event-2025{background:#fff8e8;border:1px solid #f1dfb9!important;border-left:3px solid #d59a24!important;border-radius:8px;padding:8px 10px 9px 12px!important;margin:6px 0 10px 5px!important}
 
 
 /* MeasINFO identity */
@@ -136,6 +143,7 @@ body.modal-open{overflow:hidden}
   <div class="cardhead"><h2>Områdets historie</h2><span class="tag">Kildebaseret</span></div>
   <div class="cardbody">
    <p id="areaStory">Vælg en konkret adresse for at samle registreret bygningsår, planhistorik og historiske kortkilder. Der skrives ikke en lokalhistorie uden dokumentation.</p>
+   <div id="recent2025" class="recent-2025 hidden" aria-live="polite"></div>
    <div class="sectiontitle">Historiske kort og luftfotos</div>
    <p class="tiny">Sammenlign matrikelkort og historiske luftfotos med nutidige kort. Dækning og årstal varierer fra sted til sted.</p>
    <p><a href="https://historiskekort.dk/" target="_blank" rel="noreferrer">Åbn HistoriskeKort.dk ↗</a></p>
@@ -239,7 +247,7 @@ const lookupTrackFill=document.getElementById('lookupTrackFill');
 const lookupTrackCaption=document.getElementById('lookupTrackCaption');
 const lookupDoneBtn=document.getElementById('lookupDoneBtn');
 const lookupX=document.getElementById('lookupX');
-let lookupFinished=false;
+let lookupFinished=false,lookupCloseTimer=null;
 const lookupStepIds={address:'lookupStepAddress',bbr:'lookupStepBbr',mat:'lookupStepMat',plan:'lookupStepPlan',history:'lookupStepHistory'};
 function setLookupProgress(percent,kicker,title,description){
  const p=Math.max(0,Math.min(100,Math.round(percent)));
@@ -272,6 +280,7 @@ function resetLookupModal(address){
  document.getElementById('lookupResult').classList.remove('is-warning');
  Object.keys(lookupStepIds).forEach(k=>setLookupStep(k,'','Afventer',({address:'Identificerer det valgte husnummer og adressepunkt',bbr:'Venter på svar fra BBR',mat:'Venter på svar fra matrikelregistret',plan:'Venter på svar fra Plandata.dk',history:'Venter på planversioner og historiske hændelser'}[k])));
  setLookupProgress(0,'KLAR TIL OPSLAG','Starter ejendomsanalysen','Vi undersøger først den valgte adresse og spørger derefter de relevante registre.');
+ if(lookupCloseTimer){clearTimeout(lookupCloseTimer);lookupCloseTimer=null;}
  lookupDoneBtn.disabled=true;lookupDoneBtn.textContent='Opslag kører…';lookupX.disabled=true;
  lookupOverlay.classList.add('is-open');lookupOverlay.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
 }
@@ -284,9 +293,12 @@ function finishLookup(title,description,warning){
  document.getElementById('lookupResultTitle').textContent=title||'Opslag afsluttet';
  document.getElementById('lookupResultText').textContent=description||'Kontrollér resultaterne i fanerne.';
  lookupDoneBtn.disabled=false;lookupDoneBtn.textContent='Luk og se resultater';lookupX.disabled=false;
+ if(lookupCloseTimer)clearTimeout(lookupCloseTimer);
+ lookupCloseTimer=setTimeout(closeLookupModal,900);
 }
 function closeLookupModal(){
  if(!lookupFinished)return;
+ if(lookupCloseTimer){clearTimeout(lookupCloseTimer);lookupCloseTimer=null;}
  lookupOverlay.classList.remove('is-open');lookupOverlay.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');
 }
 lookupDoneBtn.addEventListener('click',closeLookupModal);
@@ -403,6 +415,14 @@ function renderAreaHistory(data){
  const builtYear=bbr.byg026Opfoerelsesaar||null;
  const plans=data.localPlans||[],versions=data.planVersions||[],proposals=data.planProposals||[],repealed=data.repealedPlans||[];
  const events=data.planHistory||[];
+ const events2025=events.filter(e=>/^2025/.test(String(e.date||''))).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ const recent2025El=document.getElementById('recent2025');
+ if(recent2025El){
+  if(events2025.length){
+   recent2025El.classList.remove('hidden');
+   recent2025El.innerHTML='<h3>✦ Nye registreringer og planhændelser fra 2025</h3><p>'+events2025.length+' dateret(e) hændelse(r) fra 2025 blev fundet i Plandata-data inden for søgeområdet. Det er områdenær information (ca. 500 m) og ikke automatisk dokumentation for ændringer på selve ejendommen.</p><ul>'+events2025.slice(0,8).map(ev=>'<li><strong>'+escapeHtml(displayPlanDate(ev.date))+' · '+escapeHtml(ev.label||'Planhændelse')+'</strong> — '+escapeHtml(ev.title||'Lokalplan')+(ev.detail?' · '+escapeHtml(ev.detail):'')+(ev.version?' · version '+escapeHtml(ev.version):'')+'</li>').join('')+'</ul>'+(events2025.length>8?'<p>Viser 8 af '+events2025.length+' hændelser. Se hele tidslinjen nedenfor.</p>':'');
+  }else{recent2025El.classList.add('hidden');recent2025El.innerHTML='';}
+ }
  const years=events.map(e=>String(e.date||'').match(/(19|20)\d{2}/)?.[0]).filter(Boolean).map(Number).sort((a,b)=>a-b);
  const parts=[];
  const address=chosenAddress?.label||document.getElementById('propertyAddress')?.textContent||'ejendommen';
@@ -429,7 +449,7 @@ function renderAreaHistory(data){
   const detail=String(ev.detail||'');
   const version=ev.version?' · version '+ev.version:'';
   const doc=ev.documentUrl&&/^https?:\/\//i.test(ev.documentUrl)?'<a href="'+escapeHtml(ev.documentUrl)+'" target="_blank" rel="noreferrer">Åbn dokument ↗</a>':'';
-  return '<div style="border-left:2px solid #c8d7e4;padding:0 0 13px 12px;margin:2px 0 0 5px"><div style="font-size:11px;color:#687789">'+escapeHtml(displayPlanDate(ev.date))+' · '+escapeHtml(label)+escapeHtml(version)+'</div><div style="font-weight:700;margin:2px 0">'+escapeHtml(title)+'</div><div class="tiny">'+escapeHtml(detail)+(ev.current?' · markeret aktuel version':'')+'</div>'+doc+'</div>';
+  return '<div class="'+(/^2025/.test(String(ev.date||''))?'timeline-event-2025':'timeline-event')+'" style="border-left:2px solid #c8d7e4;padding:0 0 13px 12px;margin:2px 0 0 5px"><div style="font-size:11px;color:#687789">'+escapeHtml(displayPlanDate(ev.date))+' · '+escapeHtml(label)+escapeHtml(version)+'</div><div style="font-weight:700;margin:2px 0">'+escapeHtml(title)+'</div><div class="tiny">'+escapeHtml(detail)+(ev.current?' · markeret aktuel version':'')+'</div>'+doc+'</div>';
  }).join('');
 }
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -530,9 +550,10 @@ async function loadPropertyData(){
   setLookupStep('history',hasHistory?'done':'warning',hasHistory?'Historik fundet':'Ingen historik',hasHistory?'Daterede planhændelser/versioner returneret':'Ingen daterede historikhændelser fundet; kommunearkiv kan stadig have materiale');
   const partial=!addressOk||!bbrOk||!matOk||planFailed||!hasPlans||!hasHistory;
   setLookupProgress(94,'TRIN 5 AF 5','Samler datadækningen','Vi skelner mellem fund, ingen match og tekniske fejl, før oversigten åbnes.');
-  const summary='Adresse: '+(addressOk?'identificeret':'delvist verificeret')+' · BBR: '+(bbrOk?'data fundet':'ingen bygning returneret')+' · Matrikel: '+(matOk?'data fundet':'ingen matrikelrelation returneret')+' · Planer: '+(planLookup.ok?((pd.localPlans||[]).length+' lokalplan(er) i søgevinduet'):'ikke gennemført')+' · Historik: '+(hasHistory?'hændelser fundet':'ingen historik fundet');
+  const events2025=(pd.planHistory||[]).filter(ev=>/^2025/.test(String(ev.date||'')));
+  const summary='Adresse: '+(addressOk?'identificeret':'delvist verificeret')+' · BBR: '+(bbrOk?'data fundet':'ingen bygning returneret')+' · Matrikel: '+(matOk?'data fundet':'ingen matrikelrelation returneret')+' · Planer: '+(planLookup.ok?((pd.localPlans||[]).length+' lokalplan(er) i søgevinduet'):'ikke gennemført')+' · Historik: '+(hasHistory?'hændelser fundet':'ingen historik fundet')+' · 2025: '+events2025.length+' dateret(e) hændelse(r)';
   finishLookup(partial?'Opslag afsluttet med forbehold':'Alle kilder svarede',summary,partial);
-  toast('Opslag afsluttet. Se datadækning og forbehold i modalens opsummering.');
+  toast(events2025.length?'Opslag færdigt · '+events2025.length+' hændelse(r) fra 2025. Se Historik & område.':'Opslag færdigt. Resultaterne er vist i oversigten.');
  }catch(err){
   setLookupStep('address','warning','Delvist','Adresseforslaget er valgt, men registeropslaget fejlede');
   setLookupStep('bbr','error','Fejl','BBR-opslag: '+String(err.message||'ukendt fejl').slice(0,100));
