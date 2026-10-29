@@ -20,7 +20,7 @@ async function fetchLayer(layer, bbox, count=25) {
   url.searchParams.set("count",String(count));
   url.searchParams.set("bbox",bbox);
   url.searchParams.set("srsName","EPSG:25832");
-  const r = await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(18000)});
+  const r = await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(7000)});
   if(!r.ok) throw new Error("Plandata WFS HTTP "+r.status);
   const data = await r.json();
   const features = Array.isArray(data.features)?data.features:[];
