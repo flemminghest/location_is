@@ -933,10 +933,22 @@ window.addEventListener('resize',positionCitySuggestions);
 document.addEventListener('scroll',positionCitySuggestions,true);
 function showCitySuggestions(items,message='',query=''){
  if(!items.length){
-  citySuggestions.innerHTML=message?'<div class="geo-city-message">'+esc(message)+'</div>':'';
-  citySuggestions.classList.toggle('is-open',Boolean(message));
-  geoBy.setAttribute('aria-expanded',String(Boolean(message)));
-  if(message){cityActiveIndex=-1;positionCitySuggestions();}
+  const q=String(query||'').trim();
+  const fallback=q&&!/^\d{4}$/.test(q)
+   ?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(q)+'</strong><small>Fortsæt uden postnummer, hvis byopslaget ikke svarer</small></button>'
+   :'';
+  citySuggestions.innerHTML=(message?'<div class="geo-city-message">'+esc(message)+'</div>':'')+fallback;
+  citySuggestions.classList.toggle('is-open',Boolean(message||fallback));
+  geoBy.setAttribute('aria-expanded',String(Boolean(message||fallback)));
+  if(message||fallback){
+   cityActiveIndex=-1;positionCitySuggestions();
+   citySuggestions.querySelector('[data-city-only]')?.addEventListener('click',()=>{
+    selectedCity={nr:'',navn:q,cityOnly:true};
+    verifiedPostnummer='';geoPostnummer.value='';geoPostnummer.dataset.verified='';
+    geoBy.value=q;closeCitySuggestions();chosenAddress=null;syncAddressQuery();
+    searchStatus.textContent='Byfilter valgt uden verificeret postnummer: '+q+'. Adresseforslag afhænger fortsat af den officielle adressekilde.';
+   });
+  }
   return;
  }
  const cityOnlyOption=query&&!/^\\d{4}$/.test(query)?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(query)+'</strong><small>Vis adresser i denne by på tværs af postnumre</small></button>':'';
@@ -1108,23 +1120,22 @@ function findExactSuggestion(query,items){
 function chooseSuggestion(i){
  const item=currentSuggestions[i];if(!item)return;
  const zip=activePostnummer(),city=activeBy();
- if(item.source!=='official-dar'||!['adresse','husnummer'].includes(item.type)||!item.id){
-  searchStatus.textContent='Vælg en konkret officiel adresse eller et husnummer for at hente ejendomsdata.';
-  return;
- }
- if(zip&&String(item.postnr||'')!==zip){searchStatus.textContent='Forslaget ligger uden for postnummer '+zip+' og blev derfor afvist.';return;}
- if(city&&normalizeAddressMatch(item.postdistrikt)!==normalizeAddressMatch(city)){searchStatus.textContent='Forslaget ligger uden for '+city+' og blev derfor afvist.';return;}
- chosenAddress=item;
- searchInput.value=item.label;
- if(advancedOpen&&item.postnr){
-  if(!verifiedPostnummer){geoPostnummer.value=String(item.postnr);verifiedPostnummer=String(item.postnr);}
-  if(item.postdistrikt&&!geoBy.value)geoBy.value=item.postdistrikt;
+ if(zip&&item.postnr&&String(item.postnr)!==zip){searchStatus.textContent='Forslaget ligger uden for postnummer '+zip+' og blev derfor afvist.';return;}
+ if(city&&item.postdistrikt&&normalizeAddressMatch(item.postdistrikt)!==normalizeAddressMatch(city)){searchStatus.textContent='Forslaget ligger uden for '+city+' og blev derfor afvist.';return;}
+ const isExact=item.source==='official-dar'&&['adresse','husnummer'].includes(item.type)&&Boolean(item.id);
+ chosenAddress=isExact?item:null;
+ searchInput.value=item.label||'';
+ if(advancedOpen){
+  if(item.postnr&&!verifiedPostnummer){geoPostnummer.value=String(item.postnr);verifiedPostnummer=String(item.postnr);geoPostnummer.dataset.verified=String(item.postnr);}
+  if(item.postdistrikt&&!geoBy.value){geoBy.value=item.postdistrikt;selectedCity={nr:String(item.postnr||''),navn:String(item.postdistrikt)};}
   if(item.vejnavn)geoVejnavn.value=item.vejnavn;
   if(item.husnummer)geoHusnummer.value=item.husnummer;
  }
  updateDrawingButton();
  closeSuggestions();
- searchStatus.textContent='Officiel adresse valgt. Tryk Søg for at hente de tilgængelige ejendomsdata.';
+ searchStatus.textContent=isExact
+  ?'Officiel adresse valgt. Tryk Søg for at hente de tilgængelige ejendomsdata.'
+  :'Forslaget er indsat i søgefeltet. Tilføj eventuelt husnummer og postnummer for at vælge en præcis adresse.';
 }
 async function lookupAddressSuggestions(q){
  const query=String(q||'').trim();
