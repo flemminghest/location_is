@@ -1,4 +1,4 @@
-# ByggeInfo — ejendomsanalyseprototype
+# MeasLookUp — ejendomsanalyseprototype
 
 Dansk responsiv webapp til forundersøgelse af ejendomme for bygningskonstruktør-studerende.
 
