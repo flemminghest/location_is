@@ -952,17 +952,17 @@ async function loadPropertyData(){
  }
 }
 function normalizeAddressMatch(value){
- return String(value||'').toLocaleLowerCase('da-DK').normalize('NFC').replace(/[.,]/g,' ').replace(/\\s+/g,' ').trim();
+ return String(value||'').toLocaleLowerCase('da-DK').normalize('NFC').replace(/[.,]/g,' ').replace(/\s+/g,' ').trim();
 }
 function getExactSuggestion(query,items){
  const q=normalizeAddressMatch(query),qTokens=new Set(q.split(' '));
- if(!/\\d/.test(q))return null;
+ if(!/\d/.test(q))return null;
  const precise=items.filter(x=>x.source==='official-dar'&&['adresse','husnummer'].includes(x.type)&&x.id);
  const exact=precise.filter(x=>{
   const label=normalizeAddressMatch(x.label);
   if(label===q||q.startsWith(label+' '))return true;
   const tokens=label.split(' ').filter(Boolean);
-  return tokens.length>=3&&tokens.some(t=>/\\d/.test(t))&&tokens.every(t=>qTokens.has(t));
+  return tokens.length>=3&&tokens.some(t=>/\d/.test(t))&&tokens.every(t=>qTokens.has(t));
  }).sort((a,b)=>(a.type==='adresse'?0:1)-(b.type==='adresse'?0:1));
  return exact.length?exact[0]:null;
 }
