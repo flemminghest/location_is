@@ -1092,7 +1092,7 @@ async function lookupAddressSuggestions(q){
  }
  searchStatus.textContent=(zip||city)?'Søger kun i '+[city,zip?'('+zip+')':''].filter(Boolean).join(' ')+'…':'Søger efter adressen…';
  try{
-  const response=await fetch('/api/adresser?'+params.toString(),{signal:controller.signal,headers:{Accept:'application/json'},cache:'no-store'});
+  const response=await fetch('/api/adresser?'+params.toString(),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(6500)]),headers:{Accept:'application/json'},cache:'no-store'});
   const data=await response.json();
   if(controller!==activeSearchController)return [];
   if(!response.ok)throw new Error(data.error||'Adressekilden svarede ikke.');
@@ -1500,7 +1500,7 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
   setPropertyAddressDisplay(chosenAddress.label||q);
   document.getElementById('addressId').textContent=chosenAddress.id;
   closeSuggestions();
-  await loadPropertyData();
+  await runPropertyLookupSafely();
   return;
  }
  closeSuggestions();
@@ -1518,7 +1518,7 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
   updateDrawingButton();
   setLookupStep('address','done','Adresse bekræftet','Et konkret officielt adresse-ID blev fundet.');
   setLookupProgress(25,'TRIN 1 AF 5','Adresse bekræftet','Henter nu BBR, matrikel og planoplysninger.');
-  await loadPropertyData();
+  await runPropertyLookupSafely();
   return;
  }
  if(items.some(item=>item.source==='official-dar'&&['adresse','husnummer'].includes(item.type)&&item.id)){
