@@ -4,7 +4,7 @@ async function graphql(query) {
   const key = process.env.DATAFORDELER_API_KEY;
   if (!key) { const e = new Error("DATAFORDELER_API_KEY mangler i Vercel Production."); e.status = 503; throw e; }
   const url = new URL(ENDPOINT); url.searchParams.set("apiKey", key);
-  const response = await fetch(url, { method:"POST", headers:{"content-type":"application/json",accept:"application/json"}, body:JSON.stringify({query}), signal:AbortSignal.timeout(20000) });
+  const response = await fetch(url, { method:"POST", headers:{"content-type":"application/json",accept:"application/json"}, body:JSON.stringify({query}), signal:AbortSignal.timeout(5500) });
   const payload = await response.json().catch(() => ({}));
   const errors = (payload.errors || []).map(x => x.message).join("; ");
   if (!response.ok || errors) { const e = new Error(errors || payload.message || ("Datafordeler HTTP " + response.status)); e.status = 502; throw e; }
@@ -118,36 +118,35 @@ export default async function handler(req, res) {
     });
   }
 
-  if (house && house.id_lokalId) {
-    try {
-      buildings = await getBuildingsForHouse(String(house.id_lokalId), now);
-      if (!buildings.length && house.adgangTilBygning) {
-        const direct = await getBuildingById(String(house.adgangTilBygning), now);
-        if (direct) buildings = [direct];
-      }
-    } catch(firstError) {
-      errors.bbr = String(firstError.message || "BBR-opslag fejlede").slice(0,500);
-      if (house.adgangTilBygning) {
-        try {
-          const direct = await getBuildingById(String(house.adgangTilBygning), now);
-          if (direct) { buildings=[direct]; delete errors.bbr; }
-        } catch(secondError) {
-          errors.bbr = String(secondError.message || errors.bbr).slice(0,500);
-        }
-      }
-    }
-  } else {
-    errors.bbr = "Der blev ikke fundet et husnummer, som kan kobles til BBR.";
-  }
-
-  const bbr = buildings[0] || null;
   const parcelId = house && (house.jordstykke || house.placeretPaaForeloebigtJordstykke) || null;
-  if (parcelId) {
-    try { cadastral = await getParcelById(String(parcelId), now); }
-    catch(error) { errors.cadastral = String(error.message || "Matrikelopslag fejlede").slice(0,500); }
-  } else {
-    errors.cadastral = "DAR returnerede ikke et jordstykke-ID for adressen.";
-  }
+  const [buildingResult, parcelResult] = await Promise.allSettled([
+    (async()=>{
+      if(!house||!house.id_lokalId)throw new Error("Der blev ikke fundet et husnummer, som kan kobles til BBR.");
+      try{
+        let found=await getBuildingsForHouse(String(house.id_lokalId),now);
+        if(!found.length&&house.adgangTilBygning){
+          const direct=await getBuildingById(String(house.adgangTilBygning),now);
+          if(direct)found=[direct];
+        }
+        return found;
+      }catch(firstError){
+        if(house.adgangTilBygning){
+          const direct=await getBuildingById(String(house.adgangTilBygning),now);
+          if(direct)return [direct];
+        }
+        throw firstError;
+      }
+    })(),
+    (async()=>{
+      if(!parcelId)throw new Error("DAR returnerede ikke et jordstykke-ID for adressen.");
+      return await getParcelById(String(parcelId),now);
+    })()
+  ]);
+  if(buildingResult.status==="fulfilled")buildings=buildingResult.value||[];
+  else errors.bbr=String(buildingResult.reason?.message||"BBR-opslag fejlede").slice(0,500);
+  if(parcelResult.status==="fulfilled")cadastral=parcelResult.value||null;
+  else errors.cadastral=String(parcelResult.reason?.message||"Matrikelopslag fejlede").slice(0,500);
+  const bbr = buildings[0] || null;
   if (bfe) {
     try { estate = await getEstateByBfe(bfe, now); }
     catch(error) { errors.estate = String(error.message || "BFE-opslag fejlede").slice(0,500); }
