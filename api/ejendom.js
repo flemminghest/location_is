@@ -66,9 +66,15 @@ async function getBuildingById(id, now) {
 }
 async function getParcelById(id, now) {
   if (!isId(id)) return null;
-  const fields = "id_lokalId matrikelnummer registreretAreal arealtype arealbetegnelse faelleslod vejareal status registreringFra virkningFra";
+  const fields = "id_lokalId matrikelnummer registreretAreal arealtype arealbetegnelse faelleslod vejareal status registreringFra virkningFra samletFastEjendomLokalId";
   const data = await graphql(rootQuery("MAT_Jordstykke", now, eqWhere("id_lokalId", id), fields));
   return data.MAT_Jordstykke && data.MAT_Jordstykke.nodes && data.MAT_Jordstykke.nodes[0] || null;
+}
+async function getEstateById(id, now) {
+  if (!isId(id)) return null;
+  const fields = "id_lokalId BFEnummer status senesteSagLokalId registreringFra virkningFra";
+  const data = await graphql(rootQuery("MAT_SamletFastEjendom", now, eqWhere("id_lokalId", id), fields));
+  return data.MAT_SamletFastEjendom && data.MAT_SamletFastEjendom.nodes && data.MAT_SamletFastEjendom.nodes[0] || null;
 }
 async function getEstateByBfe(bfe, now) {
   const fields = "id_lokalId BFEnummer status senesteSagLokalId registreringFra virkningFra";
@@ -145,6 +151,10 @@ export default async function handler(req, res) {
   if (bfe) {
     try { estate = await getEstateByBfe(bfe, now); }
     catch(error) { errors.estate = String(error.message || "BFE-opslag fejlede").slice(0,500); }
+  } else if (cadastral && cadastral.samletFastEjendomLokalId) {
+    // Resolve the cadastral parcel's official relation to SamletFastEjendom when no BFE was supplied.
+    try { estate = await getEstateById(String(cadastral.samletFastEjendomLokalId), now); }
+    catch(error) { errors.estate = String(error.message || "Samlet fast ejendom kunne ikke slås op via jordstykket.").slice(0,500); }
   }
 
   const coords = parseCoordinates(house);
