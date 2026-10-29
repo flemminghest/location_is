@@ -454,10 +454,16 @@ async function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){searchStatus.textContent='Vælg et forslag fra den officielle danske adressekilde for at slå BBR og matrikel op.';toast('Vælg et officielt adresseforslag først.');return}
  if(!['adresse','husnummer'].includes(chosenAddress?.type)){searchStatus.textContent='Dette forslag er et vejnavn/område. Skriv vejnavn og husnummer, og vælg en specifik adresse.';toast('Vælg en specifik husnummer- eller adressepost.');return}
+ setLookupProgress(10,'TRIN 1 AF 5','Kontrollerer adressen','Det officielle adresseforslag er valgt. Vi følger registerrelationen til husnummer, bygning og jordstykke.');
+ setLookupStep('address','running','Kontrollerer','Kontrollerer DAR-adresse og adgangsadresse');
  searchStatus.textContent='Henter BBR- og matrikeldata fra Datafordeleren…';
+ setLookupProgress(18,'TRIN 2 AF 5','Kontakter Datafordeleren','Vi anmoder om de tilgængelige BBR- og matrikeloplysninger fra de officielle registre.');
+ setLookupStep('bbr','running','Slår op','Anmoder om bygningsoplysninger');
+ setLookupStep('mat','running','Slår op','Anmoder om jordstykke og matrikeldata');
  try{
-  const param=chosenAddress.type==='husnummer'?'husnummerId':'adresseId';
-  const resp=await fetch('/api/ejendom?'+param+'='+encodeURIComponent(id),{headers:{Accept:'application/json'}});
+  const param=chosenAddress.type==='adresse'&&chosenAddress.husnummerId?'husnummerId':(chosenAddress.type==='husnummer'?'husnummerId':'adresseId');
+  const lookupId=param==='husnummerId'&&chosenAddress.type==='adresse'?(chosenAddress.husnummerId||id):id;
+  const resp=await fetch('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),{headers:{Accept:'application/json'}});
   const data=await resp.json();
   if(!resp.ok)throw new Error(data.error||'Ejendomsopslaget kunne ikke gennemføres');
   currentPropertyData=data;
