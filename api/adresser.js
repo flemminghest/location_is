@@ -1,6 +1,6 @@
 const BASE = "https://adressevaelger.dk";
 const TOKEN = () => process.env.ADRESSEVAELGER_TOKEN || "adressevaelger123";
-async function requestSearch(path, params, limit=20) {
+async function requestSearch(path, params, limit=100) {
   const url = new URL(path, BASE);
   for (const [key,value] of Object.entries(params)) if (value !== undefined && value !== null && String(value) !== "") url.searchParams.set(key,String(value));
   url.searchParams.set("maksimum",String(limit));
@@ -82,13 +82,13 @@ export default async function handler(req,res) {
   try {
     const parsed=parseAddressQuery(q);
     const tasks=[
-      requestSearch("/adresser/soeg/",{tekst:q},30).then(hits=>({kind:"address-text",hits})),
-      requestSearch("/husnumre/soeg/",{tekst:q},30).then(hits=>({kind:"house-text",hits}))
+      requestSearch("/adresser/soeg/",{tekst:q},100).then(hits=>({kind:"address-text",hits})),
+      requestSearch("/husnumre/soeg/",{tekst:q},100).then(hits=>({kind:"house-text",hits}))
     ];
     // Structured search is more reliable for an exact Danish street + number + postcode query.
     if(parsed){
-      tasks.push(requestSearch("/husnumre/soeg/",{vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer},30).then(hits=>({kind:"house-structured",hits})));
-      tasks.push(requestSearch("/adresser/soeg/",{vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer},30).then(hits=>({kind:"address-structured",hits})));
+      tasks.push(requestSearch("/husnumre/soeg/",{vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer},100).then(hits=>({kind:"house-structured",hits})));
+      tasks.push(requestSearch("/adresser/soeg/",{vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer},100).then(hits=>({kind:"address-structured",hits})));
     }
     if(parsed){
       tasks.push(requestAddressWash(q).then(hits=>({kind:"address-wash",hits})));
@@ -99,9 +99,22 @@ export default async function handler(req,res) {
       if(result.status==="fulfilled")raw.push(...result.value.hits.map(x=>normalize(x,result.value.kind)));
       else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,120));
     }
-    // If a result only identifies a road + postcode, expand it to actual house numbers.
-    const broad=parsed?[]:raw.filter(x=>(x.type==="navngivenvejpostnummer"||x.type==="navngivenvejpostnummerdel")&&x.vejnavn&&x.postnr).slice(0,4);
-    const expanded=await Promise.allSettled(broad.map(async road=>({road,hits:await requestSearch("/husnumre/soeg/",{vejnavn:road.vejnavn,postnummer:road.postnr},20)})));
+    // Street-only queries can return only a partial, internally ranked set of house numbers.
+    // Expand relevant street/postcode pairs to the full official house-number list.
+    const roadPairs=new Map();
+    if(!parsed){
+      for(const hit of raw){
+        if(!hit.vejnavn)continue;
+        if(!hit.postnr && hit.type!=="navngivenvejpostnummer" && hit.type!=="navngivenvejpostnummerdel")continue;
+        const key=hit.vejnavn.toLocaleLowerCase("da")+"|"+String(hit.postnr||"");
+        if(!roadPairs.has(key))roadPairs.set(key,{vejnavn:hit.vejnavn,postnummer:hit.postnr||null});
+      }
+    }
+    const broad=[...roadPairs.values()].slice(0,4);
+    const expanded=await Promise.allSettled(broad.map(async road=>({
+      road,
+      hits:await requestSearch("/husnumre/soeg/",{vejnavn:road.vejnavn,postnummer:road.postnummer},100)
+    })));
     for(const result of expanded){
       if(result.status==="fulfilled")raw.push(...result.value.hits.map(x=>normalize(x,"vejnavn+postnummer")));
       else errors.push(String(result.reason?.message||"vej/postnummer-opslag fejlede").slice(0,100));
@@ -116,7 +129,12 @@ export default async function handler(req,res) {
       const key=(hit.id||hit.label)+"|"+hit.type;
       const current=unique.get(key);if(!current||score(hit,q)>score(current,q))unique.set(key,hit);
     }
-    const fund=[...unique.values()].sort((a,b)=>score(b,q)-score(a,q)||a.label.localeCompare(b.label,"da")).slice(0,14);
+    // Return a large scrollable result set for broad road queries.
+    const fund=[...unique.values()].sort((a,b)=>{
+      const scoreDelta=score(b,q)-score(a,q);
+      if(scoreDelta)return scoreDelta;
+      return a.label.localeCompare(b.label,"da",{numeric:true,sensitivity:"base"});
+    }).slice(0,100);
     if(searchResults.every(result=>result.status!=="fulfilled"))return res.status(502).json({error:"Begge officielle adresseopslag fejlede.",details:errors});
     res.setHeader("Cache-Control","public, max-age=25");
     return res.status(200).json({status:"ok",query:q,fund,partial:errors.length>0,details:errors,source:"Klimadatastyrelsens Adressevælger",hint:fund.some(x=>x.type==="adresse"||x.type==="husnummer")?"Vælg det præcise husnummer/adresse. Tilføj postnummer eller by, hvis flere ligner hinanden.":"Skriv vejnavn + husnummer + postnummer for at indsnævre resultaterne."});
