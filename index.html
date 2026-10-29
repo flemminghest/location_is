@@ -396,9 +396,9 @@ p{line-height:1.55}
 .geo-city{grid-column:span 3}
 .geo-street{grid-column:span 5}
 .geo-number{grid-column:span 2}
-.geo-floor{grid-column:1/span 2}
-.geo-door{grid-column:3/span 2}
-.geo-scope-note{grid-column:5/span 5;display:flex;align-items:center;gap:8px;min-height:43px;color:#6d8291;font-family:var(--font-ui);font-size:10px;line-height:1.45}
+
+
+.geo-scope-note{grid-column:1/span 9;display:flex;align-items:center;gap:8px;min-height:43px;color:#6d8291;font-family:var(--font-ui);font-size:10px;line-height:1.45}
 .geo-scope-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#3a9a84;box-shadow:0 0 0 4px #3a9a8418}
 .geo-search-submit{grid-column:10/span 3;display:flex!important;align-items:center;justify-content:center;gap:14px;min-width:0;width:100%;height:43px;padding:0 19px;border-radius:11px;font-size:14px;font-weight:800;box-shadow:0 5px 13px #14263815}
 .geo-search-submit span{font-family:var(--font-heading);font-size:14px}
@@ -411,7 +411,7 @@ p{line-height:1.55}
  .geo-fields{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
  .geo-postcode{grid-column:span 2}.geo-city{grid-column:span 4}
  .geo-street{grid-column:span 4}.geo-number{grid-column:span 2}
- .geo-floor,.geo-door{grid-column:span 3}
+ 
  .geo-scope-note{grid-column:1/span 6;min-height:24px;font-size:10px}
  .geo-search-submit{grid-column:1/span 6;height:46px}
  .geo-field input{height:42px;font-size:13px}
@@ -454,8 +454,8 @@ p{line-height:1.55}
 .geo-field input:focus{border-color:#76abb9;box-shadow:0 0 0 3px #58a8b71c}
 .geo-field input[readonly]{background:#edf4f7;color:#416879}
 .geo-city{grid-column:span 4}.geo-postcode{grid-column:span 2}.geo-street{grid-column:span 4}.geo-number{grid-column:span 2}
-.geo-floor{grid-column:span 2}.geo-door{grid-column:span 2}
-.geo-scope-note{grid-column:span 8;display:flex;align-items:center;gap:8px;min-height:41px;color:#6d8291;font-family:var(--font-ui);font-size:10px;line-height:1.45}
+
+.geo-scope-note{grid-column:span 9;display:flex;align-items:center;gap:8px;min-height:41px;color:#6d8291;font-family:var(--font-ui);font-size:10px;line-height:1.45}
 .geo-scope-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#3a9a84;box-shadow:0 0 0 4px #3a9a8418}
 .geo-city-suggestions{display:none;position:absolute;z-index:130;top:calc(100% + 5px);left:0;right:0;max-height:240px;overflow-y:auto;border:1px solid #d9e5ec;border-radius:11px;background:#fff;box-shadow:0 15px 32px #19344720;padding:4px}
 .geo-city-suggestions.is-open{display:block}
@@ -470,7 +470,7 @@ p{line-height:1.55}
 #searchStatus{margin-top:7px;font-size:11px;line-height:1.45;color:#738797}
 #searchStatus:empty{display:none}
 @media(max-width:1100px){.geo-search-submit{flex-basis:130px;min-width:130px}.geo-fields{grid-template-columns:repeat(6,minmax(0,1fr))}.geo-city{grid-column:span 3}.geo-postcode{grid-column:span 3}.geo-street{grid-column:span 4}.geo-number{grid-column:span 2}.geo-scope-note{grid-column:span 6}}
-@media(max-width:700px){.primary-search-row{gap:8px}.primary-address-input{height:60px;padding:0 14px;border-radius:13px;font-size:16px}.primary-address-input::placeholder{font-size:16px}.geo-search-submit{height:60px;flex-basis:95px;min-width:95px;padding:0 13px!important;border-radius:13px;font-size:16px}.geo-search-submit span{font-size:16px}.geo-search-submit .geo-search-icon{width:18px;height:18px}.advanced-search-toggle{font-size:11px;margin-top:10px}.advanced-search-inner{padding:11px;border-radius:13px}.advanced-search-heading{gap:4px;flex-direction:column}.geo-fields{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.geo-city{grid-column:span 4}.geo-postcode{grid-column:span 2}.geo-street{grid-column:span 4}.geo-number{grid-column:span 2}.geo-floor,.geo-door{grid-column:span 3}.geo-scope-note{grid-column:span 6;min-height:auto}.geo-field input{height:40px;font-size:12px}.advanced-search-panel.is-open{max-height:570px}}
+@media(max-width:700px){.primary-search-row{gap:8px}.primary-address-input{height:60px;padding:0 14px;border-radius:13px;font-size:16px}.primary-address-input::placeholder{font-size:16px}.geo-search-submit{height:60px;flex-basis:95px;min-width:95px;padding:0 13px!important;border-radius:13px;font-size:16px}.geo-search-submit span{font-size:16px}.geo-search-submit .geo-search-icon{width:18px;height:18px}.advanced-search-toggle{font-size:11px;margin-top:10px}.advanced-search-inner{padding:11px;border-radius:13px}.advanced-search-heading{gap:4px;flex-direction:column}.geo-fields{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.geo-city{grid-column:span 4}.geo-postcode{grid-column:span 2}.geo-street{grid-column:span 4}.geo-number{grid-column:span 2}.geo-scope-note{grid-column:span 6;min-height:auto}.geo-field input{height:40px;font-size:12px}.advanced-search-panel.is-open{max-height:570px}}
 @media(prefers-reduced-motion:reduce){.advanced-search-panel,.advanced-search-toggle svg{transition:none!important}}
 
 
@@ -520,6 +520,71 @@ p{line-height:1.55}
 .value .metric-unit{font-size:13px;font-weight:650;color:#75899a}
 @media(max-width:700px){.metric-icon{width:23px;height:23px}.metric-icon svg{width:14px;height:14px}.kv .metric-label{gap:6px}}
 @media(prefers-reduced-motion:reduce){.metric-counting{transition:none!important}}
+
+/* Expanded geographic-search panel: fresh indigo tint, preserving the existing text and icons. */
+.advanced-search-toggle{background:#edf0ff;border:1px solid #c3c9f0;color:#35437d;border-radius:11px}
+.advanced-search-toggle:hover{background:#e3e8ff;border-color:#9ea9e5}
+.advanced-search-toggle svg{stroke:currentColor}
+.advanced-search-panel{background:#f0f2ff;border-color:#c5cdf1}
+.advanced-search-panel.is-open{background:linear-gradient(140deg,#eef2ff 0%,#f6f0ff 100%);border-color:#aeb9e8;box-shadow:0 8px 26px #5159a40d}
+.advanced-search-inner{background:transparent}
+/* Larger, readable property lookup dialog. */
+.lookup-modal{width:min(1440px,calc(100vw - 32px));max-height:calc(100vh - 24px)}
+.lookup-modal-head{padding:30px 34px 27px;gap:20px}
+.lookup-mark{width:58px;height:58px;font-size:27px}
+.lookup-eyebrow{font-size:12px}
+.lookup-modal-head h2{font-size:30px;line-height:1.16}
+.lookup-modal-head p{font-size:15px;max-width:860px}
+.lookup-x{width:44px;height:44px;font-size:24px}
+.lookup-body{padding:28px 34px 18px}
+.lookup-address-pill{padding:14px 16px;font-size:16px;gap:12px}
+.lookup-address-pill .pin{font-size:22px}
+.lookup-main{grid-template-columns:minmax(260px,.7fr) minmax(0,1.3fr);gap:28px;padding:26px 0 16px}
+.lookup-progress-column{padding:24px 22px 20px}
+.lookup-ring{width:176px;height:176px;margin-bottom:20px}
+.lookup-ring:before{inset:10px}
+.lookup-ring-inner strong{font-size:42px}
+.lookup-ring-inner small{font-size:11px}
+.lookup-stage-kicker{font-size:12px}
+.lookup-progress-column h3{font-size:20px}
+.lookup-progress-column p{font-size:14px;min-height:72px}
+.lookup-track{height:8px;margin:20px 0 9px}
+.lookup-track-caption{font-size:12px}
+.lookup-steps{gap:12px}
+.lookup-step{grid-template-columns:44px minmax(0,1fr) auto;gap:14px;padding:16px 18px}
+.lookup-step-icon{width:42px;height:42px;font-size:20px}
+.lookup-step-name{font-size:16px}
+.lookup-step-detail{font-size:14px;line-height:1.5}
+.lookup-step-state{font-size:12px}
+.lookup-step-progress-label{font-size:12px}
+.lookup-step-progress strong{font-size:12px}
+.lookup-step-track{height:6px}
+.lookup-result{padding:18px 20px;font-size:15px}
+.lookup-result h3{font-size:18px}
+.lookup-footer{padding:18px 34px 24px}
+.lookup-footnote{font-size:12px;max-width:650px}
+.lookup-action{min-width:190px;font-size:15px;padding:12px 18px}
+.inline-data-spinner{display:inline-block;width:17px;height:17px;box-sizing:border-box;border:2px solid #d8e5ed;border-top-color:#2d8199;border-radius:50%;animation:inlineDataSpin .72s linear infinite;vertical-align:middle}
+@keyframes inlineDataSpin{to{transform:rotate(360deg)}}
+.lookup-failure-note{margin-top:12px;padding:12px 14px;border-radius:10px;background:#fff6f4;border:1px solid #f0cfc8;color:#9e4135;font-size:13px;line-height:1.5}
+@media(max-width:740px){
+ .lookup-modal{width:calc(100vw - 20px);max-height:calc(100vh - 20px)}
+ .lookup-modal-head{padding:19px 18px}
+ .lookup-mark{width:42px;height:42px;font-size:20px}
+ .lookup-modal-head h2{font-size:22px}
+ .lookup-modal-head p{font-size:13px}
+ .lookup-body{padding:16px 16px 8px}
+ .lookup-address-pill{font-size:13px}
+ .lookup-main{grid-template-columns:1fr;gap:12px;padding-top:14px}
+ .lookup-ring{width:124px;height:124px}
+ .lookup-ring-inner strong{font-size:30px}
+ .lookup-progress-column h3{font-size:16px}
+ .lookup-progress-column p{font-size:12px;min-height:0}
+ .lookup-step{grid-template-columns:32px minmax(0,1fr);padding:10px}
+ .lookup-step-icon{width:30px;height:30px;font-size:15px}
+ .lookup-step-state{grid-column:2;font-size:10px;white-space:normal}
+ .lookup-footer{padding:13px 16px 17px}
+}
 </style>
 </head>
 <body><div class="app">
@@ -531,8 +596,8 @@ p{line-height:1.55}
   <button class="btn primary search-submit geo-search-submit" id="geoSearchSubmit" type="submit"><span>Søg</span><svg class="geo-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"></circle><path d="m16 16 4.2 4.2"></path></svg></button>
   <div class="suggestions" id="suggestions" role="listbox" aria-label="Adresseforslag"></div>
  </div>
- <button class="advanced-search-toggle" type="button" id="toggleAdvancedSearch" aria-expanded="false" aria-controls="advancedSearchPanel"><span>Udvid søgning</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
- <div class="advanced-search-panel" id="advancedSearchPanel" aria-hidden="true" inert>
+ <button class="advanced-search-toggle" type="button" id="toggleAdvancedSearch" aria-expanded="true" aria-controls="advancedSearchPanel"><span>Skjul udvidet søgning</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+ <div class="advanced-search-panel is-open" id="advancedSearchPanel" aria-hidden="false">
   <div class="advanced-search-inner">
    <div class="advanced-search-heading"><strong>Afgræns geografisk</strong><span>By eller postnummer begrænser alle forslag og opslag.</span></div>
    <div class="geo-fields">
@@ -540,8 +605,6 @@ p{line-height:1.55}
     <label class="geo-field geo-city"><span>2. By (udfyldes automatisk)</span><input class="geo-address-input" id="geoBy" autocomplete="off" placeholder="Udfyldes, når postnummeret er fundet" aria-controls="geoCitySuggestions" aria-expanded="false"><div class="geo-city-suggestions" id="geoCitySuggestions" role="listbox" aria-label="Byer og postnumre"></div></label>
     <label class="geo-field geo-street"><span>Gade / vej</span><input class="geo-address-input" id="geoVejnavn" autocomplete="off" placeholder="Fx Rolighedsvej"></label>
     <label class="geo-field geo-number"><span>Husnr.</span><input class="geo-address-input" id="geoHusnummer" autocomplete="off" placeholder="48"></label>
-    <label class="geo-field geo-floor"><span>Etage <small>valgfri</small></span><input class="geo-address-input" id="geoEtage" placeholder="2."></label>
-    <label class="geo-field geo-door"><span>Dør <small>valgfri</small></span><input class="geo-address-input" id="geoDoer" placeholder="th."></label>
     <div class="geo-scope-note" id="geoScopeNote"><span class="geo-scope-dot" aria-hidden="true"></span><span>Skriv postnummer først. Hvis det findes, udfyldes byen automatisk.</span></div>
    </div>
   </div>
@@ -576,7 +639,7 @@ p{line-height:1.55}
  <div class="section-selection-hint hidden" id="pdfSelectionHint"><span class="selection-hint-icon">✓</span><span>Vælg de sektioner, der skal med i rapporten. Klik på sektionerne for at markere eller fravælge.</span></div>
 </section>
 <div id="tabContent">
-<div class="lower tabpanel" data-panel="grund"><section class="card"><div class="cardhead"><h2>Arealopgørelse</h2><span class="tag" id="areaReportTag">Afventer data</span></div><div class="cardbody"><div class="kv"><span>Grundareal (matrikel)</span><strong id="areaGround">— m²</strong></div><div class="kv"><span>Samlet bebygget grundflade (BBR)</span><strong id="areaFootprint">— m²</strong></div><div class="kv"><span>Boligareal</span><strong id="areaResidential">— m²</strong></div><div class="kv"><span>Kælderareal</span><strong id="areaBasement">— m²</strong></div><div class="sectiontitle">Beregner: etagearealandel (vejledende)</div><label class="tiny">Grundareal (m²)</label><input id="plotInput" type="number" placeholder="Grundareal" min="1" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;margin:4px 0 10px"><label class="tiny">Etageareal før eventuelle fradrag (m²)</label><input id="floorInput" type="number" placeholder="Etageareal før fradrag" min="0" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;margin:4px 0 10px"><div class="stat" style="padding:10px"><div class="eyebrow">Din beregning</div><div class="value" id="calcResult">—</div><div class="tiny">Dette er kun et simpelt forhold mellem indtastet etageareal og grundareal – ikke en juridisk bebyggelsesprocent. BR18-fradrag, samlet fast ejendom og lokalplan skal vurderes særskilt. <a href="https://www.bygningsreglementet.dk/ovrige-bestemmelser/23/krav/?Layout=ShowAll" target="_blank" rel="noreferrer">Se BR18 § 453–455</a>.</div></div></div></section><section class="card"><div class="cardhead"><h2>Bygningsinformation (BBR)</h2><span class="tag">Liveopslag ved adressevalg</span></div><div class="cardbody"><div class="kv"><span>Bygninger</span><strong id="bbrBuildingCount">Afventer opslag</strong></div><div class="kv"><span>Ydervæg / tag</span><strong id="bbrMaterials">Afventer opslag</strong></div><div class="kv"><span>Varmeforsyning</span><strong id="bbrHeating">Afventer opslag</strong></div><div class="kv"><span>Boligenheder</span><strong id="bbrUnitCount">Afventer opslag</strong></div><div class="kv"><span>Energimærke</span><strong id="energyLabelValue">Ikke hentet fra energimærkeregister</strong></div><div class="warning" style="margin-top:12px">Oplysningerne nedenfor stammer fra BBR for hovedbygningen, medmindre andet er angivet. BBR-kode 3 for fibercement omfatter materialekategorien fibercement, herunder asbest; koden alene bekræfter ikke konkret asbestforekomst. Energimærke og servitutter kræver særskilte opslag.</div></div></section><section class="card"><div class="cardhead"><h2>Matrikel og ejendomsforhold</h2></div><div class="cardbody"><div class="kv"><span>Matrikelnummer</span><strong id="propertyMatrikelnummer">Afventer opslag</strong></div><div class="kv"><span>Ejerlav</span><strong id="propertyEjerlav">Afventer opslag</strong></div><div class="kv"><span>Kommune</span><strong id="propertyKommune">Afventer opslag</strong></div><div class="kv"><span>Zone</span><strong id="propertyZone">Afventer planopslag</strong></div><div class="kv"><span>Servitutter</span><strong id="propertyServitutter">Ikke hentet fra Tingbogen</strong></div><div class="kv"><span>DAR-adgangspunkt</span><strong id="propertyAccessPoint">Afventer adresseopslag</strong></div></div></section></div>
+<div class="lower tabpanel" data-panel="grund"><section class="card"><div class="cardhead"><h2>Arealopgørelse</h2><span class="tag" id="areaReportTag">Afventer data</span></div><div class="cardbody"><div class="kv"><span>Grundareal (matrikel)</span><strong id="areaGround">— m²</strong></div><div class="kv"><span>Samlet bebygget grundflade (BBR)</span><strong id="areaFootprint">— m²</strong></div><div class="kv"><span>Boligareal</span><strong id="areaResidential">— m²</strong></div><div class="kv"><span>Kælderareal</span><strong id="areaBasement">— m²</strong></div><div id="overviewLookupDiagnostic" class="lookup-failure-note hidden" role="status" aria-live="polite"></div><div class="sectiontitle">Beregner: etagearealandel (vejledende)</div><label class="tiny">Grundareal (m²)</label><input id="plotInput" type="number" placeholder="Grundareal" min="1" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;margin:4px 0 10px"><label class="tiny">Etageareal før eventuelle fradrag (m²)</label><input id="floorInput" type="number" placeholder="Etageareal før fradrag" min="0" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;margin:4px 0 10px"><div class="stat" style="padding:10px"><div class="eyebrow">Din beregning</div><div class="value" id="calcResult">—</div><div class="tiny">Dette er kun et simpelt forhold mellem indtastet etageareal og grundareal – ikke en juridisk bebyggelsesprocent. BR18-fradrag, samlet fast ejendom og lokalplan skal vurderes særskilt. <a href="https://www.bygningsreglementet.dk/ovrige-bestemmelser/23/krav/?Layout=ShowAll" target="_blank" rel="noreferrer">Se BR18 § 453–455</a>.</div></div></div></section><section class="card"><div class="cardhead"><h2>Bygningsinformation (BBR)</h2><span class="tag">Liveopslag ved adressevalg</span></div><div class="cardbody"><div class="kv"><span>Bygninger</span><strong id="bbrBuildingCount">Afventer opslag</strong></div><div class="kv"><span>Ydervæg / tag</span><strong id="bbrMaterials">Afventer opslag</strong></div><div class="kv"><span>Varmeforsyning</span><strong id="bbrHeating">Afventer opslag</strong></div><div class="kv"><span>Boligenheder</span><strong id="bbrUnitCount">Afventer opslag</strong></div><div class="kv"><span>Energimærke</span><strong id="energyLabelValue">Ikke hentet fra energimærkeregister</strong></div><div class="warning" style="margin-top:12px">Oplysningerne nedenfor stammer fra BBR for hovedbygningen, medmindre andet er angivet. BBR-kode 3 for fibercement omfatter materialekategorien fibercement, herunder asbest; koden alene bekræfter ikke konkret asbestforekomst. Energimærke og servitutter kræver særskilte opslag.</div></div></section><section class="card"><div class="cardhead"><h2>Matrikel og ejendomsforhold</h2></div><div class="cardbody"><div class="kv"><span>Matrikelnummer</span><strong id="propertyMatrikelnummer">Afventer opslag</strong></div><div class="kv"><span>Ejerlav</span><strong id="propertyEjerlav">Afventer opslag</strong></div><div class="kv"><span>Kommune</span><strong id="propertyKommune">Afventer opslag</strong></div><div class="kv"><span>Zone</span><strong id="propertyZone">Afventer planopslag</strong></div><div class="kv"><span>Servitutter</span><strong id="propertyServitutter">Ikke hentet fra Tingbogen</strong></div><div class="kv"><span>DAR-adgangspunkt</span><strong id="propertyAccessPoint">Afventer adresseopslag</strong></div></div></section></div>
 <div class="lower tabpanel hidden" data-panel="planer"><section class="card"><div class="cardhead"><h2>Planforhold</h2></div><div class="cardbody"><div class="kv"><span>Lokalplan</span><strong>Afventer Plandata</strong></div><div class="kv"><span>Kommuneplanramme</span><strong>Afventer Plandata</strong></div><div class="kv"><span>Byzone / landzone</span><strong>Ikke verificeret</strong></div><div class="kv"><span>Byggelinjer / byggefelter</span><strong>Ikke undersøgt</strong></div></div></section><section class="card"><div class="cardhead"><h2>Planmæssig tjekliste</h2></div><div class="cardbody"><p>○ Find gældende lokalplan og tillæg</p><p>○ Læs anvendelsesbestemmelser</p><p>○ Kontrollér bebyggelsesprocent, højde og etager</p><p>○ Kontrollér afstande og byggelinjer</p></div></section><section class="card"><div class="cardhead"><h2>Officielle kilder</h2></div><div class="cardbody"><p><a href="https://www.plandata.dk/" target="_blank" rel="noreferrer">Plandata.dk ↗</a></p><p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Bygningsreglementet ↗</a></p></div></section></div>
 <div class="lower tabpanel hidden" data-panel="krav"><section class="card"><div class="cardhead"><h2>Byggeregler og krav</h2></div><div class="cardbody"><p>○ Planforhold og byggetilladelse</p><p>○ Bebyggelsesprocent og etageareal</p><p>○ Brandforhold og redningsberedskab</p><p>○ Konstruktioner og dokumentation</p><p>○ Energi og klimaskærm</p><p>○ Fugt, ventilation og indeklima</p><p>○ Tilgængelighed</p><p>○ Vand, afløb og regnvand</p><div class="warning">Faglig tjekliste, ikke juridisk konklusion. Krav afhænger af projekt og gældende regler.</div></div></section><section class="card"><div class="cardhead"><h2>Dokumentation</h2></div><div class="cardbody"><p>Situationsplan, snit, facader, brand- og konstruktionsdokumentation kan være relevante afhængigt af projektet.</p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Åbn BR18 ↗</a></div></section><section class="card"><div class="cardhead"><h2>Status</h2></div><div class="cardbody">Ingen krav verificeret for en konkret ejendom.</div></section></div>
 <div class="lower tabpanel hidden" data-panel="miljo"><section class="card"><div class="cardhead"><h2>Miljø og natur</h2></div><div class="cardbody"><div class="source"><span>Jordforurening V1/V2</span><em>Afventer opslag</em></div><div class="source"><span>Grundvand</span><em>Afventer opslag</em></div><div class="source"><span>Natura 2000 / §3-natur</span><em>Afventer opslag</em></div><div class="source"><span>Oversvømmelse / klimatilpasning</span><em>Afventer opslag</em></div><div class="source"><span>Støj</span><em>Afventer opslag</em></div></div></section><section class="card"><div class="cardhead"><h2>Hvorfor det er vigtigt</h2></div><div class="cardbody"><p>Kan påvirke fundering, udgravning, myndighedstilladelser, afvanding og projektøkonomi.</p><a href="https://arealinformation.miljoeportal.dk/" target="_blank" rel="noreferrer">Danmarks Arealinformation ↗</a></div></section><section class="card"><div class="cardhead"><h2>Status</h2></div><div class="cardbody">Miljøstatus er ikke kontrolleret.</div></section></div>
@@ -764,6 +827,34 @@ function setLookupProgress(percent,kicker,title,description){
  if(title)lookupStageTitle.textContent=title;
  if(description)lookupStageDesc.textContent=description;
 }
+
+function setOverviewLoadingState(){
+ const spinner='<span class="inline-data-spinner" role="status" aria-label="Henter data"></span>';
+ ['areaGround','areaFootprint','areaResidential','areaBasement','statGround','statFootprint','statResidential','statCoverage','bbrBuildingCount','bbrMaterials','bbrHeating','bbrUnitCount','propertyMatrikelnummer','propertyEjerlav','propertyKommune','propertyZone','propertyAccessPoint','addressId','bbrNumber','matrikelId','buildingUse','buildYear'].forEach(id=>{
+  const el=document.getElementById(id);if(el)el.innerHTML=spinner;
+ });
+ ['areaReportTag','profileDataStatusTag'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='Henter data';});
+ const note=document.getElementById('overviewLookupDiagnostic');if(note){note.classList.add('hidden');note.textContent='';}
+}
+function setOverviewDiagnostic(message){
+ const safeMessage=String(message||'Kilden svarede ikke').slice(0,240);
+ const note=document.getElementById('overviewLookupDiagnostic');
+ if(note){note.textContent='Opslagsstatus: '+safeMessage;note.classList.remove('hidden');}
+ const tag=document.getElementById('areaReportTag');if(tag)tag.textContent='Delvist data';
+ const profileTag=document.getElementById('profileDataStatusTag');if(profileTag)profileTag.textContent='Delvist data';
+}
+function setOverviewFailureState(message){
+ const safeMessage=String(message||'Kilden svarede ikke').slice(0,240);
+ const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+ ['areaGround','areaFootprint','areaResidential','areaBasement','statGround','statFootprint','statResidential','statCoverage'].forEach(id=>{
+  const el=document.getElementById(id);if(el)el.textContent='—';
+ });
+ ['bbrBuildingCount','bbrMaterials','bbrHeating','bbrUnitCount','propertyMatrikelnummer','propertyEjerlav','propertyKommune','propertyZone','propertyAccessPoint','addressId','bbrNumber','matrikelId','buildingUse','buildYear'].forEach(id=>set(id,'Kunne ikke hentes'));
+ set('areaReportTag','Opslag fejlede');set('profileDataStatusTag','Delvist data');
+ setOverviewDiagnostic(safeMessage);
+ searchStatus.textContent='Ejendomsopslaget fejlede: '+safeMessage;
+}
+
 function setLookupStep(key,state,stateLabel,detail){
  const el=document.getElementById(lookupStepIds[key]);if(!el)return;
  el.classList.remove('is-running','is-done','is-warning','is-error');
@@ -806,6 +897,7 @@ function setLookupStep(key,state,stateLabel,detail){
  }
 }
 function resetLookupModal(address){
+ setOverviewLoadingState();
  lookupFinished=false;
  Object.keys(lookupStepIds).forEach(stopLookupStepTimer);
  if(lookupWatchdogTimer){clearTimeout(lookupWatchdogTimer);lookupWatchdogTimer=null;}
@@ -828,6 +920,7 @@ function resetLookupModal(address){
    if(step&&(step.classList.contains('is-running')||state==='Langsomt svar'))setLookupStep(key,'error','Tidsgrænse','Kilden svarede ikke i tide. Hvis der kommer et sent svar, gemmes det i oversigten.');
    else if(step&&state==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Denne kilde blev ikke færdig inden for den samlede tidsgrænse.');
   });
+  setOverviewDiagnostic('En eller flere datakilder svarede ikke inden for 22 sekunder. Se kilde-status i analysevinduet.');
   searchStatus.textContent='Opslaget blev afsluttet med delresultater efter 22 sekunder. Kontrollér datastatus og prøv igen for manglende oplysninger.';
   finishLookup('Opslag afsluttet med delresultater','Vi fik ikke svar fra alle kilder inden for 22 sekunder. Brugbare resultater fra andre kilder bevares; langsomme kilder er markeret som tidsoverskredet.',true);
  },22000);
@@ -880,15 +973,15 @@ async function checkIntegrationStatus(){
 }
 checkIntegrationStatus();
 const searchInput=document.getElementById('query'),suggestionsEl=document.getElementById('suggestions'),searchStatus=document.getElementById('searchStatus');
-const geoPostnummer=document.getElementById('geoPostnummer'),geoBy=document.getElementById('geoBy'),geoVejnavn=document.getElementById('geoVejnavn'),geoHusnummer=document.getElementById('geoHusnummer'),geoEtage=document.getElementById('geoEtage'),geoDoer=document.getElementById('geoDoer');
+const geoPostnummer=document.getElementById('geoPostnummer'),geoBy=document.getElementById('geoBy'),geoVejnavn=document.getElementById('geoVejnavn'),geoHusnummer=document.getElementById('geoHusnummer');
 const advancedPanel=document.getElementById('advancedSearchPanel'),advancedToggle=document.getElementById('toggleAdvancedSearch'),citySuggestions=document.getElementById('geoCitySuggestions');
 // City suggestions live at viewport level so scroll, panel animation, and overflow never clip them.
 document.body.appendChild(citySuggestions);
 let cityActiveIndex=-1;
-let addressTimer=null,postcodeTimer=null,cityTimer=null,postcodeController=null,cityController=null,activeSearchController=null,lastAddressLookupError=null,currentSuggestions=[],selectedSuggestion=-1,chosenAddress=null,currentPropertyData=null,verifiedPostnummer='',selectedCity=null,advancedOpen=false;
+let addressTimer=null,postcodeTimer=null,cityTimer=null,postcodeController=null,cityController=null,activeSearchController=null,lastAddressLookupError=null,currentSuggestions=[],selectedSuggestion=-1,chosenAddress=null,currentPropertyData=null,verifiedPostnummer='',selectedCity=null,advancedOpen=true;
 
 function hasAdvancedValues(){
- return Boolean(geoBy.value.trim()||geoPostnummer.value.trim()||geoVejnavn.value.trim()||geoHusnummer.value.trim()||geoEtage.value.trim()||geoDoer.value.trim());
+ return Boolean(geoBy.value.trim()||geoPostnummer.value.trim()||geoVejnavn.value.trim()||geoHusnummer.value.trim());
 }
 function activePostnummer(){
  const value=geoPostnummer.value.trim();
@@ -898,10 +991,9 @@ function activeBy(){
  return advancedOpen&&selectedCity&&geoBy.value.trim()===selectedCity.navn?selectedCity.navn:'';
 }
 function formatAddressQuery(){
- const street=geoVejnavn.value.trim(),number=geoHusnummer.value.trim(),floor=geoEtage.value.trim(),door=geoDoer.value.trim(),zip=geoPostnummer.value.trim(),city=geoBy.value.trim();
+ const street=geoVejnavn.value.trim(),number=geoHusnummer.value.trim(),zip=geoPostnummer.value.trim(),city=geoBy.value.trim();
  const line1=[street,number].filter(Boolean).join(' ');
- const floorDoor=[floor,door].filter(Boolean).join(' ');
- return [line1,floorDoor,[zip,city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+ return [line1,[zip,city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
 }
 function syncAddressQuery(){
  const text=formatAddressQuery();
@@ -1238,13 +1330,9 @@ async function lookupAddressSuggestions(q){
  const params=new URLSearchParams();
  const street=advancedOpen?geoVejnavn.value.trim():'';
  const number=advancedOpen?geoHusnummer.value.trim():'';
- const floor=advancedOpen?geoEtage.value.trim():'';
- const door=advancedOpen?geoDoer.value.trim():'';
- if(advancedOpen&&(street||number||floor||door)){
+ if(advancedOpen&&(street||number)){
   if(street)params.set('vejnavn',street);
   if(number)params.set('husnummer',number);
-  if(floor)params.set('etage',floor);
-  if(door)params.set('doer',door);
   if(zip)params.set('postnummer',zip);
   if(city)params.set('by',city);
   if(!street&&!zip&&!city)params.set('q',query);
@@ -1400,7 +1488,7 @@ geoPostnummer.addEventListener('keydown',event=>{
   commitPostnummer().then(ok=>{if(ok)geoVejnavn.focus();});
  }
 });
-[geoVejnavn,geoHusnummer,geoEtage,geoDoer].forEach(input=>input.addEventListener('input',()=>{
+[geoVejnavn,geoHusnummer].forEach(input=>input.addEventListener('input',()=>{
  chosenAddress=null;updateDrawingButton();
  const value=formatAddressQuery();
  if(!advancedOpen&&value)searchInput.value=value;
@@ -1734,7 +1822,7 @@ const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og mat
   }
  })();
  const propOutcomePromise=propertyPromise.then(outcome=>{
-  if(!outcome.ok)return outcome;
+  if(!outcome.ok){setOverviewFailureState(outcome.error);return outcome;}
   const data=outcome.result;
   currentPropertyData=data;updateDrawingButton();renderBuildingChangeReport(data);
   const addressOk=Boolean(data.completeness?.address||data.completeness?.house||data.house);
@@ -1801,6 +1889,7 @@ async function runPropertyLookupSafely(){
  }catch(error){
   if(lookupFinished)return;
   const message=String(error?.message||error||'Ukendt fejl').slice(0,180);
+  setOverviewFailureState(message);
   setLookupStep('address','error','Opslagsfejl',message);
   ['bbr','mat','plan','history'].forEach(key=>setLookupStep(key,'warning','Ikke gennemført','En tidligere del af opslaget fejlede.'));
   finishLookup('Opslaget kunne ikke gennemføres',message+'. Prøv igen. Hvis fejlen gentager sig, skal API-loggen undersøges.',true);
