@@ -5,26 +5,22 @@ function normalized(v){return String(v||"").toLocaleLowerCase("da-DK").normalize
 function escapeGraphQL(v){return String(v).replace(/\\/g,"\\\\").replace(/"/g,'\\"');}
 async function queryPublicPostnummer(query){
  const code=String(query||"").trim();
- const urls=[];
- if(/^\d{4}$/.test(code)){
-  urls.push(new URL("https://api.dataforsyningen.dk/postnumre?nr="+encodeURIComponent(code)));
-  urls.push(new URL("https://api.dataforsyningen.dk/postnumre/"+encodeURIComponent(code)));
- }else{
-  urls.push(new URL("https://api.dataforsyningen.dk/postnumre?navn_startswith="+encodeURIComponent(code)));
- }
- const settled=await Promise.allSettled(urls.map(async url=>{
-  const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(4000),cache:"no-store"});
+ if(/^\\d{4}$/.test(code)){
+  // The former Dataforsyningen/DAWA postcode endpoint was retired on 1 October 2026.
+  // Use a live postcode directory for city-name autofill; street/address matches remain verified via KDS Adressevælger.
+  const response=await fetch("https://api.zippopotam.us/DK/"+encodeURIComponent(code),{
+   headers:{accept:"application/json"},
+   signal:AbortSignal.timeout(3500),
+   cache:"no-store"
+  });
   const payload=await response.json().catch(()=>null);
-  if(!response.ok)throw new Error("Dataforsyningen HTTP "+response.status);
-  const rows=Array.isArray(payload)?payload:(payload&&typeof payload==="object"?[payload]:[]);
-  return rows.map(x=>({nr:String(x.nr||""),navn:String(x.navn||x.postdistrikt||"").trim(),source:"Dataforsyningen postnumre"}))
-   .filter(x=>/^\d{4}$/.test(x.nr)&&x.navn&&(/^\d{4}$/.test(code)?x.nr===code:normalized(x.navn).startsWith(normalized(code))));
- }));
- for(const item of settled){
-  if(item.status==="fulfilled"&&item.value.length)return item.value;
+  if(!response.ok)throw new Error("Postnummeropslag HTTP "+response.status);
+  const places=Array.isArray(payload?.places)?payload.places:[];
+  const place=places.find(x=>String(x["place name"]||"").trim());
+  if(!place)throw new Error("Postnummeret findes ikke i postnummerregistret");
+  return [{nr:code,navn:String(place["place name"]).trim(),source:"Postnummerregister (Zippopotam.us)"}];
  }
- const errors=settled.filter(x=>x.status==="rejected").map(x=>String(x.reason?.message||"Dataforsyningen fejlede"));
- throw new Error(errors.join("; ")||"Dataforsyningen returnerede intet match");
+ throw new Error("Byopslag kræver et firecifret postnummer");
 }
 async function queryPostnummer(query){
  const key=process.env.DATAFORDELER_API_KEY;
