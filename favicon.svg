@@ -1,7 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#142638"/>
-  <path d="M7 31C14 17 23 14 31 23c3 3 5 6 7 8-4 4-7 8-13 10C16 44 10 37 7 31Z" fill="#f7fbff" stroke="#65d1bc" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M33 31c3-2 4-5 7-8 8-9 17-6 24 8-4 7-10 13-18 10-6-2-9-6-13-10Z" fill="#f7fbff" stroke="#65d1bc" stroke-width="2.5" stroke-linejoin="round"/>
-  <circle cx="22" cy="31" r="5.2" fill="#142638"/><circle cx="48" cy="31" r="5.2" fill="#142638"/>
-  <circle cx="23.5" cy="29" r="1.4" fill="#65d1bc"/><circle cx="49.5" cy="29" r="1.4" fill="#65d1bc"/>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d3c50"/>
+      <stop offset="1" stop-color="#102434"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="17" fill="url(#tile)"/>
+  <circle cx="32" cy="32" r="25.5" fill="none" stroke="#ffffff" stroke-opacity=".08"/>
+  <path d="M8.5 32C14.5 22.3 25.5 21 32 32 25.5 43 14.5 41.7 8.5 32Z" fill="none" stroke="#82d8ca" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 32C38.5 21 49.5 22.3 55.5 32 49.5 41.7 38.5 43 32 32Z" fill="none" stroke="#f2f8f9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="21" cy="32" r="4.6" fill="#65d1bc"/>
+  <circle cx="43" cy="32" r="4.6" fill="#f2f8f9"/>
+  <circle cx="22.4" cy="30.5" r="1.25" fill="#163447"/>
+  <circle cx="44.4" cy="30.5" r="1.25" fill="#163447"/>
 </svg>
