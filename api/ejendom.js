@@ -103,7 +103,7 @@ export default async function handler(req, res) {
         point = pointData.DAR_Husnummer && pointData.DAR_Husnummer.nodes && pointData.DAR_Husnummer.nodes[0] && pointData.DAR_Husnummer.nodes[0].HusnummerHarAdgangspunkt && pointData.DAR_Husnummer.nodes[0].HusnummerHarAdgangspunkt.position || null;
       } catch (_) { point = null; }
     }
-    const pointMatch = point && typeof point.wkt === "string" ? point.wkt.match(/POINT(?:\\s+Z)?\\s*\\(?\\s*([+-]?\\d+(?:\\.\\d+)?)\\s+([+-]?\\d+(?:\\.\\d+)?)/i) : null;
+    const pointMatch = point && typeof point.wkt === "string" ? point.wkt.match(/POINT(?:\s+Z)?\s*\(?\s*([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)/i) : null;
     const coordinates = pointMatch ? { x:Number(pointMatch[1]), y:Number(pointMatch[2]), crs:point.crs||null, wkt:point.wkt } : null;
     const parcel = parcels[0] || null;
     const groundArea = numberFrom(parcel, ["areal","arealberegnet","arealRegistreret"]);
