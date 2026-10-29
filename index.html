@@ -879,7 +879,7 @@ function formatAddressQuery(){
 }
 function syncAddressQuery(){
  const text=formatAddressQuery();
- if(text)searchInput.value=text;
+ if(!advancedOpen&&text)searchInput.value=text;
 }
 function setAdvancedOpen(open){
  advancedOpen=Boolean(open);
@@ -888,13 +888,17 @@ function setAdvancedOpen(open){
  advancedPanel.inert=!advancedOpen;
  advancedToggle.setAttribute('aria-expanded',String(advancedOpen));
  advancedToggle.querySelector('span').textContent=advancedOpen?'Skjul udvidet søgning':'Udvid søgning';
- if(!advancedOpen){
-  closeCitySuggestions();
-  closeSuggestions();
-  if(!searchInput.value.trim())searchStatus.textContent='';
+ closeCitySuggestions();
+ closeSuggestions();
+ if(advancedOpen){
+  searchInput.value='';
+  chosenAddress=null;
+  updateDrawingButton();
+  searchStatus.textContent='Udfyld by eller postnummer og begynd at skrive en gade for at få officielle adresseforslag.';
+  geoBy.focus({preventScroll:true});
  }else{
-  const target=geoBy.value.trim()?geoBy:geoPostnummer;
-  target.focus({preventScroll:true});
+  suggestionsEl.style.position='';suggestionsEl.style.top='';suggestionsEl.style.left='';suggestionsEl.style.width='';suggestionsEl.style.right='';
+  if(!searchInput.value.trim())searchStatus.textContent='';
  }
 }
 advancedToggle.addEventListener('click',()=>setAdvancedOpen(!advancedOpen));
@@ -1083,7 +1087,28 @@ function setPropertyAddressDisplay(value){
  localityEl.textContent=locality||'Postnummer og by ikke returneret';
  localityEl.classList.toggle('is-missing',!locality);
 }
-function closeSuggestions(){suggestionsEl.classList.remove('open');searchInput.setAttribute('aria-expanded','false');selectedSuggestion=-1}
+function closeSuggestions(){
+ suggestionsEl.classList.remove('open');
+ searchInput.setAttribute('aria-expanded','false');
+ selectedSuggestion=-1;
+ if(!advancedOpen){suggestionsEl.style.position='';suggestionsEl.style.top='';suggestionsEl.style.left='';suggestionsEl.style.width='';suggestionsEl.style.right='';}
+}
+function positionAddressSuggestions(){
+ if(!suggestionsEl.classList.contains('open'))return;
+ if(advancedOpen){
+  const rect=geoVejnavn.getBoundingClientRect(),pad=12;
+  const width=Math.min(rect.width,window.innerWidth-pad*2);
+  suggestionsEl.style.position='fixed';
+  suggestionsEl.style.top=(rect.bottom+6)+'px';
+  suggestionsEl.style.left=Math.max(pad,Math.min(rect.left,window.innerWidth-pad-width))+'px';
+  suggestionsEl.style.width=width+'px';
+  suggestionsEl.style.right='auto';
+ }else{
+  suggestionsEl.style.position='';suggestionsEl.style.top='';suggestionsEl.style.left='';suggestionsEl.style.width='';suggestionsEl.style.right='';
+ }
+}
+window.addEventListener('resize',positionAddressSuggestions);
+document.addEventListener('scroll',positionAddressSuggestions,true);
 document.getElementById('googleMapsLink').addEventListener('click',e=>{if(e.currentTarget.getAttribute('aria-disabled')==='true'){e.preventDefault();toast('Vælg en adresse først.');}});
 function renderSuggestions(items,note=''){
  currentSuggestions=items;selectedSuggestion=-1;
@@ -1100,6 +1125,7 @@ function renderSuggestions(items,note=''){
  }).join('')+(note?'<div class="suggestion-note">'+esc(note)+'</div>':'');
  suggestionsEl.classList.add('open');searchInput.setAttribute('aria-expanded','true');
  suggestionsEl.querySelectorAll('.suggestion').forEach(b=>b.addEventListener('click',()=>chooseSuggestion(+b.dataset.index)));
+ positionAddressSuggestions();
 }
 function normalizeAddressMatch(value){
  return String(value||'').toLocaleLowerCase('da-DK').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[.,]/g,' ').replace(/\s+/g,' ').trim();
@@ -1124,12 +1150,14 @@ function chooseSuggestion(i){
  if(city&&item.postdistrikt&&normalizeAddressMatch(item.postdistrikt)!==normalizeAddressMatch(city)){searchStatus.textContent='Forslaget ligger uden for '+city+' og blev derfor afvist.';return;}
  const isExact=item.source==='official-dar'&&['adresse','husnummer'].includes(item.type)&&Boolean(item.id);
  chosenAddress=isExact?item:null;
- searchInput.value=item.label||'';
+ if(!advancedOpen)searchInput.value=item.label||'';
  if(advancedOpen){
   if(item.postnr&&!verifiedPostnummer){geoPostnummer.value=String(item.postnr);verifiedPostnummer=String(item.postnr);geoPostnummer.dataset.verified=String(item.postnr);}
   if(item.postdistrikt&&!geoBy.value){geoBy.value=item.postdistrikt;selectedCity={nr:String(item.postnr||''),navn:String(item.postdistrikt)};}
   if(item.vejnavn)geoVejnavn.value=item.vejnavn;
   if(item.husnummer)geoHusnummer.value=item.husnummer;
+  if(item.postdistrikt&&!selectedCity){selectedCity={nr:String(item.postnr||''),navn:String(item.postdistrikt)};geoBy.value=item.postdistrikt;}
+  if(item.postnr&&!geoPostnummer.value)geoPostnummer.value=String(item.postnr);
  }
  updateDrawingButton();
  closeSuggestions();
@@ -1225,7 +1253,7 @@ function parseSuggestionToFields(item){
 }
 function syncAdvancedToPrimary(){
  const value=formatAddressQuery();
- if(value)searchInput.value=value;
+ if(!advancedOpen&&value)searchInput.value=value;
 }
 function onPrimaryInput(){
  chosenAddress=null;updateDrawingButton();clearTimeout(addressTimer);
@@ -1285,17 +1313,17 @@ geoPostnummer.addEventListener('input',()=>{
   const ok=await resolvePostnummer(q);
   if(ok&&geoPostnummer.value.trim()===q){
    closeCitySuggestions();
-   if(geoVejnavn.value.trim().length>=2){syncAdvancedToPrimary();lookupAddressSuggestions(searchInput.value.trim());}
+   if(geoVejnavn.value.trim().length>=2){lookupAddressSuggestions(formatAddressQuery());}
   }
  },170);
 });
 [geoVejnavn,geoHusnummer,geoEtage,geoDoer].forEach(input=>input.addEventListener('input',()=>{
  chosenAddress=null;updateDrawingButton();
  const value=formatAddressQuery();
- if(value)searchInput.value=value;
+ if(!advancedOpen&&value)searchInput.value=value;
  clearTimeout(addressTimer);
  if(geoVejnavn.value.trim().length>=2){
-  addressTimer=setTimeout(()=>lookupAddressSuggestions(searchInput.value.trim()),220);
+  addressTimer=setTimeout(()=>lookupAddressSuggestions(value),220);
  }
 }));
 document.addEventListener('click',event=>{
@@ -1695,8 +1723,8 @@ function findExactPrimaryMatch(query,items){
 }
 document.getElementById('searchForm').addEventListener('submit',async event=>{
  event.preventDefault();
- const q=searchInput.value.trim();
- if(!q){searchInput.focus();searchStatus.textContent='Skriv en adresse, et vejnavn eller et postnummer.';return;}
+ const q=advancedOpen?formatAddressQuery().trim():searchInput.value.trim();
+ if(!q){(advancedOpen?geoVejnavn:searchInput).focus();searchStatus.textContent=advancedOpen?'Skriv en gade eller vælg en adresse i de udvidede felter.':'Skriv en adresse, et vejnavn eller et postnummer.';return;}
  if(/^\\d{4}$/.test(q)&&!advancedOpen){
   geoPostnummer.value=q;
   const ok=await resolvePostnummer(q);
