@@ -517,7 +517,19 @@ async function loadPropertyData(){
   toast('Data kunne ikke hentes. Fejlen vises i opslagets modal.');
  }
 }
-document.getElementById('searchForm').addEventListener('submit',async e=>{e.preventDefault();let q=searchInput.value.trim();if(!q){toast('Skriv en adresse eller et vejnavn');searchInput.focus();return}closeSuggestions();document.getElementById('propertyAddress').textContent=q;document.getElementById('addressId').textContent=chosenAddress?.id||'Ikke returneret';if(chosenAddress?.source==='official-dar'){await loadPropertyData()}else{searchStatus.textContent='Adresse valgt. Vælg et forslag fra den officielle adressekilde for at hente BBR- og matrikeldata.';toast('Vælg et officielt adresseforslag først.')}});
+document.getElementById('searchForm').addEventListener('submit',async e=>{
+ e.preventDefault();const q=searchInput.value.trim();
+ if(!q){toast('Skriv en adresse eller et vejnavn');searchInput.focus();return}
+ closeSuggestions();
+ if(chosenAddress?.source!=='official-dar'||!['adresse','husnummer'].includes(chosenAddress?.type)||!chosenAddress?.id){
+  searchStatus.textContent='Vælg en konkret officiel adresse eller et husnummer. Brug vejnavn + husnummer + postnummer for mere præcise forslag.';
+  toast('Vælg et specifikt adresseforslag fra listen.');return;
+ }
+ document.getElementById('propertyAddress').textContent=q;
+ document.getElementById('addressId').textContent=chosenAddress.id||'Afventer opslag';
+ resetLookupModal(q);
+ await loadPropertyData();
+});
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));function setTab(n){document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===n));document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('hidden',p.dataset.panel!==n));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.section===n))}
 document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{let n=b.dataset.section==='overblik'?'grund':b.dataset.section;setTab(n);document.getElementById('tabs').scrollIntoView({behavior:'smooth',block:'start'})}));document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{setTab(b.dataset.go);document.getElementById('tabs').scrollIntoView({behavior:'smooth'})}));
 document.querySelectorAll('[data-layer]').forEach(c=>c.addEventListener('change',()=>{const el=document.getElementById(c.dataset.layer);if(el)el.style.opacity=c.checked?'1':'.12';if(['terrain','nature','plan'].includes(c.dataset.layer)&&c.checked)toast('Dette kortlag er kun illustrativt endnu.')}));
