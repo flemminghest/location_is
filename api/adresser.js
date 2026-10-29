@@ -62,7 +62,7 @@ export default async function handler(req,res) {
       else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,120));
     }
     // If a result only identifies a road + postcode, expand it to actual house numbers.
-    const broad=raw.filter(x=>(x.type==="navngivenvejpostnummer"||x.type==="navngivenvejpostnummerdel")&&x.vejnavn&&x.postnr).slice(0,4);
+    const broad=parsed?[]:raw.filter(x=>(x.type==="navngivenvejpostnummer"||x.type==="navngivenvejpostnummerdel")&&x.vejnavn&&x.postnr).slice(0,4);
     const expanded=await Promise.allSettled(broad.map(async road=>({road,hits:await requestSearch("/husnumre/soeg/",{vejnavn:road.vejnavn,postnummer:road.postnr},20)})));
     for(const result of expanded){
       if(result.status==="fulfilled")raw.push(...result.value.hits.map(x=>normalize(x,"vejnavn+postnummer")));
