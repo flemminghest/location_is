@@ -5,7 +5,7 @@ function normalized(v){return String(v||"").toLocaleLowerCase("da-DK").normalize
 function escapeGraphQL(v){return String(v).replace(/\\/g,"\\\\").replace(/"/g,'\\"');}
 async function queryPublicPostnummer(query){
  const code=String(query||"").trim();
- if(/^\\d{4}$/.test(code)){
+ if(/^\d{4}$/.test(code)){
   // The former Dataforsyningen/DAWA postcode endpoint was retired on 1 October 2026.
   // Use a live postcode directory for city-name autofill; street/address matches remain verified via KDS Adressevælger.
   const response=await fetch("https://api.zippopotam.us/DK/"+encodeURIComponent(code),{
