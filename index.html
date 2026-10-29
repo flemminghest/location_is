@@ -37,7 +37,7 @@ function chooseSuggestion(i){const s=currentSuggestions[i];if(!s)return;chosenAd
 async function lookupAddressSuggestions(q){if(activeSearchController)activeSearchController.abort();activeSearchController=new AbortController();searchStatus.textContent='Søger i det danske adresseregister…';
 try{
  // Official nationwide address API. If deployment policy/CORS changes, use a same-origin server proxy.
- const url='https://api.dataforsyningen.dk/adresser/autocomplete?q='+encodeURIComponent(q)+'&per_side=10';
+ const url='/api/adresser?q='+encodeURIComponent(q);
  const res=await fetch(url,{signal:activeSearchController.signal,headers:{Accept:'application/json'}});
  if(!res.ok)throw new Error('Officiel adressekilde er ikke tilgængelig');const data=await res.json();
  const items=(Array.isArray(data)?data:[]).map(x=>({label:x.tekst||x.adresse?.adressebetegnelse||'',detail:x.adresse?.kommunenavn||x.adresse?.postnummer?.nr||'',source:'official-dar',id:x.adresse?.id||x.id,properties:x})).filter(x=>x.label);
