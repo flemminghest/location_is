@@ -839,6 +839,10 @@ function setLookupProgress(percent,kicker,title,description){
  if(description)lookupStageDesc.textContent=description;
 }
 
+function setTextIfPresent(id,value){
+ const element=document.getElementById(id);
+ if(element)element.textContent=value;
+}
 function setOverviewLoadingState(){
  const spinner='<span class="inline-data-spinner" role="status" aria-label="Henter data"></span>';
  ['areaGround','areaFootprint','areaResidential','areaBasement','statGround','statFootprint','statResidential','statCoverage','bbrBuildingCount','bbrMaterials','bbrHeating','bbrUnitCount','propertyMatrikelnummer','propertyEjerlav','propertyKommune','propertyZone','propertyAccessPoint','addressId','bbrNumber','matrikelId','buildingUse','buildYear'].forEach(id=>{
@@ -1845,7 +1849,7 @@ const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og mat
   setLookupStep('mat',matError?'error':(matOk?'done':'warning'),matError?'Kilde-fejl':(matOk?'data fundet':'Intet match'),matError?String(matError).slice(0,150):(matOk?'Matrikel-/jordstykkedata returneret':'Ingen matrikelrelation returneret; kontrollér originalkilden'));
   const b=data.bbr||{},m=data.cadastral||{};
   const val=v=>v===null||v===undefined||v===''?'—':String(v);
-  document.getElementById('addressId').textContent=id;
+  setTextIfPresent('addressId',id);
   document.getElementById('bbrNumber').textContent=b.id_lokalId?'Bygning fundet':'Ingen BBR-bygning returneret';
   document.getElementById('matrikelId').textContent=[m.matrikelnummer,m.ejerlavLokalId].filter(Boolean).join(' · ')||'Ingen matrikel returneret';
   document.getElementById('buildingUse').textContent=({120:'Fritliggende enfamiliehus',110:'Stuehus til landbrugsejendom',121:'Sammenbygget enfamiliehus',130:'Række-, kæde- eller dobbelthus',140:'Etagebolig-bygning'}[String(b.byg021BygningensAnvendelse)]||('Anvendelseskode '+val(b.byg021BygningensAnvendelse)));
@@ -1961,7 +1965,7 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
   setLookupStep('bbr','running','Forbereder','Venter på BBR-kaldet');
   setLookupStep('mat','running','Forbereder','Venter på matrikelkaldet');
   setPropertyAddressDisplay(chosenAddress.label||q);
-  document.getElementById('addressId').textContent=chosenAddress.id;
+  setTextIfPresent('addressId',chosenAddress.id);
   closeSuggestions();
   await runPropertyLookupSafely();
   return;
@@ -1984,7 +1988,7 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
   searchInput.value=match.label;
   parseSuggestionToFields(match);
   setPropertyAddressDisplay(match.label);
-  document.getElementById('addressId').textContent=match.id;
+  setTextIfPresent('addressId',match.id);
   updateDrawingButton();
   setLookupStep('address','done','Adresse bekræftet','Et konkret officielt adresse-ID blev fundet.');
   setLookupProgress(25,'TRIN 1 AF 5','Adresse bekræftet','Henter nu BBR, matrikel og planoplysninger.');
