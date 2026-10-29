@@ -528,13 +528,13 @@ p{line-height:1.55}
   <div class="advanced-search-inner">
    <div class="advanced-search-heading"><strong>Afgræns geografisk</strong><span>By eller postnummer begrænser alle forslag og opslag.</span></div>
    <div class="geo-fields">
-    <label class="geo-field geo-city"><span>By</span><input class="geo-address-input" id="geoBy" autocomplete="off" placeholder="Søg efter bynavn" aria-controls="geoCitySuggestions" aria-expanded="false"><div class="geo-city-suggestions" id="geoCitySuggestions" role="listbox" aria-label="Byer og postnumre"></div></label>
-    <label class="geo-field geo-postcode"><span>Postnummer</span><input class="geo-address-input" id="geoPostnummer" inputmode="numeric" maxlength="4" autocomplete="postal-code" placeholder="Fx 1958" aria-describedby="geoScopeNote"></label>
+    <label class="geo-field geo-postcode"><span>1. Postnummer</span><input class="geo-address-input" id="geoPostnummer" inputmode="numeric" maxlength="4" autocomplete="postal-code" placeholder="Skriv 4 cifre, fx 4500" aria-describedby="geoScopeNote"></label>
+    <label class="geo-field geo-city"><span>2. By (udfyldes automatisk)</span><input class="geo-address-input" id="geoBy" autocomplete="off" placeholder="Udfyldes, når postnummeret er fundet" aria-controls="geoCitySuggestions" aria-expanded="false"><div class="geo-city-suggestions" id="geoCitySuggestions" role="listbox" aria-label="Byer og postnumre"></div></label>
     <label class="geo-field geo-street"><span>Gade / vej</span><input class="geo-address-input" id="geoVejnavn" autocomplete="off" placeholder="Fx Rolighedsvej"></label>
     <label class="geo-field geo-number"><span>Husnr.</span><input class="geo-address-input" id="geoHusnummer" autocomplete="off" placeholder="48"></label>
     <label class="geo-field geo-floor"><span>Etage <small>valgfri</small></span><input class="geo-address-input" id="geoEtage" placeholder="2."></label>
     <label class="geo-field geo-door"><span>Dør <small>valgfri</small></span><input class="geo-address-input" id="geoDoer" placeholder="th."></label>
-    <div class="geo-scope-note" id="geoScopeNote"><span class="geo-scope-dot" aria-hidden="true"></span><span>Vælg by eller postnummer for at begrænse søgeresultaterne.</span></div>
+    <div class="geo-scope-note" id="geoScopeNote"><span class="geo-scope-dot" aria-hidden="true"></span><span>Skriv postnummer først. Hvis det findes, udfyldes byen automatisk.</span></div>
    </div>
   </div>
  </div>
