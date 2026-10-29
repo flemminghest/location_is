@@ -1095,10 +1095,11 @@ async function loadPropertyData(){
   const addressOk=Boolean(data.completeness?.address||data.completeness?.house||data.house);
   const bbrOk=Boolean(data.completeness?.bbr||data.bbrBuildings?.length||data.bbr?.id_lokalId);
   const matOk=Boolean(data.completeness?.cadastral||data.cadastral);
+  const bbrError=data.errors?.bbr||null,matError=data.errors?.cadastral||null;
   setLookupStep('address',addressOk?'done':'warning',addressOk?'Identificeret':'Delvist',addressOk?'Registerrelation returneret':'Adressevalget kunne ikke fuldt bekræftes i Datafordeleren');
   setLookupProgress(49,'TRIN 3 AF 5','Behandler registerresultater','BBR- og matrikelresultater er modtaget. Kun oplysninger, som registrene faktisk returnerer, bliver vist.');
-  setLookupStep('bbr',bbrOk?'done':'warning',bbrOk?'Data fundet':'Intet match',bbrOk?'En eller flere BBR-bygninger returneret':'Ingen BBR-bygning returneret; kontrollér originalkilden');
-  setLookupStep('mat',matOk?'done':'warning',matOk?'Data fundet':'Intet match',matOk?'Matrikel-/jordstykkedata returneret':'Ingen matrikelrelation returneret; kontrollér ejerlav og original kilde');
+  setLookupStep('bbr',bbrError?'error':(bbrOk?'done':'warning'),bbrError?'Kilde-fejl':(bbrOk?'Data fundet':'Intet match'),bbrError?('BBR kunne ikke kontrolleres: '+String(bbrError).slice(0,140)):(bbrOk?'En eller flere BBR-bygninger returneret':'Ingen BBR-bygning returneret; kontrollér originalkilden'));
+  setLookupStep('mat',matError?'error':(matOk?'done':'warning'),matError?'Kilde-fejl':(matOk?'Data fundet':'Intet match'),matError?('Matriklen kunne ikke kontrolleres: '+String(matError).slice(0,140)):(matOk?'Matrikel-/jordstykkedata returneret':'Ingen matrikelrelation returneret; kontrollér ejerlav og original kilde'));
   const b=data.bbr||{},m=data.cadastral||{};
   const val=(v)=>v===null||v===undefined||v===''?'—':String(v);
   const num=(v)=>{const n=Number(v);return Number.isFinite(n)&&v!==null&&v!==''?n.toLocaleString('da-DK'): '—'};
@@ -1125,16 +1126,16 @@ async function loadPropertyData(){
   const planFailed=!planLookup.ok||Boolean(pe.localPlansError||pe.municipalFramesError||pe.zoneMapError);
   setLookupStep('plan',planFailed?'error':(hasPlans?'done':'warning'),planFailed?'Kildefejl':(hasPlans?'Søgning udført':'Intet match'),planFailed?(planLookup.error||'Et eller flere plandatalag fejlede'):(hasPlans?'Plandata returnerede planobjekter i søgevinduet':'Ingen planobjekter fundet i søgevinduet; kontrollér originalkort og plan'));
   setLookupStep('history',hasHistory?'done':'warning',hasHistory?'Historik fundet':'Ingen historik',hasHistory?'Daterede planhændelser/versioner returneret':'Ingen daterede historikhændelser fundet; kommunearkiv kan stadig have materiale');
-  const partial=!addressOk||!bbrOk||!matOk||planFailed||!hasPlans||!hasHistory;
+  const partial=!addressOk||!bbrOk||!matOk||Boolean(bbrError||matError)||planFailed||!hasPlans||!hasHistory;
   setLookupProgress(96,'TRIN 5 AF 5','Samler datadækningen','Vi skelner mellem fund, ingen match og tekniske fejl, før oversigten åbnes.');
   const events2025=(pd.planHistory||[]).filter(ev=>/^2025/.test(String(ev.date||'')));
   const summary='Adresse: '+(addressOk?'identificeret':'delvist verificeret')+' · BBR: '+(bbrOk?'data fundet':'ingen bygning returneret')+' · Matrikel: '+(matOk?'data fundet':'ingen matrikelrelation returneret')+' · Planer: '+(planLookup.ok?((pd.localPlans||[]).length+' lokalplan(er) i søgevinduet'):'ikke gennemført')+' · Historik: '+(hasHistory?'hændelser fundet':'ingen historik fundet')+' · 2025: '+events2025.length+' dateret(e) hændelse(r)';
   finishLookup(partial?'Opslag afsluttet med forbehold':'Alle kilder svarede',summary,partial);
   toast(events2025.length?'Opslag færdigt · '+events2025.length+' hændelse(r) fra 2025. Se Historik & område.':'Opslag færdigt. Resultaterne er vist i oversigten.');
  }catch(err){
-  setLookupStep('address','warning','Delvist','Adresseforslaget er valgt, men registeropslaget fejlede');
-  setLookupStep('bbr','error','Fejl','BBR-opslag: '+String(err.message||'ukendt fejl').slice(0,100));
-  setLookupStep('mat','error','Fejl','Matrikelopslag: '+String(err.message||'ukendt fejl').slice(0,100));
+  setLookupStep('address','error','Kilde-fejl','Det officielle adresse-ID kunne ikke hentes fra Datafordeleren: '+String(err.message||'ukendt fejl').slice(0,120));
+  setLookupStep('bbr','warning','Ikke verificeret','BBR-opslag blev ikke gennemført, fordi adressekontrollen fejlede først.');
+  setLookupStep('mat','warning','Ikke verificeret','Matrikelopslag blev ikke gennemført, fordi adressekontrollen fejlede først.');
   setLookupStep('plan','warning','Ikke kørt','Planopslag afventer brugbart adressepunkt');
   setLookupStep('history','warning','Ikke kørt','Planhistorik blev ikke undersøgt');
   searchStatus.textContent='Adresse valgt, men BBR/matrikelopslag fejlede: '+err.message;
