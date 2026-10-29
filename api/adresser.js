@@ -111,18 +111,12 @@ export default async function handler(req,res) {
       if(postnummer)params.postnummer=postnummer;
       if(etage)params.etage=etage;
       if(doer)params.doer=doer;
-      const path=(etage||doer)?"/adresser/soeg/":"/husnumre/soeg/";
-      try{
-        const hits=await requestSearch(path,params,100);
-        raw.push(...hits.map(x=>normalize(x,path.includes("adresser")?"structured-address":"structured-house")));
-      }catch(error){errors.push(String(error.message||"Adresseopslag fejlede").slice(0,150));}
-      // An apartment-level search can require the address endpoint; house-number results are only a fallback
-      // when no floor/door was supplied.
-      if(!(etage||doer)&&husnummer){
-        try{
-          const addressHits=await requestSearch("/adresser/soeg/",params,60);
-          raw.push(...addressHits.map(x=>normalize(x,"structured-address")));
-        }catch(error){errors.push(String(error.message||"Adressesøgning fejlede").slice(0,150));}
+      const paths=(etage||doer)?["/adresser/soeg/"]:(husnummer?["/husnumre/soeg/","/adresser/soeg/"]:["/husnumre/soeg/"]);
+      // Query house and address resources concurrently; never wait two timeout windows back-to-back.
+      const results=await Promise.allSettled(paths.map(path=>requestSearch(path,params,60).then(hits=>hits.map(x=>normalize(x,path.includes("adresser")?"structured-address":"structured-house")))));
+      for(const result of results){
+        if(result.status==="fulfilled")raw.push(...result.value);
+        else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
       }
       raw=filterStrict(raw,postnummer,by);
       const fund=sortAndDedupe(raw,q||[vejnavn,husnummer,postnummer,by,etage,doer].filter(Boolean).join(" ")).slice(0,100);
