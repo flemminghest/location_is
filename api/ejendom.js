@@ -12,7 +12,7 @@ async function graphql(query) {
   return payload.data;
 }
 
-function isId(value) { return /^[a-zA-Z0-9._-]{8,100}$/.test(String(value || "")); }
+function isId(value) { return /^[a-zA-Z0-9._-]{1,100}$/.test(String(value || "")); }
 function baseArgs(now, where) { return "first:10, registreringstid:\"" + now + "\", virkningstid:\"" + now + "\"" + (where ? ", where:{" + where + "}" : ""); }
 function eqWhere(field, value) { return field + ":{eq:\"" + String(value).replace(/["\\]/g, "") + "\"}"; }
 function rootQuery(type, now, where, nodes) { return "query { " + type + "(" + baseArgs(now, where) + ") { nodes { " + nodes + " } } }"; }
