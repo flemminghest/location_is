@@ -3,6 +3,17 @@ const TOKEN=()=>process.env.ADRESSEVAELGER_TOKEN||"adressevaelger123";
 const ENDPOINT=process.env.DATAFORDELER_GRAPHQL_URL||"https://graphql.datafordeler.dk/flexible/v3";
 function normalized(v){return String(v||"").toLocaleLowerCase("da-DK").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
 function escapeGraphQL(v){return String(v).replace(/\\/g,"\\\\").replace(/"/g,'\\"');}
+async function queryPublicPostnummer(query){
+ const url=new URL("https://api.dataforsyningen.dk/postnumre");
+ if(/^\d{4}$/.test(query))url.searchParams.set("nr",query);
+ else url.searchParams.set("navn_startswith",query);
+ url.searchParams.set("per_side","100");
+ const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(5000)});
+ const payload=await response.json().catch(()=>null);
+ if(!response.ok||!Array.isArray(payload))throw new Error("Dataforsyningen postnummer-API HTTP "+response.status);
+ return payload.map(x=>({nr:String(x.nr||""),navn:String(x.navn||"").trim(),source:"Dataforsyningen postnumre"}))
+  .filter(x=>/^\d{4}$/.test(x.nr)&&x.navn&&(/^\d{4}$/.test(query)?x.nr===query:normalized(x.navn).startsWith(normalized(query))));
+}
 async function queryPostnummer(query){
  const key=process.env.DATAFORDELER_API_KEY;
  if(!key)throw new Error("DATAFORDELER_API_KEY mangler");
@@ -57,11 +68,14 @@ export default async function handler(req,res){
  const nr=String(req.query.nr||"").trim(),q=String(req.query.q||"").trim(),query=nr||q;
  if(!query||query.length<2||query.length>60)return res.status(400).json({ok:false,error:"Angiv et postnummer på fire cifre eller et bynavn."});
  if(nr&&!/^\d{4}$/.test(nr))return res.status(400).json({ok:false,error:"Postnummer skal bestå af fire cifre."});
- const [primary,secondary]=await Promise.allSettled([queryPostnummer(query),searchKds(query)]);
+ const [publicResult,primary,secondary]=await Promise.allSettled([queryPublicPostnummer(query),queryPostnummer(query),searchKds(query)]);
  const all=[];let primaryErrors=[];
- if(primary.status==="fulfilled"){all.push(...primary.value.items);primaryErrors=primary.value.errors;}
- else primaryErrors=[String(primary.reason?.message||"DAR_Postnummer fejlede").slice(0,150)];
+ if(publicResult.status==="fulfilled")all.push(...publicResult.value);
+ else primaryErrors.push(String(publicResult.reason?.message||"Dataforsyningen fejlede").slice(0,150));
+ if(primary.status==="fulfilled"){all.push(...primary.value.items);primaryErrors.push(...primary.value.errors);}
+ else primaryErrors.push(String(primary.reason?.message||"DAR_Postnummer fejlede").slice(0,150));
  if(secondary.status==="fulfilled")all.push(...secondary.value);
+ else primaryErrors.push(String(secondary.reason?.message||"Adressevælger fejlede").slice(0,150));
  const unique=new Map();
  for(const item of all){
   if(nr&&item.nr!==nr)continue;
@@ -77,5 +91,5 @@ export default async function handler(req,res){
   return res.status(200).json({ok:true,results:results.slice(0,30),source:"Officielle postnummerkilder"});
  }
  res.setHeader("Cache-Control","no-store");
- return res.status(502).json({ok:false,error:"Postnummer/by kunne ikke verificeres hos de officielle kilder.",details:[...primaryErrors,...(secondary.status==="rejected"?[String(secondary.reason?.message||"Adressevælger fejlede").slice(0,120)]:[])]});
+ return res.status(502).json({ok:false,error:"Postnummer/by kunne ikke verificeres hos de officielle kilder.",details:primaryErrors});
 }
