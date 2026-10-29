@@ -1,81 +1,66 @@
 const BASE = "https://adressevaelger.dk";
 const TOKEN = () => process.env.ADRESSEVAELGER_TOKEN || "adressevaelger123";
-async function fetchSuggestions(endpoint, q, limit) {
-  const url = new URL(endpoint, BASE);
-  url.searchParams.set("tekst", q);
-  url.searchParams.set("maksimum", String(limit));
-  url.searchParams.set("token", TOKEN());
-  const response = await fetch(url, { headers:{accept:"application/json"}, signal:AbortSignal.timeout(12000) });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error("Adressevælger HTTP " + response.status);
-  if (body.status && body.status !== "ok") throw new Error(body.beskrivelse || "Adressevælgerens søgning fejlede");
-  return Array.isArray(body.fund) ? body.fund : [];
+async function requestSearch(path, params, limit=20) {
+  const url = new URL(path, BASE);
+  for (const [key,value] of Object.entries(params)) if (value !== undefined && value !== null && String(value) !== "") url.searchParams.set(key,String(value));
+  url.searchParams.set("maksimum",String(limit));
+  url.searchParams.set("token",TOKEN());
+  const response = await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(12000)});
+  const data = await response.json().catch(()=>({}));
+  if (!response.ok) throw new Error("Adressevælger HTTP "+response.status);
+  if (data.status && data.status !== "ok") throw new Error(data.beskrivelse || "Adressevælgerens søgning fejlede");
+  return Array.isArray(data.fund) ? data.fund : [];
 }
-function normalize(hit, kind) {
-  const type = String(hit.type || "").toLowerCase();
-  const labels = {
-    adresse:"Adresse", husnummer:"Husnummer",
-    navngivenvejpostnummer:"Vej og postnummer",
-    vejnavn:"Vejnavn", vejnavnhusnummer:"Muligt husnummer"
-  };
-  const label = hit.titel || hit.adgangsadressebetegnelse || hit.adressebetegnelse || [hit.vejnavn,hit.husnummer,hit.postnr,hit.postdistrikt].filter(Boolean).join(" ");
-  const detailParts = [];
-  if (hit.postnr && hit.postdistrikt) detailParts.push(hit.postnr + " " + hit.postdistrikt);
-  else if (hit.postdistrikt) detailParts.push(hit.postdistrikt);
-  if (hit.antal_husnumre != null) detailParts.push(hit.antal_husnumre + " husnumre på vejen");
-  if (type === "vejnavn") detailParts.push("Vejnavn · tilføj husnummer og postnummer");
-  if (type === "vejnavnhusnummer") detailParts.push("Ikke entydig endnu · tilføj postnummer/by");
-  const specific = type === "adresse" || type === "husnummer";
-  return {
-    id:hit.id || null, type, label:String(label || ""),
-    detail:detailParts.join(" · "), kindLabel:labels[type] || (kind === "adresse" ? "Adresseforslag" : "Søgeforslag"),
-    source:"official-dar", husnummerId:hit.husnummerId || hit.husnummerid || null,
-    vejnavn:hit.vejnavn || null, husnummer:hit.husnummer || null, postnr:hit.postnr || null, postdistrikt:hit.postdistrikt || null,
-    antal_husnumre:hit.antal_husnumre == null ? null : Number(hit.antal_husnumre), specific, rawType:hit.type || null
-  };
+function normalize(hit, origin) {
+  const type=String(hit.type||"").toLowerCase();
+  const labels={adresse:"Præcis adresse",husnummer:"Husnummer",navngivenvejpostnummer:"Vej og postnummer",vejnavn:"Vejnavn",vejnavnhusnummer:"Muligt husnummer"};
+  const label=hit.titel||hit.adgangsadressebetegnelse||hit.adressebetegnelse||[hit.vejnavn,hit.husnummer,hit.postnr,hit.postdistrikt].filter(Boolean).join(" ");
+  const detail=[];
+  if(hit.postnr&&hit.postdistrikt)detail.push(hit.postnr+" "+hit.postdistrikt);
+  else if(hit.postdistrikt)detail.push(hit.postdistrikt);
+  if(hit.antal_husnumre!=null)detail.push(hit.antal_husnumre+" husnumre på vejen");
+  if(type==="vejnavn")detail.push("Tilføj husnummer og postnummer for et præcist opslag");
+  if(type==="vejnavnhusnummer")detail.push("Ikke entydig endnu · tilføj postnummer/by");
+  const specific=type==="adresse"||type==="husnummer";
+  return {id:hit.id||null,type,label:String(label||""),detail:detail.join(" · "),kindLabel:labels[type]||"Søgeforslag",source:"official-dar",husnummerId:hit.husnummerId||hit.husnummerid||null,vejnavn:hit.vejnavn||hit.vejNavn||null,husnummer:hit.husnummer||hit.husNummer||null,postnr:hit.postnr||null,postdistrikt:hit.postdistrikt||null,antal_husnumre:hit.antal_husnumre==null?null:Number(hit.antal_husnumre),specific,origin};
 }
-function score(hit, q) {
-  const query = q.toLocaleLowerCase("da").replace(/[.,]/g," ").replace(/\\s+/g," ").trim();
-  const label = hit.label.toLocaleLowerCase("da").replace(/[.,]/g," ").replace(/\\s+/g," ").trim();
-  let n = 0;
-  if (label === query) n += 100;
-  else if (label.startsWith(query)) n += 35;
-  else if (label.includes(query)) n += 15;
-  if (hit.type === "adresse") n += 24;
-  else if (hit.type === "husnummer") n += 18;
-  else if (hit.type === "navngivenvejpostnummer") n += 5;
-  if (/\\b\\d{4}\\b/.test(q) && hit.postnr === q.match(/\\b\\d{4}\\b/)?.[0]) n += 20;
-  if (hit.specific) n += 10;
-  return n;
+function score(hit,q) {
+  const clean=x=>String(x||"").toLocaleLowerCase("da").replace(/[.,]/g," ").replace(/\\s+/g," ").trim();
+  const query=clean(q),label=clean(hit.label);let n=0;
+  if(label===query)n+=100;else if(label.startsWith(query))n+=35;else if(label.includes(query))n+=15;
+  if(hit.type==="adresse")n+=26;else if(hit.type==="husnummer")n+=20;else if(hit.type==="navngivenvejpostnummer")n+=3;
+  const zip=query.match(/\\b\\d{4}\\b/);if(zip&&hit.postnr===zip[0])n+=25;
+  if(hit.specific)n+=10;return n;
 }
-export default async function handler(req, res) {
-  if (req.method !== "GET") { res.setHeader("Allow","GET"); return res.status(405).json({error:"Method not allowed"}); }
-  const q = String(req.query.q || "").trim();
-  if (q.length < 2 || q.length > 73) return res.status(400).json({error:"Søgningen skal være 2–73 tegn."});
+export default async function handler(req,res) {
+  if(req.method!=="GET"){res.setHeader("Allow","GET");return res.status(405).json({error:"Method not allowed"});}
+  const q=String(req.query.q||"").trim();
+  if(q.length<2||q.length>73)return res.status(400).json({error:"Skriv mindst 2 tegn og højst 73 tegn."});
   try {
-    // Address search finds individual floor/door addresses; house-number search finds access locations.
-    const [addressHits, houseHits] = await Promise.allSettled([
-      fetchSuggestions("/adresser/soeg/", q, 20),
-      fetchSuggestions("/husnumre/soeg/", q, 20)
+    const [addressResults,houseResults]=await Promise.allSettled([
+      requestSearch("/adresser/soeg/",{tekst:q},20),
+      requestSearch("/husnumre/soeg/",{tekst:q},20)
     ]);
-    const errors = [];
-    const merged = [];
-    if (addressHits.status === "fulfilled") merged.push(...addressHits.value.map(x => normalize(x,"adresse")));
-    else errors.push("adresse: " + String(addressHits.reason?.message || "fejl").slice(0,120));
-    if (houseHits.status === "fulfilled") merged.push(...houseHits.value.map(x => normalize(x,"husnummer")));
-    else errors.push("husnummer: " + String(houseHits.reason?.message || "fejl").slice(0,120));
-    const unique = new Map();
-    for (const hit of merged) {
-      if (!hit.label) continue;
-      const key = (hit.id || hit.label) + "|" + hit.type;
-      const existing = unique.get(key);
-      if (!existing || score(hit,q) > score(existing,q)) unique.set(key,hit);
+    const raw=[];const errors=[];
+    if(addressResults.status==="fulfilled")raw.push(...addressResults.value.map(x=>normalize(x,"adresser/soeg")));else errors.push("Adresse: "+String(addressResults.reason?.message||"fejl").slice(0,100));
+    if(houseResults.status==="fulfilled")raw.push(...houseResults.value.map(x=>normalize(x,"husnumre/soeg")));else errors.push("Husnummer: "+String(houseResults.reason?.message||"fejl").slice(0,100));
+    // If the input only identifies a road + postcode, expand that choice into actual house-number suggestions.
+    const broad=raw.filter(x=>x.type==="navngivenvejpostnummer"&&x.vejnavn&&x.postnr).slice(0,3);
+    const expanded=await Promise.allSettled(broad.map(async road=>({road,hits:await requestSearch("/husnumre/soeg/",{vejnavn:road.vejnavn,postnummer:road.postnr},12)})));
+    for(const result of expanded){
+      if(result.status==="fulfilled")raw.push(...result.value.hits.map(x=>normalize(x,"vejnavn+postnummer")));
     }
-    const fund = [...unique.values()].sort((a,b) => score(b,q)-score(a,q) || a.label.localeCompare(b.label,"da")).slice(0,12);
-    if (errors.length === 2) return res.status(502).json({error:"Begge officielle adresseopslag fejlede.",details:errors});
-    res.setHeader("Cache-Control","public, max-age=30");
-    return res.status(200).json({status:"ok",query:q,fund,partial:errors.length>0,details:errors,source:"Klimadatastyrelsens Adressevælger",hint:fund.length ? "Brug vejnavn + husnummer + postnummer for det mest præcise match." : "Prøv med vejnavn, husnummer og postnummer eller by."});
-  } catch (error) {
+    const unique=new Map();
+    for(const hit of raw){
+      if(!hit.label)continue;
+      const key=(hit.id||hit.label)+"|"+hit.type;
+      const current=unique.get(key);if(!current||score(hit,q)>score(current,q))unique.set(key,hit);
+    }
+    const fund=[...unique.values()].sort((a,b)=>score(b,q)-score(a,q)||a.label.localeCompare(b.label,"da")).slice(0,14);
+    if(addressResults.status!=="fulfilled"&&houseResults.status!=="fulfilled")return res.status(502).json({error:"Begge officielle adresseopslag fejlede.",details:errors});
+    res.setHeader("Cache-Control","public, max-age=25");
+    return res.status(200).json({status:"ok",query:q,fund,partial:errors.length>0,details:errors,source:"Klimadatastyrelsens Adressevælger",hint:fund.some(x=>x.type==="adresse"||x.type==="husnummer")?"Vælg det præcise husnummer/adresse. Tilføj postnummer eller by, hvis flere ligner hinanden.":"Skriv vejnavn + husnummer + postnummer for at indsnævre resultaterne."});
+  } catch(error) {
     return res.status(502).json({error:"Kunne ikke kontakte Klimadatastyrelsens Adressevælger.",detail:String(error.message||"").slice(0,200)});
   }
 }
