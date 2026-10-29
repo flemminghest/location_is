@@ -419,24 +419,77 @@ p{line-height:1.55}
 
 /* Keep helper/status line visually absent until there is an actual result or validation message */
 #searchStatus:empty{display:none}
+
+/* Primary one-field search; advanced filters expand only on request */
+.geo-search-form{display:block!important;position:relative;width:100%;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+.primary-search-row{display:flex;position:relative;align-items:stretch;gap:12px;width:100%}
+.primary-address-input{flex:1 1 auto;min-width:0;height:76px;padding:0 25px;border:1px solid #d7e3eb;border-radius:17px;background:#fff;color:#183248;font-family:var(--font-heading);font-size:clamp(19px,1.6vw,24px);font-weight:750;letter-spacing:-.035em;line-height:1.25;box-shadow:0 4px 15px #16354a08;transition:border-color .18s,box-shadow .18s;outline:none}
+.primary-address-input::placeholder{color:#8194a2;opacity:1;font-family:var(--font-heading);font-weight:700;letter-spacing:-.035em}
+.primary-address-input:focus{border-color:#83b4bd;box-shadow:0 0 0 4px #5aa6ad1c,0 6px 20px #16354a0c}
+.primary-search-row .suggestions{top:calc(100% + 8px);left:0;right:0;max-height:min(390px,55vh);z-index:100}
+.advanced-search-toggle{display:inline-flex;align-items:center;gap:7px;margin:12px 0 0;padding:3px 4px;border:0;background:transparent;color:#526f82;font-family:var(--font-ui);font-size:12px;font-weight:750;line-height:1.4;cursor:pointer;transition:color .15s}
+.advanced-search-toggle:hover{color:#24566e}
+.advanced-search-toggle svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s}
+.advanced-search-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}
+.advanced-search-panel{max-height:0;opacity:0;overflow:hidden;visibility:hidden;transform:translateY(-7px);margin-top:0;pointer-events:none;transition:max-height .32s ease,opacity .22s ease,transform .28s ease,margin-top .28s ease,visibility 0s linear .32s}
+.advanced-search-panel.is-open{max-height:420px;opacity:1;visibility:visible;transform:none;margin-top:12px;pointer-events:auto;transition:max-height .38s ease,opacity .25s ease,transform .28s ease,margin-top .28s ease,visibility 0s}
+.advanced-search-inner{padding:15px;border:1px solid #d8e5ec;border-radius:15px;background:linear-gradient(150deg,#f8fbfd,#eef4f7);box-shadow:0 5px 17px #17365008}
+.advanced-search-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 12px;margin-bottom:13px}
+.advanced-search-heading strong{font-family:var(--font-heading);font-size:13px;font-weight:800;color:#234155;letter-spacing:-.02em}
+.advanced-search-heading span{font-family:var(--font-ui);font-size:10px;color:#788d9b}
+.geo-fields{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:11px 12px;align-items:end}
+.geo-field{position:relative;display:flex;flex-direction:column;gap:6px;min-width:0}
+.geo-field>span{display:flex;align-items:center;gap:6px;color:#526a7c;font-family:var(--font-ui);font-size:10px;line-height:1.25;font-weight:750;letter-spacing:.015em}
+.geo-field>span small{font-size:9px;color:#96a3ae;font-weight:550}
+.geo-field input{width:100%;min-width:0;height:41px;padding:0 11px;border:1px solid #d4e1e9;border-radius:9px;background:#fff;color:#1d3548;font-family:var(--font-ui);font-size:12px;line-height:1.3;font-weight:600;outline:none;transition:border-color .15s,box-shadow .15s}
+.geo-field input::placeholder{color:#a1adb7;font-weight:450}
+.geo-field input:focus{border-color:#76abb9;box-shadow:0 0 0 3px #58a8b71c}
+.geo-field input[readonly]{background:#edf4f7;color:#416879}
+.geo-city{grid-column:span 4}.geo-postcode{grid-column:span 2}.geo-street{grid-column:span 4}.geo-number{grid-column:span 2}
+.geo-floor{grid-column:span 2}.geo-door{grid-column:span 2}
+.geo-scope-note{grid-column:span 8;display:flex;align-items:center;gap:8px;min-height:41px;color:#6d8291;font-family:var(--font-ui);font-size:10px;line-height:1.45}
+.geo-scope-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#3a9a84;box-shadow:0 0 0 4px #3a9a8418}
+.geo-city-suggestions{display:none;position:absolute;z-index:130;top:calc(100% + 5px);left:0;right:0;max-height:240px;overflow-y:auto;border:1px solid #d9e5ec;border-radius:11px;background:#fff;box-shadow:0 15px 32px #19344720;padding:4px}
+.geo-city-suggestions.is-open{display:block}
+.geo-city-option{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;padding:10px;border:0;border-radius:8px;background:#fff;color:#234155;text-align:left;cursor:pointer}
+.geo-city-option:hover,.geo-city-option:focus-visible{background:#eef6f7;outline:none}
+.geo-city-option strong{font-family:var(--font-ui);font-size:12px;font-weight:750}
+.geo-city-option small{font-size:10px;color:#718696}
+.geo-city-message{padding:10px;color:#7b8c9a;font-size:10px;line-height:1.45}
+.geo-search-submit{grid-column:auto!important;display:inline-flex!important;align-items:center;justify-content:space-between!important;gap:18px;flex:0 0 150px;min-width:150px;width:auto;height:76px;padding:0 22px!important;border-radius:17px;font-size:19px;font-weight:800}
+.geo-search-submit span{font-family:var(--font-heading);font-size:19px}
+.geo-search-submit .geo-search-icon{width:20px;height:20px}
+#searchStatus{margin-top:7px;font-size:11px;line-height:1.45;color:#738797}
+#searchStatus:empty{display:none}
+@media(max-width:1100px){.geo-search-submit{flex-basis:130px;min-width:130px}.geo-fields{grid-template-columns:repeat(6,minmax(0,1fr))}.geo-city{grid-column:span 3}.geo-postcode{grid-column:span 3}.geo-street{grid-column:span 4}.geo-number{grid-column:span 2}.geo-scope-note{grid-column:span 6}}
+@media(max-width:700px){.primary-search-row{gap:8px}.primary-address-input{height:60px;padding:0 14px;border-radius:13px;font-size:16px}.primary-address-input::placeholder{font-size:16px}.geo-search-submit{height:60px;flex-basis:95px;min-width:95px;padding:0 13px!important;border-radius:13px;font-size:16px}.geo-search-submit span{font-size:16px}.geo-search-submit .geo-search-icon{width:18px;height:18px}.advanced-search-toggle{font-size:11px;margin-top:10px}.advanced-search-inner{padding:11px;border-radius:13px}.advanced-search-heading{gap:4px;flex-direction:column}.geo-fields{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.geo-city{grid-column:span 4}.geo-postcode{grid-column:span 2}.geo-street{grid-column:span 4}.geo-number{grid-column:span 2}.geo-floor,.geo-door{grid-column:span 3}.geo-scope-note{grid-column:span 6;min-height:auto}.geo-field input{height:40px;font-size:12px}.advanced-search-panel.is-open{max-height:570px}}
+@media(prefers-reduced-motion:reduce){.advanced-search-panel,.advanced-search-toggle svg{transition:none!important}}
 </style>
 </head>
 <body><div class="app">
 <aside class="side"><div class="brand"><img class="brand-icon" src="/favicon.svg" alt="" aria-hidden="true"><span class="brand-name" aria-label="MeasLookUp">MeasL<span class="brand-eyes" aria-hidden="true"><svg viewBox="0 0 48 24" focusable="false"><path d="M2.5 12C7 4.5 16.5 3.5 22 12c-5.5 8.5-15 7.5-19.5 0Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M25.5 12C31 3.5 41 4.5 45.5 12 41 19.5 31 20.5 25.5 12Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12.5" cy="12" r="3.1" fill="#65d1bc"/><circle cx="35.5" cy="12" r="3.1" fill="#65d1bc"/><circle cx="13.5" cy="10.8" r=".85" fill="#f7fbff"/><circle cx="36.5" cy="10.8" r=".85" fill="#f7fbff"/></svg></span>kUp</span></div><div class="navlabel">Ejendomsanalyse</div><nav class="nav">
 <button class="active" data-section="overblik"><span>⌂</span><span>Overblik</span></button><button data-section="grund"><span>▤</span><span>Ejendomsdata</span></button><button data-section="planer"><span>◈</span><span>Kort og planer</span></button><button data-section="planer"><span>▧</span><span>Lokalplan</span></button><button data-section="krav"><span>▣</span><span>Byggeregler</span></button><button data-section="miljo"><span>♧</span><span>Miljø og natur</span></button><button data-section="infrastruktur"><span>⇄</span><span>Infrastruktur</span></button><button data-section="naeromraade"><span>⌖</span><span>Nærområde</span></button><button data-section="historik"><span>◷</span><span>Historik & område</span></button><button data-section="dokumenter"><span>▤</span><span>Dokumenter</span></button></nav><div class="sidefoot">STUDIEVÆRKTØJ · PROTOTYPE<br>Data afhænger af kildeopslag</div></aside>
 <main class="main"><header class="top"><div class="top-heading"><div class="top-heading-main"><h1>Ejendomsanalyse</h1></div><div class="sub"><span>Kortlæg ejendommen før du projekterer</span></div></div><div class="searchwrap"><form class="search geo-search-form" id="searchForm" autocomplete="off">
- <div class="geo-fields">
-  <label class="geo-field geo-postcode"><span>Postnummer</span><input class="geo-address-input" id="geoPostnummer" inputmode="numeric" maxlength="4" autocomplete="postal-code" placeholder="1958" required aria-describedby="geoScopeNote"></label>
-  <label class="geo-field geo-city"><span>By · automatisk</span><input class="geo-address-input" id="geoBy" autocomplete="address-level2" placeholder="Udfyldes fra postnummer" readonly></label>
-  <label class="geo-field geo-street"><span>Gade / vej</span><input class="geo-address-input" id="geoVejnavn" autocomplete="address-line1" placeholder="Fx Rolighedsvej" required></label>
-  <label class="geo-field geo-number"><span>Husnr.</span><input class="geo-address-input" id="geoHusnummer" autocomplete="address-line2" placeholder="48"></label>
-  <label class="geo-field geo-floor"><span>Etage <small>valgfri</small></span><input class="geo-address-input" id="geoEtage" placeholder="2."></label>
-  <label class="geo-field geo-door"><span>Dør <small>valgfri</small></span><input class="geo-address-input" id="geoDoer" placeholder="th."></label>
-  <div class="geo-scope-note" id="geoScopeNote"><span class="geo-scope-dot" aria-hidden="true"></span><span>Opslag afgrænses til det valgte postnummer.</span></div>
+ <div class="primary-search-row">
+  <input id="query" class="primary-address-input" type="text" aria-label="Adresse, gade eller postnummer" placeholder="Søg adresse, vej + husnummer eller postnummer" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false" role="combobox" autocomplete="street-address">
   <button class="btn primary search-submit geo-search-submit" id="geoSearchSubmit" type="submit"><span>Søg</span><svg class="geo-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.6"></circle><path d="m16 16 4.2 4.2"></path></svg></button>
+  <div class="suggestions" id="suggestions" role="listbox" aria-label="Adresseforslag"></div>
  </div>
- <input id="query" type="hidden" aria-label="Samlet adresse">
- <div class="suggestions" id="suggestions" role="listbox" aria-label="Adresseforslag"></div>
+ <button class="advanced-search-toggle" type="button" id="toggleAdvancedSearch" aria-expanded="false" aria-controls="advancedSearchPanel"><span>Udvid søgning</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+ <div class="advanced-search-panel" id="advancedSearchPanel" aria-hidden="true" inert>
+  <div class="advanced-search-inner">
+   <div class="advanced-search-heading"><strong>Afgræns geografisk</strong><span>By eller postnummer begrænser alle forslag og opslag.</span></div>
+   <div class="geo-fields">
+    <label class="geo-field geo-city"><span>By</span><input class="geo-address-input" id="geoBy" autocomplete="off" placeholder="Søg efter bynavn" aria-controls="geoCitySuggestions" aria-expanded="false"><div class="geo-city-suggestions" id="geoCitySuggestions" role="listbox" aria-label="Byer og postnumre"></div></label>
+    <label class="geo-field geo-postcode"><span>Postnummer</span><input class="geo-address-input" id="geoPostnummer" inputmode="numeric" maxlength="4" autocomplete="postal-code" placeholder="Fx 1958" aria-describedby="geoScopeNote"></label>
+    <label class="geo-field geo-street"><span>Gade / vej</span><input class="geo-address-input" id="geoVejnavn" autocomplete="off" placeholder="Fx Rolighedsvej"></label>
+    <label class="geo-field geo-number"><span>Husnr.</span><input class="geo-address-input" id="geoHusnummer" autocomplete="off" placeholder="48"></label>
+    <label class="geo-field geo-floor"><span>Etage <small>valgfri</small></span><input class="geo-address-input" id="geoEtage" placeholder="2."></label>
+    <label class="geo-field geo-door"><span>Dør <small>valgfri</small></span><input class="geo-address-input" id="geoDoer" placeholder="th."></label>
+    <div class="geo-scope-note" id="geoScopeNote"><span class="geo-scope-dot" aria-hidden="true"></span><span>Vælg by eller postnummer for at begrænse søgeresultaterne.</span></div>
+   </div>
+  </div>
+ </div>
 </form>
 <div class="searchstatus" id="searchStatus" aria-live="polite"></div>
 <div class="geo-example"><div class="geo-example-copy"><span class="geo-example-kicker">GRATIS EKSEMPEL</span><span class="geo-example-format">Gadenavn + husnummer · postnummer + by <span class="geo-optional">· etage/dør valgfrit</span></span><span class="geo-example-address">Lorents Møllers Vej 48, 6700 Esbjerg</span></div><button type="button" id="fillExampleSearch" class="geo-example-button">Prøv eksemplet <span aria-hidden="true">→</span></button></div><p class="geo-example-note">Etage og dør kan tilføjes ved lejligheder, fx “2. th.”. Det hjælper med at præcisere boligen, men offentlige bygningsdata kan være registreret på adressen eller bygningen samlet.</p></div></header>
