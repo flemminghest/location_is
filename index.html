@@ -1341,7 +1341,18 @@ function findExactPrimaryMatch(query,items){
   if(city&&normalizeAddressMatch(item.postdistrikt)!==normalizeAddressMatch(city))return false;
   return true;
  });
- return candidates.find(item=>normalizeAddressMatch(item.label)===normalizedQuery)||null;
+ const exact=candidates.find(item=>normalizeAddressMatch(item.label)===normalizedQuery);
+ if(exact)return exact;
+ // Only auto-resolve a shortened address when the user explicitly constrained geography.
+ // Without a city/postcode filter, the same street and number can be ambiguous.
+ if(!activePostnummer()&&!activeBy())return null;
+ const tokens=normalizedQuery.split(' ').filter(Boolean);
+ if(!tokens.some(token=>/\\d/.test(token)))return null;
+ const partial=candidates.filter(item=>{
+  const label=normalizeAddressMatch(item.label);
+  return tokens.every(token=>label.includes(token));
+ });
+ return partial.length===1?partial[0]:null;
 }
 document.getElementById('searchForm').addEventListener('submit',async event=>{
  event.preventDefault();
