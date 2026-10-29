@@ -681,7 +681,7 @@ function formatAddressQuery(){
 function syncAddressQuery(){searchInput.value=formatAddressQuery();}
 async function resolvePostnummer(nr){
  const code=String(nr||'').trim();
- if(!/^\\d{4}$/.test(code)){verifiedPostnummer='';geoBy.value='';geoBy.readOnly=true;return false;}
+ if(!/^\d{4}$/.test(code)){verifiedPostnummer='';geoBy.value='';geoBy.readOnly=true;return false;}
  if(verifiedPostnummer===code&&geoBy.value)return true;
  if(postcodeController)postcodeController.abort();
  postcodeController=new AbortController();
@@ -710,7 +710,7 @@ function scheduleStructuredSuggestions(){
  chosenAddress=null;
  updateDrawingButton();
  const zip=geoPostnummer.value.trim(),street=geoVejnavn.value.trim();
- if(!/^\\d{4}$/.test(zip)){closeSuggestions();searchStatus.textContent='Indtast et firecifret postnummer først. Søgningen bliver begrænset til dette område.';return;}
+ if(!/^\d{4}$/.test(zip)){closeSuggestions();searchStatus.textContent='Indtast et firecifret postnummer først. Søgningen bliver begrænset til dette område.';return;}
  if(verifiedPostnummer!==zip){closeSuggestions();return;}
  if(street.length<2){closeSuggestions();searchStatus.textContent='Postnummer '+zip+' · '+geoBy.value+'. Skriv gade/vej for at søge inden for området.';return;}
  addressTimer=setTimeout(()=>lookupAddressSuggestions(searchInput.value),250);
@@ -814,7 +814,7 @@ async function lookupAddressSuggestions(q){
  if(activeSearchController)activeSearchController.abort();
  activeSearchController=new AbortController();
  const controller=activeSearchController,zip=geoPostnummer.value.trim();
- if(!/^\\d{4}$/.test(zip)||verifiedPostnummer!==zip||geoVejnavn.value.trim().length<2){closeSuggestions();return [];}
+ if(!/^\d{4}$/.test(zip)||verifiedPostnummer!==zip||geoVejnavn.value.trim().length<2){closeSuggestions();return [];}
  const params=new URLSearchParams({vejnavn:geoVejnavn.value.trim(),postnummer:zip});
  if(geoHusnummer.value.trim())params.set('husnummer',geoHusnummer.value.trim());
  if(geoEtage.value.trim())params.set('etage',geoEtage.value.trim());
@@ -863,11 +863,11 @@ function parseSuggestionToFields(item){
  if(item.doer||p.doer)geoDoer.value=item.doer||p.doer;
  // When the source returns only a complete title, split its official address designation safely.
  const label=String(item.label||'');
- const parsed=label.match(/^(.+?)\\s+(\\d+[a-zA-Z]?(?:\\s*[-/]\\s*\\d+[a-zA-Z]?)?)(?:,\\s*(.*?))?,?\\s+(\\d{4})\\s+(.+)$/);
+ const parsed=label.match(/^(.+?)\s+(\d+[a-zA-Z]?(?:\s*[-/]\s*\d+[a-zA-Z]?)?)(?:,\s*(.*?))?,?\s+(\d{4})\s+(.+)$/);
  if(parsed){
   if(!geoVejnavn.value.trim())geoVejnavn.value=parsed[1].trim();
   if(!geoHusnummer.value.trim())geoHusnummer.value=parsed[2].trim();
-  if(parsed[3]&&/\\d/.test(parsed[3]))geoEtage.value=parsed[3].trim();
+  if(parsed[3]&&/\d/.test(parsed[3]))geoEtage.value=parsed[3].trim();
   if(parsed[4]===geoPostnummer.value.trim())geoBy.value=parsed[5].trim();
  }
  syncAddressQuery();
@@ -1148,7 +1148,7 @@ function normalizeAddressMatch(value){
 function getExactSuggestion(query,items){
  const q=normalizeAddressMatch(query),qTokens=new Set(q.split(' '));
  if(!/\d/.test(q))return null;
- const precise=items.filter(x=>x.source==='official-dar'&&['adresse','husnummer'].includes(x.type)&&x.id);
+ const precise=items.filter(x=>x.source==='official-dar'&&['adresse','husnummer'].includes(x.type)&&x.id&&String(x.postnr||'')===geoPostnummer.value.trim());
  const exact=precise.filter(x=>{
   const label=normalizeAddressMatch(x.label);
   if(label===q||q.startsWith(label+' '))return true;
@@ -1157,26 +1157,11 @@ function getExactSuggestion(query,items){
  }).sort((a,b)=>(a.type==='adresse'?0:1)-(b.type==='adresse'?0:1));
  return exact.length?exact[0]:null;
 }
-function normalizeAddressMatch(value){
- return String(value||'').toLocaleLowerCase('da-DK').normalize('NFC').replace(/[.,]/g,' ').replace(/\\s+/g,' ').trim();
-}
-function getExactSuggestion(query,items){
- const q=normalizeAddressMatch(query),qTokens=new Set(q.split(' '));
- if(!/\\d/.test(q))return null;
- const precise=items.filter(x=>x.source==='official-dar'&&['adresse','husnummer'].includes(x.type)&&x.id&&String(x.postnr||'')===geoPostnummer.value.trim());
- const exact=precise.filter(x=>{
-  const label=normalizeAddressMatch(x.label);
-  if(label===q||q.startsWith(label+' '))return true;
-  const tokens=label.split(' ').filter(Boolean);
-  return tokens.length>=3&&tokens.some(t=>/\\d/.test(t))&&tokens.every(t=>qTokens.has(t));
- }).sort((a,b)=>(a.type==='adresse'?0:1)-(b.type==='adresse'?0:1));
- return exact.length?exact[0]:null;
-}
 document.getElementById('searchForm').addEventListener('submit',async e=>{
  e.preventDefault();
  syncAddressQuery();
  const q=searchInput.value.trim(),zip=geoPostnummer.value.trim();
- if(!/^\\d{4}$/.test(zip)){geoPostnummer.focus();searchStatus.textContent='Indtast et gyldigt firecifret postnummer først.';toast('Postnummer kræves for at afgrænse opslaget.');return;}
+ if(!/^\d{4}$/.test(zip)){geoPostnummer.focus();searchStatus.textContent='Indtast et gyldigt firecifret postnummer først.';toast('Postnummer kræves for at afgrænse opslaget.');return;}
  if(verifiedPostnummer!==zip){const ok=await resolvePostnummer(zip);if(!ok){geoPostnummer.focus();toast('Postnummeret kunne ikke verificeres.');return;}syncAddressQuery();}
  if(geoVejnavn.value.trim().length<2){geoVejnavn.focus();searchStatus.textContent='Skriv et gadenavn. Postnummeret er verificeret, og opslaget bliver inden for området.';toast('Indtast gadenavn for at fortsætte.');return;}
  closeSuggestions();
