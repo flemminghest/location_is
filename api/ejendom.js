@@ -175,18 +175,34 @@ export default async function handler(req, res) {
   }
 
   let bbrUnits = [], ejerlav = null;
-  if (buildings.length) {
-    const unitResults = await Promise.allSettled(buildings.map(item => getUnitsForBuilding(String(item.id_lokalId || ""), now)));
-    for (const result of unitResults) {
-      if (result.status === "fulfilled") bbrUnits.push(...(result.value || []));
-      else errors.units = String(result.reason?.message || "BBR-enheder kunne ikke slås op").slice(0,300);
-    }
-    bbrUnits = [...new Map(bbrUnits.filter(item=>item&&item.id_lokalId).map(item=>[item.id_lokalId,item])).values()];
-  }
-  if (cadastral && cadastral.id_lokalId) {
-    try { ejerlav = await getEjerlavForParcel(String(cadastral.id_lokalId), now); }
-    catch (error) { errors.ejerlav = String(error.message || "Ejerlav kunne ikke slås op").slice(0,300); }
-  }
+  const boundedOptionalLookup = async (work, timeoutMs, label) => {
+    let timer;
+    try {
+      return await Promise.race([
+        Promise.resolve().then(work).then(value=>({ok:true,value}),error=>({ok:false,error})),
+        new Promise(resolve=>{timer=setTimeout(()=>resolve({timeout:true}),timeoutMs);})
+      ]);
+    } finally { if (timer) clearTimeout(timer); }
+  };
+  const optionalTasks = await Promise.all([
+    buildings.length
+      ? boundedOptionalLookup(async()=>{
+          const unitResults = await Promise.allSettled(buildings.map(item => getUnitsForBuilding(String(item.id_lokalId || ""), now)));
+          const rejected = unitResults.filter(x=>x.status==="rejected");
+          const values = unitResults.filter(x=>x.status==="fulfilled").flatMap(x=>x.value||[]);
+          if (rejected.length === unitResults.length && rejected.length) throw new Error(String(rejected[0].reason?.message||"BBR-enheder kunne ikke slås op"));
+          return [...new Map(values.filter(item=>item&&item.id_lokalId).map(item=>[item.id_lokalId,item])).values()];
+        }, 1400, "units")
+      : Promise.resolve({ok:true,value:[]}),
+    cadastral && cadastral.id_lokalId
+      ? boundedOptionalLookup(()=>getEjerlavForParcel(String(cadastral.id_lokalId), now),1400,"ejerlav")
+      : Promise.resolve({ok:true,value:null})
+  ]);
+  const unitsResult = optionalTasks[0], ejerlavResult = optionalTasks[1];
+  if (unitsResult.ok) bbrUnits = unitsResult.value || [];
+  else errors.units = unitsResult.timeout ? "BBR-enhedsopslaget blev sprunget over efter 1,4 sekunder, så de øvrige ejendomsdata kunne returneres rettidigt." : String(unitsResult.error?.message||"BBR-enheder kunne ikke slås op").slice(0,300);
+  if (ejerlavResult.ok) ejerlav = ejerlavResult.value || null;
+  else errors.ejerlav = ejerlavResult.timeout ? "Ejerlavsopslaget blev sprunget over efter 1,4 sekunder, så de øvrige ejendomsdata kunne returneres rettidigt." : String(ejerlavResult.error?.message||"Ejerlav kunne ikke slås op").slice(0,300);
   const coords = parseCoordinates(house);
   const groundArea = numberValue(cadastral, ["registreretAreal","arealberegnet","samletAreal"]);
   // Sum only actual values from all returned BBR buildings; null means no registered area was returned.
