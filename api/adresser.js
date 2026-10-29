@@ -162,7 +162,8 @@ export default async function handler(req,res) {
       }else if(vejnavn){
         const searchText=[vejnavn,husnummer,postnummer,by].filter(Boolean).join(" ");
         const parsedStreet=husnummer&&postnummer?{vejnavn,husnummer,postnummer,postdistrikt:by||null}:null;
-        const paths=(etage||doer)?["/adresser/soeg/"]:(husnummer?["/husnumre/soeg/","/adresser/soeg/"]:["/husnumre/soeg/"]);
+        // Search both exact house numbers and broader address/street records even when no house number was entered.
+        const paths=(etage||doer)?["/adresser/soeg/"]:["/husnumre/soeg/","/adresser/soeg/"];
         const results=await Promise.allSettled([
           ...(parsedStreet?[requestExactHouseFromDar(parsedStreet)]:[]),
           ...paths.map(path=>requestSearch(path,{tekst:searchText},50).then(hits=>hits.map(x=>normalize(x,path.includes("adresser")?"structured-address":"structured-house"))))
@@ -181,7 +182,7 @@ export default async function handler(req,res) {
       return res.status(200).json({
         status:"ok",query:q,fund,partial:errors.length>0,details:errors,
         source:"Klimadatastyrelsens Adressevælger",scopedToPostcode:postnummer||null,
-        hint:fund.length?"Officielle adresseforslag inden for det valgte postnummer.":"Ingen match i det valgte postnummer. Kontrollér gadenavn, husnummer, etage og dør."
+        hint:fund.length?"Officielle adresseforslag inden for det valgte postnummer.":"Ingen match i det valgte postnummer. Kontrollér gadenavn, husnummer og postnummer."
       });
     }
 
