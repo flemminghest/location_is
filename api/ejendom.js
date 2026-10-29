@@ -36,7 +36,7 @@ async function entityById(type, id, candidates, now) {
 async function getHouse(id, now) {
   if (!validId(id)) return null;
   const fields = await typeFields("DAR_Husnummer");
-  const sel = selection(fields, ["id_lokalId","adgangsadressebetegnelse","husnummertekst","status","adgangTilBygning","jordstykke","placeretPaaForeloebigtJordstykke"]);
+  const sel = selection(fields, ["id_lokalId","adgangsadressebetegnelse","husnummertekst","status","adgangTilBygning"]);
   const query = 'query { DAR_Husnummer(first:1, registreringstid:"' + now + '", virkningstid:"' + now + '", where:{id_lokalId:{eq:"' + id + '"}}){nodes{' + sel + '}} }';
   const d = await gql(query);
   return d.DAR_Husnummer && d.DAR_Husnummer.nodes && d.DAR_Husnummer.nodes[0] || null;
@@ -83,7 +83,7 @@ export default async function handler(req, res) {
       }
     }
     const matFields = await typeFields("MAT_Jordstykke");
-    const matCandidates = ["matrikelnummer","areal","arealberegnet","arealRegistreret","ejerlavLokalId","status","datafordelerOpdateringstid","kommunekode","geometri"];
+    const matCandidates = ["matrikelnummer","areal","arealberegnet","arealRegistreret","ejerlavLokalId","status","datafordelerOpdateringstid","kommunekode"];
     if (house && matFields.length) {
       const darFields = await typeFields("DAR_Husnummer");
       if (darFields.includes("husnummerErPlaceretPaaJordstykke")) {
@@ -94,17 +94,23 @@ export default async function handler(req, res) {
           parcels = d.DAR_Husnummer && d.DAR_Husnummer.nodes && d.DAR_Husnummer.nodes[0] && d.DAR_Husnummer.nodes[0].husnummerErPlaceretPaaJordstykke && d.DAR_Husnummer.nodes[0].husnummerErPlaceretPaaJordstykke.nodes || [];
         } catch (e) { relationError = String(e.message || "Matrikelrelation kunne ikke læses").slice(0,250); }
       }
-      if (!parcels.length && house.jordstykke && validId(String(house.jordstykke))) {
-        try { const p = await entityById("MAT_Jordstykke", String(house.jordstykke), matCandidates, now); if (p) parcels = [p]; }
-        catch (e) { relationError = String(e.message || "Matrikelopslag fejlede").slice(0,250); }
-      }
     }
+    let point = null;
+    if (house && house.id_lokalId) {
+      try {
+        const pointQuery = 'query { DAR_Husnummer(first:1, registreringstid:"' + now + '", virkningstid:"' + now + '", where:{id_lokalId:{eq:"' + house.id_lokalId + '"}}){nodes{id_lokalId HusnummerHarAdgangspunkt{position{type crs dimension wkt}}}} }';
+        const pointData = await gql(pointQuery);
+        point = pointData.DAR_Husnummer && pointData.DAR_Husnummer.nodes && pointData.DAR_Husnummer.nodes[0] && pointData.DAR_Husnummer.nodes[0].HusnummerHarAdgangspunkt && pointData.DAR_Husnummer.nodes[0].HusnummerHarAdgangspunkt.position || null;
+      } catch (_) { point = null; }
+    }
+    const pointMatch = point && typeof point.wkt === "string" ? point.wkt.match(/POINT(?:\\s+Z)?\\s*\\(?\\s*([+-]?\\d+(?:\\.\\d+)?)\\s+([+-]?\\d+(?:\\.\\d+)?)/i) : null;
+    const coordinates = pointMatch ? { x:Number(pointMatch[1]), y:Number(pointMatch[2]), crs:point.crs||null, wkt:point.wkt } : null;
     const parcel = parcels[0] || null;
     const groundArea = numberFrom(parcel, ["areal","arealberegnet","arealRegistreret"]);
     const footprint = numberFrom(bbr, ["byg041BebyggetAreal","bebyggetAreal"]);
     const residentialArea = numberFrom(bbr, ["byg039BygningensSamledeBoligAreal","samletBoligareal"]);
     const buildingArea = numberFrom(bbr, ["byg038SamletBygningsareal","samletBygningsareal"]);
     res.setHeader("Cache-Control","private, max-age=60");
-    return res.status(200).json({source:"Datafordeleren Flexible GraphQL v3",fetchedAt:new Date().toISOString(),address:address?{id:address.id_lokalId,designation:address.adressebetegnelse||null}:null,house:house?{id:house.id_lokalId,designation:house.adgangsadressebetegnelse||null,streetNumber:house.husnummertekst||null,status:house.status||null,buildingId:house.adgangTilBygning||null}:null,bbr,cadastral:parcel,parcels,estate:cadastralEstate,areas:{groundArea,footprint,residentialArea,buildingArea},completeness:{address:Boolean(address),house:Boolean(house),bbr:Boolean(bbr),cadastral:parcels.length>0,estate:Boolean(cadastralEstate)},availableFields:{bbr:(await typeFields("BBR_Bygning")).filter(x=>/byg0(21|26|38|39|40|41|54)|husnummer|id_lokalId/i.test(x)),mat:matFields.filter(x=>/matrikelnummer|areal|ejerlav|id_lokalId/i.test(x))},relationError,note:"Arealer vises kun hvis de officielle registre returnerer dem. Et manglende BBR-objekt betyder ikke, at bygningen ikke findes; relationen skal kontrolleres."});
+    return res.status(200).json({source:"Datafordeleren Flexible GraphQL v3",fetchedAt:new Date().toISOString(),address:address?{id:address.id_lokalId,designation:address.adressebetegnelse||null}:null,house:house?{id:house.id_lokalId,designation:house.adgangsadressebetegnelse||null,streetNumber:house.husnummertekst||null,status:house.status||null,buildingId:house.adgangTilBygning||null}:null,coordinates,bbr,cadastral:parcel,parcels,estate:cadastralEstate,areas:{groundArea,footprint,residentialArea,buildingArea},completeness:{address:Boolean(address),house:Boolean(house),bbr:Boolean(bbr),cadastral:parcels.length>0,estate:Boolean(cadastralEstate)},availableFields:{bbr:(await typeFields("BBR_Bygning")).filter(x=>/byg0(21|26|38|39|40|41|54)|husnummer|id_lokalId/i.test(x)),mat:matFields.filter(x=>/matrikelnummer|areal|ejerlav|id_lokalId/i.test(x))},relationError,note:"Arealer vises kun hvis de officielle registre returnerer dem. Et manglende BBR-objekt betyder ikke, at bygningen ikke findes; relationen skal kontrolleres."});
   } catch (e) { return res.status(e.status || 502).json({error:String(e.message || "Dataopslag fejlede").slice(0,600),source:"Datafordeleren Flexible GraphQL v3",setup:!process.env.DATAFORDELER_API_KEY}); }
 }
