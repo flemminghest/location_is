@@ -436,7 +436,8 @@ function renderBuildingChangeReport(data){
   reportEl.textContent='Tilstandsrapport ikke undersøgt. Åbn Boligejer.dk for at se, om der er registreret rapporter; læsning af rapporten kræver ejeradgang med MitID.';
   return;
  }
- const all=[...new Map([...(primary?[primary]:[]),...buildings].map((b)=>[String(b.id_lokalId||b.byg007Bygningsnummer||Math.random()),b])).values()];
+ const combined=[...(primary?[primary]:[]),...buildings];
+ const all=[...new Map(combined.map((b,i)=>[String(b.id_lokalId||b.byg007Bygningsnummer||('building-'+i)),b])).values()];
  const dateValue=(v)=>{
   if(v===null||v===undefined||v==='')return null;
   const raw=typeof v==='object'?(v.value??v.date??v.dato??JSON.stringify(v)):String(v);
