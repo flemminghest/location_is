@@ -384,8 +384,8 @@ p{line-height:1.55}
 .geo-field input::placeholder{color:#a1adb7;font-weight:450}
 .geo-field input:focus{border-color:#76abb9;box-shadow:0 0 0 3px #58a8b71c}
 .geo-field input[readonly]{background:#edf4f7;border-color:#dbe7ee;color:#416879;cursor:default}
-.geo-postcode{grid-column:span 2}
-.postcode-lookup-status{display:flex;align-items:center;gap:7px;min-height:17px;color:#2e6ca4;font-size:10px;line-height:1.35;font-weight:650}
+.geo-postcode{grid-column:span 2;position:relative}
+.postcode-lookup-status{position:absolute;left:0;top:calc(100% + 4px);z-index:5;display:flex;align-items:center;gap:7px;min-height:17px;color:#2e6ca4;font-size:10px;line-height:1.35;font-weight:650;white-space:nowrap;pointer-events:none}
 .postcode-lookup-status[hidden]{display:none}
 .postcode-spinner{width:13px;height:13px;flex:none;border:2px solid #cbdde8;border-top-color:#2e8caa;border-radius:50%;animation:postcodeSpin .7s linear infinite}
 @keyframes postcodeSpin{to{transform:rotate(360deg)}}
