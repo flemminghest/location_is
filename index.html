@@ -384,7 +384,15 @@ p{line-height:1.55}
 .geo-field input::placeholder{color:#a1adb7;font-weight:450}
 .geo-field input:focus{border-color:#76abb9;box-shadow:0 0 0 3px #58a8b71c}
 .geo-field input[readonly]{background:#edf4f7;border-color:#dbe7ee;color:#416879;cursor:default}
-.geo-postcode{grid-column:span 2}
+.geo-postcode{grid-column:span 2;position:relative}
+.postcode-lookup-status{position:absolute;left:0;top:calc(100% + 4px);z-index:5;display:flex;align-items:center;gap:7px;min-height:17px;color:#2e6ca4;font-size:10px;line-height:1.35;font-weight:650;white-space:nowrap;pointer-events:none}
+.postcode-lookup-status[hidden]{display:none}
+.postcode-spinner{width:13px;height:13px;flex:none;border:2px solid #cbdde8;border-top-color:#2e8caa;border-radius:50%;animation:postcodeSpin .7s linear infinite}
+@keyframes postcodeSpin{to{transform:rotate(360deg)}}
+.geo-postcode.is-loading input{border-color:#6bb6c4;box-shadow:0 0 0 3px #58a8b71c}
+.geo-postcode.is-success .postcode-lookup-status{color:#16815d}
+.geo-postcode.is-error .postcode-lookup-status{color:#ad5b35}
+.geo-postcode.is-success .postcode-spinner,.geo-postcode.is-error .postcode-spinner{display:none}
 .geo-city{grid-column:span 3}
 .geo-street{grid-column:span 5}
 .geo-number{grid-column:span 2}
@@ -528,13 +536,13 @@ p{line-height:1.55}
   <div class="advanced-search-inner">
    <div class="advanced-search-heading"><strong>Afgræns geografisk</strong><span>By eller postnummer begrænser alle forslag og opslag.</span></div>
    <div class="geo-fields">
-    <label class="geo-field geo-city"><span>By</span><input class="geo-address-input" id="geoBy" autocomplete="off" placeholder="Søg efter bynavn" aria-controls="geoCitySuggestions" aria-expanded="false"><div class="geo-city-suggestions" id="geoCitySuggestions" role="listbox" aria-label="Byer og postnumre"></div></label>
-    <label class="geo-field geo-postcode"><span>Postnummer</span><input class="geo-address-input" id="geoPostnummer" inputmode="numeric" maxlength="4" autocomplete="postal-code" placeholder="Fx 1958" aria-describedby="geoScopeNote"></label>
+    <label class="geo-field geo-postcode"><span>1. Postnummer</span><input class="geo-address-input" id="geoPostnummer" inputmode="numeric" maxlength="4" autocomplete="postal-code" placeholder="Skriv 4 cifre, fx 4500" aria-describedby="geoScopeNote postcodeLookupStatus"><div class="postcode-lookup-status" id="postcodeLookupStatus" role="status" aria-live="polite" hidden><span class="postcode-spinner" aria-hidden="true"></span><span class="postcode-lookup-message">Henter bynavn…</span></div></label>
+    <label class="geo-field geo-city"><span>2. By (udfyldes automatisk)</span><input class="geo-address-input" id="geoBy" autocomplete="off" placeholder="Udfyldes, når postnummeret er fundet" aria-controls="geoCitySuggestions" aria-expanded="false"><div class="geo-city-suggestions" id="geoCitySuggestions" role="listbox" aria-label="Byer og postnumre"></div></label>
     <label class="geo-field geo-street"><span>Gade / vej</span><input class="geo-address-input" id="geoVejnavn" autocomplete="off" placeholder="Fx Rolighedsvej"></label>
     <label class="geo-field geo-number"><span>Husnr.</span><input class="geo-address-input" id="geoHusnummer" autocomplete="off" placeholder="48"></label>
     <label class="geo-field geo-floor"><span>Etage <small>valgfri</small></span><input class="geo-address-input" id="geoEtage" placeholder="2."></label>
     <label class="geo-field geo-door"><span>Dør <small>valgfri</small></span><input class="geo-address-input" id="geoDoer" placeholder="th."></label>
-    <div class="geo-scope-note" id="geoScopeNote"><span class="geo-scope-dot" aria-hidden="true"></span><span>Vælg by eller postnummer for at begrænse søgeresultaterne.</span></div>
+    <div class="geo-scope-note" id="geoScopeNote"><span class="geo-scope-dot" aria-hidden="true"></span><span>Skriv postnummer først. Hvis det findes, udfyldes byen automatisk.</span></div>
    </div>
   </div>
  </div>
@@ -799,14 +807,15 @@ function resetLookupModal(address){
   if(lookupFinished)return;
   Object.keys(lookupStepIds).forEach(key=>{
    const step=document.getElementById(lookupStepIds[key]);
-   if(step&&step.classList.contains('is-running'))setLookupStep(key,'error','Tidsgrænse','Kilden svarede ikke inden for den samlede tidsgrænse.');
-   else if(step&&!step.querySelector('.lookup-step-progress')&&step.querySelector('.lookup-step-state')?.textContent==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Afbrudt, fordi en anden del af opslaget tog for lang tid.');
+   if(step&&step.classList.contains('is-running'))setLookupStep(key,'error','Tidsgrænse','Dette opslag nåede ikke sin samlede tidsgrænse; andre kilder afsluttes separat.');
+   else if(step&&step.querySelector('.lookup-step-state')?.textContent==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Ingen forespørgsel blev gennemført for denne kilde.');
   });
-  searchStatus.textContent='Opslaget blev afbrudt efter 22 sekunder. En eller flere datakilder svarede ikke rettidigt.';
-  finishLookup('Opslaget tog for lang tid','En eller flere datakilder svarede ikke inden for 22 sekunder. Fejl og færdige opslag vises pr. kilde ovenfor. Prøv igen senere.',true);
+  searchStatus.textContent='Opslaget blev afbrudt efter 22 sekunder. Ikke alle datakilder svarede rettidigt.';
+  finishLookup('Opslaget tog for lang tid','En eller flere datakilder svarede ikke inden for 22 sekunder. Se den separate status for hver kilde.',true);
  },22000);
 }
 function finishLookup(title,description,warning){
+ if(lookupFinished)return;
  lookupFinished=true;
  if(lookupWatchdogTimer){clearTimeout(lookupWatchdogTimer);lookupWatchdogTimer=null;}
  Object.keys(lookupStepIds).forEach(stopLookupStepTimer);
@@ -818,7 +827,7 @@ function finishLookup(title,description,warning){
  document.getElementById('lookupResultText').textContent=description||'Kontrollér resultaterne i fanerne.';
  lookupDoneBtn.disabled=false;lookupDoneBtn.textContent='Luk og se resultater';lookupX.disabled=false;
  if(lookupCloseTimer)clearTimeout(lookupCloseTimer);
- lookupCloseTimer=setTimeout(closeLookupModal,900);
+ lookupCloseTimer=setTimeout(closeLookupModal,1800);
 }
 function closeLookupModal(){
  if(!lookupFinished)return;
@@ -858,7 +867,7 @@ const advancedPanel=document.getElementById('advancedSearchPanel'),advancedToggl
 // City suggestions live at viewport level so scroll, panel animation, and overflow never clip them.
 document.body.appendChild(citySuggestions);
 let cityActiveIndex=-1;
-let addressTimer=null,postcodeTimer=null,cityTimer=null,postcodeController=null,cityController=null,activeSearchController=null,currentSuggestions=[],selectedSuggestion=-1,chosenAddress=null,currentPropertyData=null,verifiedPostnummer='',selectedCity=null,advancedOpen=false;
+let addressTimer=null,postcodeTimer=null,cityTimer=null,postcodeController=null,cityController=null,activeSearchController=null,lastAddressLookupError=null,currentSuggestions=[],selectedSuggestion=-1,chosenAddress=null,currentPropertyData=null,verifiedPostnummer='',selectedCity=null,advancedOpen=false;
 
 function hasAdvancedValues(){
  return Boolean(geoBy.value.trim()||geoPostnummer.value.trim()||geoVejnavn.value.trim()||geoHusnummer.value.trim()||geoEtage.value.trim()||geoDoer.value.trim());
@@ -878,7 +887,7 @@ function formatAddressQuery(){
 }
 function syncAddressQuery(){
  const text=formatAddressQuery();
- if(text)searchInput.value=text;
+ if(!advancedOpen&&text)searchInput.value=text;
 }
 function setAdvancedOpen(open){
  advancedOpen=Boolean(open);
@@ -887,13 +896,17 @@ function setAdvancedOpen(open){
  advancedPanel.inert=!advancedOpen;
  advancedToggle.setAttribute('aria-expanded',String(advancedOpen));
  advancedToggle.querySelector('span').textContent=advancedOpen?'Skjul udvidet søgning':'Udvid søgning';
- if(!advancedOpen){
-  closeCitySuggestions();
-  closeSuggestions();
-  if(!searchInput.value.trim())searchStatus.textContent='';
+ closeCitySuggestions();
+ closeSuggestions();
+ if(advancedOpen){
+  searchInput.value='';
+  chosenAddress=null;
+  updateDrawingButton();
+  searchStatus.textContent='Udfyld by eller postnummer og begynd at skrive en gade for at få officielle adresseforslag.';
+  geoBy.focus({preventScroll:true});
  }else{
-  const target=geoBy.value.trim()?geoBy:geoPostnummer;
-  target.focus({preventScroll:true});
+  suggestionsEl.style.position='';suggestionsEl.style.top='';suggestionsEl.style.left='';suggestionsEl.style.width='';suggestionsEl.style.right='';
+  if(!searchInput.value.trim())searchStatus.textContent='';
  }
 }
 advancedToggle.addEventListener('click',()=>setAdvancedOpen(!advancedOpen));
@@ -932,13 +945,25 @@ window.addEventListener('resize',positionCitySuggestions);
 document.addEventListener('scroll',positionCitySuggestions,true);
 function showCitySuggestions(items,message='',query=''){
  if(!items.length){
-  citySuggestions.innerHTML=message?'<div class="geo-city-message">'+esc(message)+'</div>':'';
-  citySuggestions.classList.toggle('is-open',Boolean(message));
-  geoBy.setAttribute('aria-expanded',String(Boolean(message)));
-  if(message){cityActiveIndex=-1;positionCitySuggestions();}
+  const q=String(query||'').trim();
+  const fallback=q&&!/^\d{4}$/.test(q)
+   ?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(q)+'</strong><small>Fortsæt uden postnummer, hvis byopslaget ikke svarer</small></button>'
+   :'';
+  citySuggestions.innerHTML=(message?'<div class="geo-city-message">'+esc(message)+'</div>':'')+fallback;
+  citySuggestions.classList.toggle('is-open',Boolean(message||fallback));
+  geoBy.setAttribute('aria-expanded',String(Boolean(message||fallback)));
+  if(message||fallback){
+   cityActiveIndex=-1;positionCitySuggestions();
+   citySuggestions.querySelector('[data-city-only]')?.addEventListener('click',()=>{
+    selectedCity={nr:'',navn:q,cityOnly:true};
+    verifiedPostnummer='';geoPostnummer.value='';geoPostnummer.dataset.verified='';
+    geoBy.value=q;closeCitySuggestions();chosenAddress=null;syncAddressQuery();
+    searchStatus.textContent='Byfilter valgt uden verificeret postnummer: '+q+'. Adresseforslag afhænger fortsat af den officielle adressekilde.';
+   });
+  }
   return;
  }
- const cityOnlyOption=query&&!/^\\d{4}$/.test(query)?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(query)+'</strong><small>Vis adresser i denne by på tværs af postnumre</small></button>':'';
+ const cityOnlyOption=query&&!/^\d{4}$/.test(query)?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(query)+'</strong><small>Vis adresser i denne by på tværs af postnumre</small></button>':'';
  citySuggestions.innerHTML=cityOnlyOption+items.map((item,i)=>'<button type="button" class="geo-city-option" role="option" data-city-index="'+i+'"><strong>'+esc(item.navn)+' · '+esc(item.nr)+'</strong><small>Begræns søgning til dette postnummer</small></button>').join('');
  citySuggestions.classList.add('is-open');
  geoBy.setAttribute('aria-expanded','true');
@@ -968,7 +993,7 @@ function showCitySuggestions(items,message='',query=''){
   chosenAddress=null;
   syncAddressQuery();
   searchStatus.textContent='Geografisk filter valgt: '+item.navn+' ('+item.nr+'). Forslag fra andre postnumre bliver sorteret fra.';
-  if(geoVejnavn.value.trim().length>=2)lookupAddressSuggestions(searchInput.value.trim());
+  if(geoVejnavn.value.trim().length>=2)lookupAddressSuggestions(formatAddressQuery());
  }));
 }
 async function searchPostnumre(query){
@@ -976,7 +1001,7 @@ async function searchPostnumre(query){
  cityController=new AbortController();
  const controller=cityController;
  geoBy.setAttribute('aria-busy','true');
- showCitySuggestions([], 'Søger efter byer og postnumre…');
+ showCitySuggestions([], 'Søger efter byer og postnumre…',query);
  try{
   const response=await fetch('/api/postnummer?q='+encodeURIComponent(query),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(6500)]),headers:{Accept:'application/json'},cache:'no-store'});
   const data=await response.json();
@@ -986,22 +1011,35 @@ async function searchPostnumre(query){
   const valid=results.filter(x=>x.nr&&x.navn).slice(0,20);
   geoBy.setAttribute('aria-busy','false');
   if(valid.length)showCitySuggestions(valid,'',query);
-  else showCitySuggestions([], 'Ingen byer eller postnumre fundet. Kontrollér stavningen.');
+  else showCitySuggestions([], 'Ingen byer eller postnumre fundet. Kontrollér stavningen.',query);
  }catch(error){
   if(error.name==='AbortError')return;
   if(controller===cityController){
    geoBy.setAttribute('aria-busy','false');
-   showCitySuggestions([], 'By/postnummer kunne ikke hentes lige nu. Prøv igen om lidt.');
+   showCitySuggestions([], 'By/postnummer kunne ikke hentes lige nu. Du kan fortsætte med bynavnet uden postnummer.',query);
   }
  }
 }
+function setPostcodeLookupState(state,message=''){
+ const field=geoPostnummer.closest('.geo-postcode');
+ const status=document.getElementById('postcodeLookupStatus');
+ if(!field||!status)return;
+ field.classList.toggle('is-loading',state==='loading');
+ field.classList.toggle('is-success',state==='success');
+ field.classList.toggle('is-error',state==='error');
+ status.hidden=!message;
+ const text=status.querySelector('.postcode-lookup-message');
+ if(text)text.textContent=message;
+ status.querySelector('.postcode-spinner').style.display=state==='loading'?'':'none';
+}
 async function resolvePostnummer(nr){
  const code=String(nr||'').trim();
- if(!/^\d{4}$/.test(code)){verifiedPostnummer='';selectedCity=null;geoBy.value='';return false;}
- if(verifiedPostnummer===code&&selectedCity&&geoBy.value===selectedCity.navn)return true;
+ if(!/^\d{4}$/.test(code)){verifiedPostnummer='';selectedCity=null;geoBy.value='';setPostcodeLookupState('error','Indtast et postnummer på 4 cifre.');return false;}
+ if(verifiedPostnummer===code&&selectedCity&&geoBy.value===selectedCity.navn){setPostcodeLookupState('success','By fundet: '+selectedCity.navn);return true;}
  if(postcodeController)postcodeController.abort();
  postcodeController=new AbortController();
  const controller=postcodeController;
+ setPostcodeLookupState('loading','Henter bynavn for '+code+'…');
  searchStatus.textContent='Verificerer postnummer '+code+'…';
  try{
   const response=await fetch('/api/postnummer?nr='+encodeURIComponent(code),{signal:controller.signal,headers:{Accept:'application/json'},cache:'no-store'});
@@ -1012,13 +1050,36 @@ async function resolvePostnummer(nr){
   selectedCity={nr:code,navn:String(data.navn)};
   geoPostnummer.dataset.verified=code;
   geoBy.value=String(data.navn);
+  setPostcodeLookupState('success','By fundet: '+data.navn);
   searchStatus.textContent='Geografisk filter valgt: '+data.navn+' ('+code+'). Resultater fra andre postnumre vises ikke.';
   return true;
  }catch(error){
   if(error.name==='AbortError')return false;
+  if(controller!==postcodeController)return false;
+  // Fallback: derive the matching city from official address suggestions if the postcode endpoint fails.
+  try{
+   const fallbackController=controller;
+   const fallbackResponse=await fetch('/api/adresser?q='+encodeURIComponent(code),{signal:fallbackController.signal,headers:{Accept:'application/json'},cache:'no-store'});
+   const fallbackData=await fallbackResponse.json().catch(()=>({}));
+   if(fallbackController!==postcodeController)return false;
+   const hits=Array.isArray(fallbackData.fund)?fallbackData.fund:[];
+   const hit=hits.find(item=>String(item.postnr||'')===code&&String(item.postdistrikt||'').trim());
+   if(fallbackResponse.ok&&hit){
+    const cityName=String(hit.postdistrikt).trim();
+    verifiedPostnummer=code;selectedCity={nr:code,navn:cityName};
+    geoPostnummer.dataset.verified=code;geoBy.value=cityName;
+    setPostcodeLookupState('success','By fundet: '+cityName);
+    searchStatus.textContent='By udfyldt fra det officielle adresseopslag: '+cityName+' ('+code+').';
+    return true;
+   }
+  }catch(fallbackError){
+   if(fallbackError.name==='AbortError')return false;
+  }
   if(controller===postcodeController){
-   verifiedPostnummer='';selectedCity=null;geoPostnummer.dataset.verified='';geoBy.value='';
-   searchStatus.textContent='Postnummeret kunne ikke verificeres hos de officielle kilder. Prøv igen.';
+   verifiedPostnummer='';selectedCity=null;geoPostnummer.dataset.verified='';
+   geoBy.value='';
+   setPostcodeLookupState('error','Kunne ikke hente bynavnet. Prøv igen.');
+   searchStatus.textContent='Postnummeret kunne ikke verificeres, så byen kunne ikke udfyldes. Prøv igen om lidt.';
   }
   return false;
  }
@@ -1070,7 +1131,28 @@ function setPropertyAddressDisplay(value){
  localityEl.textContent=locality||'Postnummer og by ikke returneret';
  localityEl.classList.toggle('is-missing',!locality);
 }
-function closeSuggestions(){suggestionsEl.classList.remove('open');searchInput.setAttribute('aria-expanded','false');selectedSuggestion=-1}
+function closeSuggestions(){
+ suggestionsEl.classList.remove('open');
+ searchInput.setAttribute('aria-expanded','false');
+ selectedSuggestion=-1;
+ if(!advancedOpen){suggestionsEl.style.position='';suggestionsEl.style.top='';suggestionsEl.style.left='';suggestionsEl.style.width='';suggestionsEl.style.right='';}
+}
+function positionAddressSuggestions(){
+ if(!suggestionsEl.classList.contains('open'))return;
+ if(advancedOpen){
+  const rect=geoVejnavn.getBoundingClientRect(),pad=12;
+  const width=Math.min(rect.width,window.innerWidth-pad*2);
+  suggestionsEl.style.position='fixed';
+  suggestionsEl.style.top=(rect.bottom+6)+'px';
+  suggestionsEl.style.left=Math.max(pad,Math.min(rect.left,window.innerWidth-pad-width))+'px';
+  suggestionsEl.style.width=width+'px';
+  suggestionsEl.style.right='auto';
+ }else{
+  suggestionsEl.style.position='';suggestionsEl.style.top='';suggestionsEl.style.left='';suggestionsEl.style.width='';suggestionsEl.style.right='';
+ }
+}
+window.addEventListener('resize',positionAddressSuggestions);
+document.addEventListener('scroll',positionAddressSuggestions,true);
 document.getElementById('googleMapsLink').addEventListener('click',e=>{if(e.currentTarget.getAttribute('aria-disabled')==='true'){e.preventDefault();toast('Vælg en adresse først.');}});
 function renderSuggestions(items,note=''){
  currentSuggestions=items;selectedSuggestion=-1;
@@ -1087,6 +1169,7 @@ function renderSuggestions(items,note=''){
  }).join('')+(note?'<div class="suggestion-note">'+esc(note)+'</div>':'');
  suggestionsEl.classList.add('open');searchInput.setAttribute('aria-expanded','true');
  suggestionsEl.querySelectorAll('.suggestion').forEach(b=>b.addEventListener('click',()=>chooseSuggestion(+b.dataset.index)));
+ positionAddressSuggestions();
 }
 function normalizeAddressMatch(value){
  return String(value||'').toLocaleLowerCase('da-DK').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[.,]/g,' ').replace(/\s+/g,' ').trim();
@@ -1107,29 +1190,31 @@ function findExactSuggestion(query,items){
 function chooseSuggestion(i){
  const item=currentSuggestions[i];if(!item)return;
  const zip=activePostnummer(),city=activeBy();
- if(item.source!=='official-dar'||!['adresse','husnummer'].includes(item.type)||!item.id){
-  searchStatus.textContent='Vælg en konkret officiel adresse eller et husnummer for at hente ejendomsdata.';
-  return;
- }
- if(zip&&String(item.postnr||'')!==zip){searchStatus.textContent='Forslaget ligger uden for postnummer '+zip+' og blev derfor afvist.';return;}
- if(city&&normalizeAddressMatch(item.postdistrikt)!==normalizeAddressMatch(city)){searchStatus.textContent='Forslaget ligger uden for '+city+' og blev derfor afvist.';return;}
- chosenAddress=item;
- searchInput.value=item.label;
- if(advancedOpen&&item.postnr){
-  if(!verifiedPostnummer){geoPostnummer.value=String(item.postnr);verifiedPostnummer=String(item.postnr);}
-  if(item.postdistrikt&&!geoBy.value)geoBy.value=item.postdistrikt;
+ if(zip&&item.postnr&&String(item.postnr)!==zip){searchStatus.textContent='Forslaget ligger uden for postnummer '+zip+' og blev derfor afvist.';return;}
+ if(city&&item.postdistrikt&&normalizeAddressMatch(item.postdistrikt)!==normalizeAddressMatch(city)){searchStatus.textContent='Forslaget ligger uden for '+city+' og blev derfor afvist.';return;}
+ const isExact=item.source==='official-dar'&&['adresse','husnummer'].includes(item.type)&&Boolean(item.id);
+ chosenAddress=isExact?item:null;
+ if(!advancedOpen)searchInput.value=item.label||'';
+ if(advancedOpen){
+  if(item.postnr&&!verifiedPostnummer){geoPostnummer.value=String(item.postnr);verifiedPostnummer=String(item.postnr);geoPostnummer.dataset.verified=String(item.postnr);}
+  if(item.postdistrikt&&!geoBy.value){geoBy.value=item.postdistrikt;selectedCity={nr:String(item.postnr||''),navn:String(item.postdistrikt)};}
   if(item.vejnavn)geoVejnavn.value=item.vejnavn;
   if(item.husnummer)geoHusnummer.value=item.husnummer;
+  if(item.postdistrikt&&!selectedCity){selectedCity={nr:String(item.postnr||''),navn:String(item.postdistrikt)};geoBy.value=item.postdistrikt;}
+  if(item.postnr&&!geoPostnummer.value)geoPostnummer.value=String(item.postnr);
  }
  updateDrawingButton();
  closeSuggestions();
- searchStatus.textContent='Officiel adresse valgt. Tryk Søg for at hente de tilgængelige ejendomsdata.';
+ searchStatus.textContent=isExact
+  ?'Officiel adresse valgt. Tryk Søg for at hente de tilgængelige ejendomsdata.'
+  :'Forslaget er indsat i søgefeltet. Tilføj eventuelt husnummer og postnummer for at vælge en præcis adresse.';
 }
 async function lookupAddressSuggestions(q){
  const query=String(q||'').trim();
  if(activeSearchController)activeSearchController.abort();
  activeSearchController=new AbortController();
  const controller=activeSearchController;
+ lastAddressLookupError=null;
  const zip=activePostnummer(),city=activeBy();
  if(query.length<2){closeSuggestions();return [];}
  const params=new URLSearchParams();
@@ -1144,7 +1229,7 @@ async function lookupAddressSuggestions(q){
   if(door)params.set('doer',door);
   if(zip)params.set('postnummer',zip);
   if(city)params.set('by',city);
-  if(!street&&!zip&&!city){params.set('q',query);}
+  if(!street&&!zip&&!city)params.set('q',query);
   else if(street&&!zip&&!city)params.set('q',query);
  }else{
   params.set('q',query);
@@ -1153,10 +1238,13 @@ async function lookupAddressSuggestions(q){
  }
  searchStatus.textContent=(zip||city)?'Søger kun i '+[city,zip?'('+zip+')':''].filter(Boolean).join(' ')+'…':'Søger efter adressen…';
  try{
-  const response=await fetch('/api/adresser?'+params.toString(),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(6500)]),headers:{Accept:'application/json'},cache:'no-store'});
-  const data=await response.json();
+  const response=await fetch('/api/adresser?'+params.toString(),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8500)]),headers:{Accept:'application/json'},cache:'no-store'});
+  const data=await response.json().catch(()=>({}));
   if(controller!==activeSearchController)return [];
-  if(!response.ok)throw new Error(data.error||'Adressekilden svarede ikke.');
+  if(!response.ok){
+   const detail=Array.isArray(data.details)?data.details.join(' · '):'';
+   throw new Error([data.error||'Adressekilden svarede ikke.',detail].filter(Boolean).join(' '));
+  }
   const items=(Array.isArray(data.fund)?data.fund:[]).map(item=>({
    label:item.label||item.titel||item.adressebetegnelse||'',
    detail:item.detail||[item.postnr,item.postdistrikt].filter(Boolean).join(' '),
@@ -1170,18 +1258,29 @@ async function lookupAddressSuggestions(q){
    if(city&&normalizeAddressMatch(item.postdistrikt)!==normalizeAddressMatch(city))return false;
    return true;
   });
+  const sourceFailures=Array.isArray(data.details)?data.details.filter(Boolean):[];
+  if(data.partial&&!items.length){
+   throw new Error('En eller flere officielle adressekilder fejlede, og ingen brugbare forslag blev returneret. '+sourceFailures.join(' · '));
+  }
   if(items.length){
-   renderSuggestions(items,(zip||city)?'Forslag afgrænset til '+[city,zip].filter(Boolean).join(' · ')+'.':'Forslag fra Klimadatastyrelsens officielle Adressevælger.');
+   const scopeNote=(zip||city)?'Forslag afgrænset til '+[city,zip].filter(Boolean).join(' · ')+'.':'Forslag fra Klimadatastyrelsens officielle Adressevælger.';
+   const partialNote=data.partial?'Delvise resultater: '+(sourceFailures.join(' · ')||'En eller flere adressekilder svarede ikke.'):'';
+   renderSuggestions(items,[scopeNote,partialNote].filter(Boolean).join(' '));
    return items;
   }
   renderSuggestions([],(zip||city)?'Ingen match inden for det valgte geografiske område. Prøv et andet gadenavn eller kontrollér postnummeret.':'Ingen forslag fundet. Kontrollér stavningen eller tilføj husnummer og postnummer.');
   searchStatus.textContent=(zip||city)?'Ingen adresse fundet inden for det valgte område.':'Ingen adresseforslag fundet.';
   return [];
  }catch(error){
-  if(error.name==='AbortError')return [];
   if(controller!==activeSearchController)return [];
-  renderSuggestions([],'Adressekilden kunne ikke svare inden for tidsgrænsen. Prøv igen.');
-  searchStatus.textContent='Søgningen fejlede: '+String(error.message||'ukendt fejl').slice(0,130);
+  if(error.name==='AbortError'&&controller.signal.aborted)return [];
+  lastAddressLookupError=String(error?.message||error||'Ukendt fejl');
+  const isTimeout=error.name==='TimeoutError'||/timeout|tidsgrænse|timed out/i.test(lastAddressLookupError);
+  const message=isTimeout
+   ?'Adressekilden brugte for lang tid. Vent et øjeblik og prøv Søg igen.'
+   :'Adressekilden kunne ikke svare: '+lastAddressLookupError.slice(0,180)+'. Prøv igen.';
+  renderSuggestions([],message);
+  searchStatus.textContent=message;
   return [];
  }
 }
@@ -1198,7 +1297,7 @@ function parseSuggestionToFields(item){
 }
 function syncAdvancedToPrimary(){
  const value=formatAddressQuery();
- if(value)searchInput.value=value;
+ if(!advancedOpen&&value)searchInput.value=value;
 }
 function onPrimaryInput(){
  chosenAddress=null;updateDrawingButton();clearTimeout(addressTimer);
@@ -1248,27 +1347,45 @@ geoBy.addEventListener('keydown',event=>{
  const active=options[cityActiveIndex];
  if(active){geoBy.setAttribute('aria-activedescendant',active.id);active.scrollIntoView({block:'nearest'});}
 });
+async function commitPostnummer(){
+ clearTimeout(postcodeTimer);
+ const q=geoPostnummer.value.trim();
+ if(!/^\d{4}$/.test(q)){
+  selectedCity=null;verifiedPostnummer='';geoPostnummer.dataset.verified='';geoBy.value='';
+  return false;
+ }
+ if(verifiedPostnummer===q&&selectedCity&&geoBy.value===selectedCity.navn)return true;
+ const ok=await resolvePostnummer(q);
+ if(ok&&geoPostnummer.value.trim()===q){
+  closeCitySuggestions();
+  if(geoVejnavn.value.trim().length>=2)lookupAddressSuggestions(formatAddressQuery());
+ }
+ return ok;
+}
 geoPostnummer.addEventListener('input',()=>{
  selectedCity=null;verifiedPostnummer='';geoPostnummer.dataset.verified='';geoBy.value='';
+ setPostcodeLookupState('idle','');
  if(cityController)cityController.abort();
  clearTimeout(postcodeTimer);
  const q=geoPostnummer.value.trim();
  if(!/^\d{4}$/.test(q)){closeCitySuggestions();return;}
- postcodeTimer=setTimeout(async()=>{
-  const ok=await resolvePostnummer(q);
-  if(ok&&geoPostnummer.value.trim()===q){
-   closeCitySuggestions();
-   if(geoVejnavn.value.trim().length>=2){syncAdvancedToPrimary();lookupAddressSuggestions(searchInput.value.trim());}
-  }
- },170);
+ // Keep a short live lookup, but commit immediately when the user leaves the field with Tab/click.
+ postcodeTimer=setTimeout(()=>commitPostnummer(),500);
+});
+geoPostnummer.addEventListener('blur',()=>{commitPostnummer();});
+geoPostnummer.addEventListener('keydown',event=>{
+ if(event.key==='Enter'){
+  event.preventDefault();
+  commitPostnummer().then(ok=>{if(ok)geoVejnavn.focus();});
+ }
 });
 [geoVejnavn,geoHusnummer,geoEtage,geoDoer].forEach(input=>input.addEventListener('input',()=>{
  chosenAddress=null;updateDrawingButton();
  const value=formatAddressQuery();
- if(value)searchInput.value=value;
+ if(!advancedOpen&&value)searchInput.value=value;
  clearTimeout(addressTimer);
  if(geoVejnavn.value.trim().length>=2){
-  addressTimer=setTimeout(()=>lookupAddressSuggestions(searchInput.value.trim()),220);
+  addressTimer=setTimeout(()=>lookupAddressSuggestions(value),220);
  }
 }));
 document.addEventListener('click',event=>{
@@ -1514,15 +1631,19 @@ function animateNumberInto(element,value,{unit='',decimals=0,asStat=false,durati
 }
 installMetricIcons();
 
+async function waitForPropertyCoordinates(propertyPromise){
+ const outcome=await propertyPromise;
+ if(!outcome.ok)throw new Error('Plandata afventer, fordi adresseopslaget ikke kunne gennemføres.');
+ const coords=outcome.result?.coordinates||null;
+ if(!coords)throw new Error('Datafordeleren returnerede ingen adresseposition til planopslaget.');
+ return coords;
+}
 async function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){
-  setLookupStep('address','error','Adresse-ID mangler','Der blev ikke sendt et konkret officielt adresse-ID til ejendomsopslaget.');
-  setLookupStep('bbr','warning','Ikke gennemført','BBR kræver et gyldigt officielt adresse-ID.');
-  setLookupStep('mat','warning','Ikke gennemført','Matrikel kræver et gyldigt officielt adresse-ID.');
-  setLookupStep('plan','warning','Ikke gennemført','Planopslag kræver en verificeret adresseposition.');
-  setLookupStep('history','warning','Ikke gennemført','Historik kræver en verificeret adresseposition.');
-  finishLookup('Adresse-ID mangler','Den valgte søgepost kunne ikke bruges som et officielt adresse-ID. Vælg et konkret officielt husnummer/adresse fra listen.',true);
+  setLookupStep('address','error','Adresse-ID mangler','Der blev ikke sendt et konkret officielt adresse-ID.');
+  ['bbr','mat','plan','history'].forEach(key=>setLookupStep(key,'warning','Ikke gennemført','Vælg en konkret officiel adresse først.'));
+  finishLookup('Adresse-ID mangler','Vælg en konkret officiel adresse eller et husnummer fra listen.',true);
   return;
  }
  if(!['adresse','husnummer'].includes(chosenAddress?.type)){
@@ -1530,73 +1651,103 @@ async function loadPropertyData(){
   finishLookup('Vælg en konkret adresse','Det valgte forslag identificerer ikke et bestemt husnummer.',true);
   return;
  }
- setLookupProgress(24,'TRIN 2 AF 5','Kontrollerer adressen','Det officielle adresseforslag er valgt. Vi følger registerrelationen til husnummer, bygning og jordstykke.');
+ const address=chosenAddress;
+ const param=address.type==='adresse'&&address.husnummerId?'husnummerId':(address.type==='husnummer'?'husnummerId':'adresseId');
+ const lookupId=param==='husnummerId'&&address.type==='adresse'?(address.husnummerId||id):id;
+ const requestJson=async(url,timeoutMs)=>{
+  const response=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(timeoutMs)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||data.detail||('HTTP '+response.status));
+  return data;
+ };
+ const timedSource=async(key,label,detail,work)=>{
+  setLookupStep(key,'running',label,detail);
+  const started=performance.now();
+  try{
+   const result=await work();
+   if(!lookupFinished)setLookupStep(key,'done','Kilde svarede','Afsluttet på '+((performance.now()-started)/1000).toFixed(1).replace('.',',')+' sek.');
+   return {ok:true,result};
+  }catch(error){
+   if(!lookupFinished)setLookupStep(key,'error','Kilde-fejl',String(error?.message||error||'Ukendt fejl').slice(0,160));
+   return {ok:false,error:String(error?.message||error||'Ukendt fejl')};
+  }
+ };
+ setLookupProgress(20,'TRIN 2 AF 5','Kontrollerer adressen','Registeropslag køres parallelt, hvor datagrundlaget tillader det. Hver kilde har sin egen fremdrift og tidsgrænse.');
  setLookupStep('address','running','Kontrollerer','Kontrollerer DAR-adresse og adgangsadresse');
- searchStatus.textContent='Henter BBR- og matrikeldata fra Datafordeleren…';
- setLookupProgress(31,'TRIN 2 AF 5','Kontakter Datafordeleren','Vi anmoder om de tilgængelige BBR- og matrikeloplysninger fra de officielle registre.');
- setLookupStep('bbr','running','Slår op','Anmoder om bygningsoplysninger');
- setLookupStep('mat','running','Slår op','Anmoder om jordstykke og matrikeldata');
- try{
-  const param=chosenAddress.type==='adresse'&&chosenAddress.husnummerId?'husnummerId':(chosenAddress.type==='husnummer'?'husnummerId':'adresseId');
-  const lookupId=param==='husnummerId'&&chosenAddress.type==='adresse'?(chosenAddress.husnummerId||id):id;
-  const resp=await fetch('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(9500)});
-  const data=await resp.json();
-  if(lookupFinished)return;
-  if(!resp.ok)throw new Error(data.error||'Ejendomsopslaget kunne ikke gennemføres');
-  currentPropertyData=data;
-  updateDrawingButton();
-  renderBuildingChangeReport(data);
+ searchStatus.textContent='Kontakter de officielle registre…';
+  setLookupStep('mat','running','Slår op','Henter matrikelrelationen samtidig med adresse og BBR');
+const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og matrikelrelationer',()=>requestJson('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),10500));
+ const planPromise=(async()=>{
+  setLookupStep('plan','running','Søger','Venter på adresseposition og søger derefter i Plandata.dk');
+  setLookupStep('history','running','Søger','Venter på planversioner, forslag og aflysninger');
+  const started=performance.now();
+  try{
+   const coords=await Promise.race([
+    waitForPropertyCoordinates(propertyPromise),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Adressepositionen blev ikke tilgængelig inden for 11 sekunder.')),11000))
+   ]);
+   const result=await Promise.race([
+    loadPlansForCoordinates(coords),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Plandata overskred tidsgrænsen på 6 sekunder.')),6500))
+   ]);
+   const planLookup=window.__measInfoPlanLookup||{ok:false,error:result?.error||'Plandata-opslaget gav ikke et resultat'};
+   const pd=planLookup.data||{},errors=pd.errors||{};
+   const hasPlans=Boolean((pd.localPlans||[]).length||(pd.subAreas||[]).length||(pd.buildingFields||[]).length||(pd.municipalFrames||[]).length||(pd.zoneMap||[]).length);
+   const hasHistory=Boolean((pd.planVersions||[]).length||(pd.planProposals||[]).length||(pd.repealedPlans||[]).length||(pd.planHistory||[]).length);
+   const planFailed=!planLookup.ok||Boolean(errors.localPlansError||errors.municipalFramesError||errors.zoneMapError);
+   if(!lookupFinished){
+    setLookupStep('plan',planFailed?'error':(hasPlans?'done':'warning'),planFailed?'Kildefejl':(hasPlans?'Søgning udført':'Intet match'),planFailed?(planLookup.error||'Et eller flere plandatalag fejlede'):(hasPlans?'Planobjekter returneret · '+((performance.now()-started)/1000).toFixed(1).replace('.',',')+' sek.':'Ingen planobjekter i søgevinduet; kontrollér originalkort og plan'));
+    setLookupStep('history',hasHistory?'done':'warning',hasHistory?'Historik fundet':'Ingen historik',hasHistory?'Daterede planhændelser/versioner returneret':'Ingen daterede historikhændelser fundet; kommunearkiv kan stadig have materiale');
+   }
+   return {ok:!planFailed,planLookup,pd,hasPlans,hasHistory,planFailed};
+  }catch(error){
+   if(!lookupFinished){
+    setLookupStep('plan','error','Tidsgrænse/kildefejl',String(error.message||error).slice(0,150));
+    setLookupStep('history','warning','Ikke bekræftet','Planopslaget blev ikke fuldført inden for tidsgrænsen.');
+   }
+   return {ok:false,error:String(error.message||error),planLookup:window.__measInfoPlanLookup||{ok:false,error:String(error.message||error)},pd:{},hasPlans:false,hasHistory:false,planFailed:true};
+  }
+ })();
+ const propOutcomePromise=propertyPromise.then(outcome=>{
+  if(!outcome.ok)return outcome;
+  const data=outcome.result;
+  currentPropertyData=data;updateDrawingButton();renderBuildingChangeReport(data);
   const addressOk=Boolean(data.completeness?.address||data.completeness?.house||data.house);
   const bbrOk=Boolean(data.completeness?.bbr||data.bbrBuildings?.length||data.bbr?.id_lokalId);
   const matOk=Boolean(data.completeness?.cadastral||data.cadastral);
   const bbrError=data.errors?.bbr||null,matError=data.errors?.cadastral||null;
   setLookupStep('address',addressOk?'done':'warning',addressOk?'Identificeret':'Delvist',addressOk?'Registerrelation returneret':'Adressevalget kunne ikke fuldt bekræftes i Datafordeleren');
-  setLookupProgress(49,'TRIN 3 AF 5','Behandler registerresultater','BBR- og matrikelresultater er modtaget. Kun oplysninger, som registrene faktisk returnerer, bliver vist.');
-  setLookupStep('bbr',bbrError?'error':(bbrOk?'done':'warning'),bbrError?'Kilde-fejl':(bbrOk?'Data fundet':'Intet match'),bbrError?('BBR kunne ikke kontrolleres: '+String(bbrError).slice(0,140)):(bbrOk?'En eller flere BBR-bygninger returneret':'Ingen BBR-bygning returneret; kontrollér originalkilden'));
-  setLookupStep('mat',matError?'error':(matOk?'done':'warning'),matError?'Kilde-fejl':(matOk?'Data fundet':'Intet match'),matError?('Matriklen kunne ikke kontrolleres: '+String(matError).slice(0,140)):(matOk?'Matrikel-/jordstykkedata returneret':'Ingen matrikelrelation returneret; kontrollér ejerlav og original kilde'));
+  setLookupStep('bbr',bbrError?'error':(bbrOk?'done':'warning'),bbrError?'Kilde-fejl':(bbrOk?'Data fundet':'Intet match'),bbrError?String(bbrError).slice(0,150):(bbrOk?'En eller flere BBR-bygninger returneret':'Ingen BBR-bygning returneret; kontrollér originalkilden'));
+  setLookupStep('mat',matError?'error':(matOk?'done':'warning'),matError?'Kilde-fejl':(matOk?'data fundet':'Intet match'),matError?String(matError).slice(0,150):(matOk?'Matrikel-/jordstykkedata returneret':'Ingen matrikelrelation returneret; kontrollér originalkilden'));
   const b=data.bbr||{},m=data.cadastral||{};
-  const val=(v)=>v===null||v===undefined||v===''?'—':String(v);
-  const num=(v)=>{const n=Number(v);return Number.isFinite(n)&&v!==null&&v!==''?n.toLocaleString('da-DK'): '—'};
+  const val=v=>v===null||v===undefined||v===''?'—':String(v);
   document.getElementById('addressId').textContent=id;
   document.getElementById('bbrNumber').textContent=b.id_lokalId?'Bygning fundet':'Ingen BBR-bygning returneret';
   document.getElementById('matrikelId').textContent=[m.matrikelnummer,m.ejerlavLokalId].filter(Boolean).join(' · ')||'Ingen matrikel returneret';
   document.getElementById('buildingUse').textContent=val(b.byg021BygningensAnvendelse);
   animateNumberInto(document.getElementById('buildYear'),b.byg026Opfoerelsesaar,{duration:900});
   animateNumberInto(document.getElementById('bbrArea'),b.byg038SamletBygningsareal,{unit:'m²',duration:900});
-  const ground=data.areas?.groundArea??m.arealberegnet??m.areal??null,foot=data.areas?.footprint??b.byg041BebyggetAreal??null,res=data.areas?.residentialArea??b.byg039BygningensSamledeBoligAreal??null,basement=null;
-  for(const [key,v] of [['areaGround',ground],['areaFootprint',foot],['areaResidential',res],['areaBasement',basement]])animateNumberInto(document.getElementById(key),v,{unit:'m²',duration:950});
+  const ground=data.areas?.groundArea??m.arealberegnet??m.areal??null,foot=data.areas?.footprint??b.byg041BebyggetAreal??null,res=data.areas?.residentialArea??b.byg039BygningensSamledeBoligAreal??null;
+  for(const [key,v] of [['areaGround',ground],['areaFootprint',foot],['areaResidential',res],['areaBasement',null]])animateNumberInto(document.getElementById(key),v,{unit:'m²',duration:950});
   for(const [key,v] of [['statGround',ground],['statFootprint',foot],['statResidential',res]])animateNumberInto(document.getElementById(key),v,{unit:'m²',asStat:true,duration:1100});
-  const coverage=(ground>0&&foot>=0)?(foot/ground*100):null;
-  animateNumberInto(document.getElementById('statCoverage'),coverage,{unit:'%',asStat:true,decimals:1,duration:1100});
-  searchStatus.textContent='Data hentet '+new Date(data.fetchedAt).toLocaleString('da-DK')+' · BBR: '+(bbrOk?'fundet':'intet resultat')+' · Matrikel: '+(matOk?'fundet':'intet resultat');
-  setLookupProgress(72,'TRIN 4 AF 5','Undersøger planforhold','Vi søger i Plandata.dk efter lokalplaner, kommuneplanrammer, byggefelter og planhistorik omkring adressepunktet.');
-  setLookupStep('plan','running','Søger','Henter planlag og rammer fra Plandata.dk');
-  setLookupStep('history','running','Søger','Henter planversioner, forslag og aflysninger');
-  await loadPlansForCoordinates(data.coordinates);
-  if(lookupFinished)return;
-  const planLookup=window.__measInfoPlanLookup||{ok:false,error:'Plandata-opslaget gav ikke et resultat'};
-  const pd=planLookup.data||{},pe=pd.errors||{};
-  const hasPlans=Boolean((pd.localPlans||[]).length||(pd.subAreas||[]).length||(pd.buildingFields||[]).length||(pd.municipalFrames||[]).length||(pd.zoneMap||[]).length);
-  const hasHistory=Boolean((pd.planVersions||[]).length||(pd.planProposals||[]).length||(pd.repealedPlans||[]).length||(pd.planHistory||[]).length);
-  const planFailed=!planLookup.ok||Boolean(pe.localPlansError||pe.municipalFramesError||pe.zoneMapError);
-  setLookupStep('plan',planFailed?'error':(hasPlans?'done':'warning'),planFailed?'Kildefejl':(hasPlans?'Søgning udført':'Intet match'),planFailed?(planLookup.error||'Et eller flere plandatalag fejlede'):(hasPlans?'Plandata returnerede planobjekter i søgevinduet':'Ingen planobjekter fundet i søgevinduet; kontrollér originalkort og plan'));
-  setLookupStep('history',hasHistory?'done':'warning',hasHistory?'Historik fundet':'Ingen historik',hasHistory?'Daterede planhændelser/versioner returneret':'Ingen daterede historikhændelser fundet; kommunearkiv kan stadig have materiale');
-  const partial=!addressOk||!bbrOk||!matOk||Boolean(bbrError||matError)||planFailed||!hasPlans||!hasHistory;
-  setLookupProgress(96,'TRIN 5 AF 5','Samler datadækningen','Vi skelner mellem fund, ingen match og tekniske fejl, før oversigten åbnes.');
-  const events2025=(pd.planHistory||[]).filter(ev=>/^2025/.test(String(ev.date||'')));
-  const summary='Adresse: '+(addressOk?'identificeret':'delvist verificeret')+' · BBR: '+(bbrOk?'data fundet':'ingen bygning returneret')+' · Matrikel: '+(matOk?'data fundet':'ingen matrikelrelation returneret')+' · Planer: '+(planLookup.ok?((pd.localPlans||[]).length+' lokalplan(er) i søgevinduet'):'ikke gennemført')+' · Historik: '+(hasHistory?'hændelser fundet':'ingen historik fundet')+' · 2025: '+events2025.length+' dateret(e) hændelse(r)';
-  finishLookup(partial?'Opslag afsluttet med forbehold':'Alle kilder svarede',summary,partial);
-  toast(events2025.length?'Opslag færdigt · '+events2025.length+' hændelse(r) fra 2025. Se Historik & område.':'Opslag færdigt. Resultaterne er vist i oversigten.');
- }catch(err){
-  setLookupStep('address','error','Kilde-fejl','Det officielle adresse-ID kunne ikke hentes fra Datafordeleren: '+String(err.message||'ukendt fejl').slice(0,120));
-  setLookupStep('bbr','warning','Ikke verificeret','BBR-opslag blev ikke gennemført, fordi adressekontrollen fejlede først.');
-  setLookupStep('mat','warning','Ikke verificeret','Matrikelopslag blev ikke gennemført, fordi adressekontrollen fejlede først.');
-  setLookupStep('plan','warning','Ikke kørt','Planopslag afventer brugbart adressepunkt');
-  setLookupStep('history','warning','Ikke kørt','Planhistorik blev ikke undersøgt');
-  searchStatus.textContent='Adresse valgt, men BBR/matrikelopslag fejlede: '+err.message;
-  finishLookup('Dataopslaget kunne ikke gennemføres',String(err.message||'Ukendt fejl')+'. Kontrollér API-status og adgangsrettigheder.',true);
-  toast('Data kunne ikke hentes. Fejlen vises i opslagets modal.');
+  animateNumberInto(document.getElementById('statCoverage'),ground>0&&foot>=0?(foot/ground*100):null,{unit:'%',asStat:true,decimals:1,duration:1100});
+  searchStatus.textContent='Data hentet '+new Date(data.fetchedAt||Date.now()).toLocaleString('da-DK')+' · BBR: '+(bbrOk?'fundet':'ingen bygning')+' · Matrikel: '+(matOk?'fundet':'ingen relation');
+  return {ok:true,data,addressOk,bbrOk,matOk,bbrError,matError};
+ });
+ setLookupProgress(38,'TRIN 3 AF 5','Afventer kilderne','Hvert opslag kan afsluttes separat. Et langsomt svar forhindrer ikke de øvrige statussignaler i at blive opdateret.');
+ const [propOutcome,planOutcome]=await Promise.all([propOutcomePromise,planPromise]);
+ if(lookupFinished)return;
+ const pd=planOutcome.pd||{},planLookup=planOutcome.planLookup||{ok:false,error:planOutcome.error||'Plandata-opslaget gav ikke et resultat'};
+ const events2025=(pd.planHistory||[]).filter(ev=>/^2025/.test(String(ev.date||'')));
+ if(!propOutcome.ok){
+  setLookupStep('address','error','Datafordeler-fejl',String(propOutcome.error||'Ejendomsopslaget fejlede').slice(0,150));
+  if(!document.getElementById('lookupStepMat').classList.contains('is-error'))setLookupStep('mat','warning','Ikke bekræftet','Ejendomsendepunktet kunne ikke hente relationen til matriklen.');
  }
+ const partial=!propOutcome.ok||!propOutcome.bbrOk||!propOutcome.matOk||Boolean(propOutcome.bbrError||propOutcome.matError)||planOutcome.planFailed||!planOutcome.hasPlans||!planOutcome.hasHistory;
+ setLookupProgress(96,'TRIN 5 AF 5','Samler datadækningen','Resultaterne samles, når hvert opslag er afsluttet eller har ramt sin tidsgrænse.');
+ const summary='Adresse: '+(propOutcome.ok?(propOutcome.addressOk?'identificeret':'delvist verificeret'):'ikke verificeret')+' · BBR: '+(propOutcome.bbrOk?'data fundet':'ingen data bekræftet')+' · Matrikel: '+(propOutcome.matOk?'data fundet':'ingen relation bekræftet')+' · Planer: '+(planLookup.ok?((pd.localPlans||[]).length+' lokalplan(er) i søgevinduet'):'ikke gennemført')+' · Historik: '+(planOutcome.hasHistory?'hændelser fundet':'ingen historik bekræftet')+' · 2025: '+events2025.length+' hændelse(r)';
+ finishLookup(partial?'Opslag afsluttet med forbehold':'Alle kilder svarede',summary,partial);
+ toast(events2025.length?'Opslag færdigt · '+events2025.length+' hændelse(r) fra 2025. Se Historik & område.':'Opslag færdigt. Resultaterne er vist i oversigten.');
 }
 async function runPropertyLookupSafely(){
  try{
@@ -1634,8 +1785,9 @@ function findExactPrimaryMatch(query,items){
 }
 document.getElementById('searchForm').addEventListener('submit',async event=>{
  event.preventDefault();
- const q=searchInput.value.trim();
- if(!q){searchInput.focus();searchStatus.textContent='Skriv en adresse, et vejnavn eller et postnummer.';return;}
+ const q=advancedOpen?formatAddressQuery().trim():searchInput.value.trim();
+ if(!q){(advancedOpen?geoVejnavn:searchInput).focus();searchStatus.textContent=advancedOpen?'Skriv en gade eller vælg en adresse i de udvidede felter.':'Skriv en adresse, et vejnavn eller et postnummer.';return;}
+ if(advancedOpen&&!geoVejnavn.value.trim()){geoVejnavn.focus();searchStatus.textContent='Skriv en gade / vej, og vælg et officielt adresseforslag, før du søger.';return;}
  if(/^\\d{4}$/.test(q)&&!advancedOpen){
   geoPostnummer.value=q;
   const ok=await resolvePostnummer(q);
@@ -1673,6 +1825,12 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
  setLookupProgress(5,'TRIN 1 AF 5','Søger i adresseregisteret','Søger i officielle adressekilder'+(activePostnummer()?' inden for postnummer '+activePostnummer():'')+'.');
  setLookupStep('address','running','Søger','Officielle adresseforslag og adressevalidering');
  const items=await lookupAddressSuggestions(q);
+ if(lastAddressLookupError){
+  setLookupStep('address','error','Kilde-fejl',lastAddressLookupError.slice(0,160));
+  ['bbr','mat','plan','history'].forEach(key=>setLookupStep(key,'warning','Ikke gennemført','Adresseopslaget skal lykkes, før ejendomsdata kan hentes.'));
+  finishLookup('Adressekilden svarede ikke',lastAddressLookupError+'. Prøv igen, når adressekilden er tilgængelig.',true);
+  return;
+ }
  const match=findExactPrimaryMatch(q,items);
  if(match){
   chosenAddress=match;
