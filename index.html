@@ -489,10 +489,33 @@ async function loadPropertyData(){
   const coverage=(ground>0&&foot>=0)?(foot/ground*100):null;
   document.getElementById('statCoverage').textContent=coverage==null?'—':coverage.toLocaleString('da-DK',{maximumFractionDigits:1})+' %';
   document.getElementById('integrationNote').textContent='Adresseopslag gennemført. Felter vises kun, når datakilden returnerer en værdi. Manglende oplysninger er ikke bevis for, at forholdet ikke findes.';
-  searchStatus.textContent='Data hentet '+new Date(data.fetchedAt).toLocaleString('da-DK')+' · BBR: '+(data.completeness?.bbr?'fundet':'intet resultat')+' · Matrikel: '+(data.completeness?.cadastral?'fundet':'intet resultat');
+  searchStatus.textContent='Data hentet '+new Date(data.fetchedAt).toLocaleString('da-DK')+' · BBR: '+(bbrOk?'fundet':'intet resultat')+' · Matrikel: '+(matOk?'fundet':'intet resultat');
+  setLookupProgress(68,'TRIN 4 AF 5','Undersøger planforhold','Vi søger i Plandata.dk efter lokalplaner, kommuneplanrammer, byggefelter og planhistorik omkring adressepunktet.');
+  setLookupStep('plan','running','Søger','Henter planlag og rammer fra Plandata.dk');
+  setLookupStep('history','running','Søger','Henter planversioner, forslag og aflysninger');
   await loadPlansForCoordinates(data.coordinates);
-  toast('Ejendomsopslag gennemført. Kontrollér kilder og registreringsstatus.');
- }catch(err){searchStatus.textContent='Adresse valgt, men BBR/matrikelopslag fejlede: '+err.message;toast('Data kunne ikke hentes. Se status under søgefeltet.')}
+  const planLookup=window.__measInfoPlanLookup||{ok:false,error:'Plandata-opslaget gav ikke et resultat'};
+  const pd=planLookup.data||{},pe=pd.errors||{};
+  const hasPlans=Boolean((pd.localPlans||[]).length||(pd.subAreas||[]).length||(pd.buildingFields||[]).length||(pd.municipalFrames||[]).length||(pd.zoneMap||[]).length);
+  const hasHistory=Boolean((pd.planVersions||[]).length||(pd.planProposals||[]).length||(pd.repealedPlans||[]).length||(pd.planHistory||[]).length);
+  const planFailed=!planLookup.ok||Boolean(pe.localPlansError||pe.municipalFramesError||pe.zoneMapError);
+  setLookupStep('plan',planFailed?'error':(hasPlans?'done':'warning'),planFailed?'Kildefejl':(hasPlans?'Søgning udført':'Intet match'),planFailed?(planLookup.error||'Et eller flere plandatalag fejlede'):(hasPlans?'Plandata returnerede planobjekter i søgevinduet':'Ingen planobjekter fundet i søgevinduet; kontrollér originalkort og plan'));
+  setLookupStep('history',hasHistory?'done':'warning',hasHistory?'Historik fundet':'Ingen historik',hasHistory?'Daterede planhændelser/versioner returneret':'Ingen daterede historikhændelser fundet; kommunearkiv kan stadig have materiale');
+  const partial=!addressOk||!bbrOk||!matOk||planFailed||!hasPlans||!hasHistory;
+  setLookupProgress(94,'TRIN 5 AF 5','Samler datadækningen','Vi skelner mellem fund, ingen match og tekniske fejl, før oversigten åbnes.');
+  const summary='Adresse: '+(addressOk?'identificeret':'delvist verificeret')+' · BBR: '+(bbrOk?'data fundet':'ingen bygning returneret')+' · Matrikel: '+(matOk?'data fundet':'ingen matrikelrelation returneret')+' · Planer: '+(planLookup.ok?((pd.localPlans||[]).length+' lokalplan(er) i søgevinduet'):'ikke gennemført')+' · Historik: '+(hasHistory?'hændelser fundet':'ingen historik fundet');
+  finishLookup(partial?'Opslag afsluttet med forbehold':'Alle kilder svarede',summary,partial);
+  toast('Opslag afsluttet. Se datadækning og forbehold i modalens opsummering.');
+ }catch(err){
+  setLookupStep('address','warning','Delvist','Adresseforslaget er valgt, men registeropslaget fejlede');
+  setLookupStep('bbr','error','Fejl','BBR-opslag: '+String(err.message||'ukendt fejl').slice(0,100));
+  setLookupStep('mat','error','Fejl','Matrikelopslag: '+String(err.message||'ukendt fejl').slice(0,100));
+  setLookupStep('plan','warning','Ikke kørt','Planopslag afventer brugbart adressepunkt');
+  setLookupStep('history','warning','Ikke kørt','Planhistorik blev ikke undersøgt');
+  searchStatus.textContent='Adresse valgt, men BBR/matrikelopslag fejlede: '+err.message;
+  finishLookup('Dataopslaget kunne ikke gennemføres',String(err.message||'Ukendt fejl')+'. Kontrollér API-status og adgangsrettigheder.',true);
+  toast('Data kunne ikke hentes. Fejlen vises i opslagets modal.');
+ }
 }
 document.getElementById('searchForm').addEventListener('submit',async e=>{e.preventDefault();let q=searchInput.value.trim();if(!q){toast('Skriv en adresse eller et vejnavn');searchInput.focus();return}closeSuggestions();document.getElementById('propertyAddress').textContent=q;document.getElementById('addressId').textContent=chosenAddress?.id||'Ikke returneret';if(chosenAddress?.source==='official-dar'){await loadPropertyData()}else{searchStatus.textContent='Adresse valgt. Vælg et forslag fra den officielle adressekilde for at hente BBR- og matrikeldata.';toast('Vælg et officielt adresseforslag først.')}});
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));function setTab(n){document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===n));document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('hidden',p.dataset.panel!==n));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.section===n))}
