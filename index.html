@@ -1048,7 +1048,16 @@ function syncAdvancedToPrimary(){
 function onPrimaryInput(){
  chosenAddress=null;updateDrawingButton();clearTimeout(addressTimer);
  const q=searchInput.value.trim();
- if(q.length<2){closeSuggestions();return;}
+ if(q.length<2){closeSuggestions();searchStatus.textContent='';return;}
+ if(/^\\d{4}$/.test(q)){
+  geoPostnummer.value=q;
+  addressTimer=setTimeout(async()=>{
+   const ok=await resolvePostnummer(q);
+   if(ok&&searchInput.value.trim()===q)searchStatus.textContent=q+' er '+geoBy.value+'. Udvid søgningen for at bruge postnummeret som geografisk filter.';
+  },180);
+  closeSuggestions();
+  return;
+ }
  addressTimer=setTimeout(()=>lookupAddressSuggestions(q),220);
 }
 searchInput.addEventListener('input',onPrimaryInput);
@@ -1331,6 +1340,12 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
  event.preventDefault();
  const q=searchInput.value.trim();
  if(!q){searchInput.focus();searchStatus.textContent='Skriv en adresse, et vejnavn eller et postnummer.';return;}
+ if(/^\\d{4}$/.test(q)&&!advancedOpen){
+  geoPostnummer.value=q;
+  const ok=await resolvePostnummer(q);
+  if(ok){searchStatus.textContent=q+' er '+geoBy.value+'. Klik “Udvid søgning” for at finde adresser inden for dette område.';}
+  return;
+ }
  const rawZip=advancedOpen?geoPostnummer.value.trim():'';
  const rawCity=advancedOpen?geoBy.value.trim():'';
  if(rawZip&&!verifiedPostnummer){
