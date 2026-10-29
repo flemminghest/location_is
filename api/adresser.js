@@ -35,6 +35,70 @@ async function requestAddressWash(address) {
     matchCode:1000,matchText:data.vaskestatus.tekst||"Eksakt match",origin:"address-wash"
   }];
 }
+
+const DAWA_BASE="https://api.dataforsyningen.dk";
+const GRAPHQL_ENDPOINT=process.env.DATAFORDELER_GRAPHQL_URL||"https://graphql.datafordeler.dk/flexible/v3";
+async function requestDawaAddresses(params={},limit=60){
+ const url=new URL("/adresser",DAWA_BASE);
+ if(params.q)url.searchParams.set("q",params.q);
+ if(params.vejnavn)url.searchParams.set("vejnavn",params.vejnavn);
+ if(params.husnummer)url.searchParams.set("husnr",params.husnummer);
+ if(params.postnummer)url.searchParams.set("postnr",params.postnummer);
+ if(params.by)url.searchParams.set("postnrnavn",params.by);
+ if(params.etage)url.searchParams.set("etage",params.etage);
+ if(params.doer)url.searchParams.set("dør",params.doer);
+ url.searchParams.set("struktur","mini");
+ url.searchParams.set("per_side",String(Math.min(100,limit)));
+ const response=await fetch(url,{headers:{accept:"application/json"},signal:AbortSignal.timeout(4500)});
+ const data=await response.json().catch(()=>null);
+ if(!response.ok)throw new Error("DAWA adresser HTTP "+response.status);
+ if(!Array.isArray(data))throw new Error("DAWA returnerede ikke en adresseliste");
+ return data.map(normalizeDawa).filter(Boolean);
+}
+function normalizeDawa(item){
+ const access=item?.adgangsadresse||item?.adgangsAdresse||{};
+ const road=access.vejstykke?.navn||access.vejnavn||item.vejnavn||item.vejstykke?.navn||null;
+ const number=access.husnr||access.husnummer||item.husnr||item.husnummer||null;
+ const postcode=String(access.postnummer?.nr||access.postnr||item.postnr||item.postnummer?.nr||"");
+ const city=String(access.postnummer?.navn||access.postnrnavn||item.postnrnavn||item.postnummer?.navn||"");
+ const floor=String(item.etage||item.etagebetegnelse||"");
+ const door=String(item.dør||item.doer||item.doerbetegnelse||"");
+ let label=item.adressebetegnelse||item.betegnelse||item.tekst||"";
+ if(!label&&road&&number)label=[road,number].filter(Boolean).join(" ")+(floor||door?", "+[floor,door].filter(Boolean).join(" "):"")+(postcode?" "+postcode+" "+city:"");
+ const houseId=access.id||item.adgangsadresseid||item.adgangsadresse_id||item.husnummerId||null;
+ if(!label||!item.id&&!houseId)return null;
+ return {
+  id:item.id||houseId,type:"adresse",label:String(label),detail:[postcode,city].filter(Boolean).join(" "),
+  kindLabel:"Adresse (Dataforsyningen)",source:"official-dar",origin:"DAWA/Dataforsyningen",
+  husnummerId:houseId,vejnavn:road,husnummer:number,postnr:postcode||null,postdistrikt:city||null,
+  etage:floor||null,doer:door||null,specific:true,properties:item
+ };
+}
+async function requestExactHouseFromDar(parsed){
+ const key=process.env.DATAFORDELER_API_KEY;
+ if(!key)return [];
+ const designation=[parsed.vejnavn,parsed.husnummer].filter(Boolean).join(" ")+", "+parsed.postnummer+(parsed.postdistrikt?" "+parsed.postdistrikt:"");
+ const escape=v=>String(v).replace(/\\/g,"\\\\").replace(/"/g,'\\"');
+ const now=new Date().toISOString();
+ const where='adgangsadressebetegnelse:{eq:"'+escape(designation)+'"},status:{in:["2","3"]}';
+ const query=rootQuery("DAR_Husnummer",now,where,"id_lokalId adgangsadressebetegnelse husnummertekst status adgangTilBygning jordstykke placeretPaaForeloebigtJordstykke");
+ const url=new URL(GRAPHQL_ENDPOINT);url.searchParams.set("apiKey",key);
+ const response=await fetch(url,{method:"POST",headers:{"content-type":"application/json",accept:"application/json"},body:JSON.stringify({query}),signal:AbortSignal.timeout(4500)});
+ const payload=await response.json().catch(()=>({}));
+ const errors=(payload.errors||[]).map(x=>x.message).join("; ");
+ if(!response.ok||errors)throw new Error(errors||"Datafordeler DAR HTTP "+response.status);
+ const nodes=payload.data?.DAR_Husnummer?.nodes;
+ if(!Array.isArray(nodes))throw new Error("DAR returnerede ikke en husnummerliste");
+ return nodes.map(node=>{
+  const label=node.adgangsadressebetegnelse||designation;
+  const zip=label.match(/(?:,\s*|\s)(\d{4})\s/)?.[1]||parsed.postnummer;
+  const town=label.match(/\d{4}\s+(.+)$/)?.[1]||parsed.postdistrikt||"";
+  return {id:node.id_lokalId,type:"husnummer",label,detail:[zip,town].filter(Boolean).join(" "),
+    kindLabel:"Verificeret i DAR",source:"official-dar",origin:"Datafordeler DAR GraphQL",
+    husnummerId:node.id_lokalId,vejnavn:parsed.vejnavn,husnummer:node.husnummertekst||parsed.husnummer,
+    postnr:zip,postdistrikt:town,specific:true,properties:node};
+ });
+}
 function normalize(hit, origin) {
   const type=String(hit.type||"").toLowerCase();
   const label=String(hit.titel||hit.adgangsadressebetegnelse||hit.adressebetegnelse||[hit.vejnavn||hit.vejNavn,hit.husnummer||hit.husNummer||hit.husnummertekst,hit.postnr,hit.postdistrikt].filter(Boolean).join(" ")||"").trim();
@@ -106,39 +170,28 @@ export default async function handler(req,res) {
     let raw=[],errors=[];
     if(structured){
       if(!vejnavn&&q){
-        // The visible one-field search remains usable even with a postcode/city filter selected.
-        // Search the user's phrase, then strictly retain only results inside the selected geography.
+        // The visible one-field search remains usable even with a geographic filter selected.
+        const dawaParams={q,postnummer:postnummer||undefined,by:by||undefined};
         const results=await Promise.allSettled([
-          requestSearch("/adresser/soeg/",{tekst:q},50).then(hits=>hits.map(x=>normalize(x,"filtered-text-address"))),
-          requestSearch("/husnumre/soeg/",{tekst:q},50).then(hits=>hits.map(x=>normalize(x,"filtered-text-house")))
+          requestDawaAddresses(dawaParams,50),
+          requestSearch("/adresser/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"filtered-text-address"))),
+          requestSearch("/husnumre/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"filtered-text-house")))
         ]);
         for(const result of results){
           if(result.status==="fulfilled")raw.push(...result.value);
           else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
         }
       }else if(vejnavn){
-        if(postnummer){
-          const params={vejnavn,postnummer};
-          if(husnummer)params.husnummer=husnummer;
-          if(etage)params.etage=etage;
-          if(doer)params.doer=doer;
-          const paths=(etage||doer)?["/adresser/soeg/"]:(husnummer?["/husnumre/soeg/","/adresser/soeg/"]:["/husnumre/soeg/"]);
-          const results=await Promise.allSettled(paths.map(path=>requestSearch(path,params,60).then(hits=>hits.map(x=>normalize(x,path.includes("adresser")?"structured-address":"structured-house")))));
-          for(const result of results){
-            if(result.status==="fulfilled")raw.push(...result.value);
-            else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
-          }
-        }else{
-          // By-only scope without an exact postcode uses a text query; returned hits are then city-filtered.
-          const text=[vejnavn,husnummer,etage,doer,by].filter(Boolean).join(" ");
-          const results=await Promise.allSettled([
-            requestSearch("/adresser/soeg/",{tekst:text},60).then(hits=>hits.map(x=>normalize(x,"city-filtered-address"))),
-            requestSearch("/husnumre/soeg/",{tekst:text},60).then(hits=>hits.map(x=>normalize(x,"city-filtered-house")))
-          ]);
-          for(const result of results){
-            if(result.status==="fulfilled")raw.push(...result.value);
-            else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
-          }
+        const dawaParams={vejnavn,husnummer:husnummer||undefined,postnummer:postnummer||undefined,by:by||undefined,etage:etage||undefined,doer:doer||undefined};
+        const searchText=[vejnavn,husnummer,postnummer,by].filter(Boolean).join(" ");
+        const paths=(etage||doer)?["/adresser/soeg/"]:(husnummer?["/husnumre/soeg/","/adresser/soeg/"]:["/husnumre/soeg/"]);
+        const results=await Promise.allSettled([
+          requestDawaAddresses(dawaParams,60),
+          ...paths.map(path=>requestSearch(path,{tekst:searchText},50).then(hits=>hits.map(x=>normalize(x,path.includes("adresser")?"structured-address":"structured-house"))))
+        ]);
+        for(const result of results){
+          if(result.status==="fulfilled")raw.push(...result.value);
+          else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,180));
         }
       }else{
         return res.status(200).json({status:"ok",query:q,fund:[],scopedToPostcode:postnummer||null,hint:"Skriv en adresse eller et gadenavn, så søgningen kan afgrænses."});
@@ -156,19 +209,22 @@ export default async function handler(req,res) {
 
     const parsed=parseAddressQuery(q);
     if(parsed){
-      const params={vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer};
+      const structured={vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer,by:parsed.postdistrikt||undefined};
       const results=await Promise.allSettled([
-        requestSearch("/husnumre/soeg/",params,40).then(hits=>hits.map(x=>normalize(x,"structured-house"))),
-        requestSearch("/adresser/soeg/",params,40).then(hits=>hits.map(x=>normalize(x,"structured-address"))),
+        requestExactHouseFromDar(parsed),
+        requestDawaAddresses(structured,40),
+        requestSearch("/husnumre/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"structured-house"))),
+        requestSearch("/adresser/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"structured-address"))),
         requestAddressWash(q)
       ]);
       for(const result of results){
         if(result.status==="fulfilled")raw.push(...result.value);
-        else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
+        else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,180));
       }
       raw=filterStrict(raw,parsed.postnummer,parsed.postdistrikt);
     }else{
       const results=await Promise.allSettled([
+        requestDawaAddresses({q},40),
         requestSearch("/adresser/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"text-address"))),
         requestSearch("/husnumre/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"text-house")))
       ]);
@@ -178,7 +234,7 @@ export default async function handler(req,res) {
       }
     }
     const fund=sortAndDedupe(raw,q).slice(0,60);
-    if(!fund.length&&errors.length===2)return res.status(502).json({error:"Begge officielle adresseopslag fejlede inden for tidsgrænsen.",details:errors});
+    if(!fund.length&&errors.length>=3)return res.status(502).json({error:"Alle tilgængelige adresseopslag fejlede inden for tidsgrænsen.",details:errors});
     res.setHeader("Cache-Control","private, max-age=15");
     return res.status(200).json({status:"ok",query:q,fund,partial:errors.length>0,details:errors,source:"Klimadatastyrelsens Adressevælger",hint:fund.length?"Vælg en præcis officiel adresse eller et husnummer.":"Ingen adresse fundet; kontrollér stavning og postnummer."});
   }catch(error){
