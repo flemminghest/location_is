@@ -6,7 +6,7 @@ function escapeGraphQL(v){return String(v).replace(/\\/g,"\\\\").replace(/"/g,'\
 async function queryPublicPostnummer(query){
  const code=String(query||"").trim();
  const urls=[];
- if(/^\\d{4}$/.test(code)){
+ if(/^\d{4}$/.test(code)){
   urls.push(new URL("https://api.dataforsyningen.dk/postnumre?nr="+encodeURIComponent(code)));
   urls.push(new URL("https://api.dataforsyningen.dk/postnumre/"+encodeURIComponent(code)));
  }else{
@@ -18,7 +18,7 @@ async function queryPublicPostnummer(query){
   if(!response.ok)throw new Error("Dataforsyningen HTTP "+response.status);
   const rows=Array.isArray(payload)?payload:(payload&&typeof payload==="object"?[payload]:[]);
   return rows.map(x=>({nr:String(x.nr||""),navn:String(x.navn||x.postdistrikt||"").trim(),source:"Dataforsyningen postnumre"}))
-   .filter(x=>/^\\d{4}$/.test(x.nr)&&x.navn&&(/^\\d{4}$/.test(code)?x.nr===code:normalized(x.navn).startsWith(normalized(code))));
+   .filter(x=>/^\d{4}$/.test(x.nr)&&x.navn&&(/^\d{4}$/.test(code)?x.nr===code:normalized(x.navn).startsWith(normalized(code))));
  }));
  for(const item of settled){
   if(item.status==="fulfilled"&&item.value.length)return item.value;
