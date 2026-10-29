@@ -1961,6 +1961,7 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
  setLookupStep('address','running','Søger','Officielle adresseforslag og adressevalidering');
  const items=await lookupAddressSuggestions(q);
  if(lastAddressLookupError){
+  setOverviewFailureState(lastAddressLookupError);
   setLookupStep('address','error','Kilde-fejl',lastAddressLookupError.slice(0,160));
   ['bbr','mat','plan','history'].forEach(key=>setLookupStep(key,'warning','Ikke gennemført','Adresseopslaget skal lykkes, før ejendomsdata kan hentes.'));
   finishLookup('Adressekilden svarede ikke',lastAddressLookupError+'. Prøv igen, når adressekilden er tilgængelig.',true);
@@ -1980,16 +1981,19 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
   return;
  }
  if(items.some(item=>item.source==='official-dar'&&['adresse','husnummer'].includes(item.type)&&item.id)){
+  setOverviewFailureState('Vælg den præcise officielle adresse i forslagene. BBR og matrikel er ikke slået op, før et bestemt husnummer er valgt.');
   searchStatus.textContent='Vælg den præcise adresse i forslagene, og tryk Søg igen.';
   setLookupStep('address','warning','Vælg adresse','Flere mulige officielle matches blev fundet.');
   finishLookup('Vælg den præcise adresse','Vælg et konkret officielt husnummer/adresse fra forslagslisten. '+(activePostnummer()?'Listen er filtreret til postnummer '+activePostnummer()+'.':'Ingen geografisk afgrænsning er valgt.'),true);
   return;
  }
  if(items.length){
+  setOverviewFailureState('Der blev fundet forslag, men ingen konkret officiel adresse. Vælg et bestemt husnummer for at hente BBR og matrikel.');
   setLookupStep('address','warning','Ikke entydig','Der blev fundet vej-/kortforslag, men ingen konkret officiel adresse.');
   finishLookup('Adresse ikke entydigt bekræftet','Der findes forslag, men ingen konkret officiel adresse kunne knyttes sikkert til opslaget. Vælg et officielt husnummer fra listen.',true);
   return;
  }
+ setOverviewFailureState('Ingen officiel adresse blev fundet for søgningen. Kontrollér vejnavn, husnummer og postnummer.');
  setLookupStep('address','error','Intet match','Ingen adresse blev returneret af kilderne for denne søgning.');
  setLookupStep('bbr','warning','Ikke kørt','BBR kræver et verificeret adresse-ID.');
  setLookupStep('mat','warning','Ikke kørt','Matrikel kræver et verificeret adresse-ID.');
