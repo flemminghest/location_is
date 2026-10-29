@@ -828,12 +828,13 @@ function resetLookupModal(address){
   if(lookupFinished)return;
   Object.keys(lookupStepIds).forEach(key=>{
    const step=document.getElementById(lookupStepIds[key]);
-   if(step&&step.classList.contains('is-running'))setLookupStep(key,'error','Tidsgrænse','Denne kilde afsluttede ikke inden for den samlede sikkerhedsgrænse.');
-   else if(step&&step.querySelector('.lookup-step-state')?.textContent==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Ingen forespørgsel blev gennemført for denne kilde.');
+   const state=step?.querySelector('.lookup-step-state')?.textContent||'';
+   if(step&&(step.classList.contains('is-running')||state==='Langsomt svar'))setLookupStep(key,'error','Tidsgrænse','Kilden nåede ikke sin tidsgrænse. Eventuelle data fra de øvrige kilder bevares.');
+   else if(step&&state==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Ingen forespørgsel blev gennemført for denne kilde.');
   });
-  searchStatus.textContent='Opslaget blev afsluttet med delresultater efter 40 sekunder.';
-  finishLookup('Opslag afsluttet med delresultater','En eller flere kilder svarede ikke inden for 40 sekunder. Resultater fra de øvrige kilder er bevaret.',true);
- },40000);
+  searchStatus.textContent='Opslaget blev afsluttet med delresultater efter 28 sekunder.';
+  finishLookup('Opslag afsluttet med delresultater','Nogle kilder svarede ikke inden for 28 sekunder. Resultater fra de øvrige kilder er bevaret; du kan prøve igen for at hente manglende data.',true);
+ },28000);
 }
 function finishLookup(title,description,warning){
  if(lookupFinished)return;
