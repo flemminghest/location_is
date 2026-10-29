@@ -79,7 +79,7 @@ export default async function handler(req,res) {
       const current=unique.get(key);if(!current||score(hit,q)>score(current,q))unique.set(key,hit);
     }
     const fund=[...unique.values()].sort((a,b)=>score(b,q)-score(a,q)||a.label.localeCompare(b.label,"da")).slice(0,14);
-    if(addressResults.status!=="fulfilled"&&houseResults.status!=="fulfilled")return res.status(502).json({error:"Begge officielle adresseopslag fejlede.",details:errors});
+    if(searchResults.every(result=>result.status!=="fulfilled"))return res.status(502).json({error:"Begge officielle adresseopslag fejlede.",details:errors});
     res.setHeader("Cache-Control","public, max-age=25");
     return res.status(200).json({status:"ok",query:q,fund,partial:errors.length>0,details:errors,source:"Klimadatastyrelsens Adressevælger",hint:fund.some(x=>x.type==="adresse"||x.type==="husnummer")?"Vælg det præcise husnummer/adresse. Tilføj postnummer eller by, hvis flere ligner hinanden.":"Skriv vejnavn + husnummer + postnummer for at indsnævre resultaterne."});
   } catch(error) {
