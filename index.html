@@ -742,7 +742,7 @@ function hasAdvancedValues(){
 }
 function activePostnummer(){
  const value=geoPostnummer.value.trim();
- return advancedOpen&&/^\\d{4}$/.test(value)&&verifiedPostnummer===value?value:'';
+ return advancedOpen&&/^\d{4}$/.test(value)&&verifiedPostnummer===value?value:'';
 }
 function activeBy(){
  return advancedOpen&&selectedCity&&geoBy.value.trim()===selectedCity.navn?selectedCity.navn:'';
@@ -779,16 +779,28 @@ function closeCitySuggestions(){
  citySuggestions.innerHTML='';
  geoBy.setAttribute('aria-expanded','false');
 }
-function showCitySuggestions(items,message=''){
+function showCitySuggestions(items,message='',query=''){
  if(!items.length){
   citySuggestions.innerHTML=message?'<div class="geo-city-message">'+esc(message)+'</div>':'';
   citySuggestions.classList.toggle('is-open',Boolean(message));
   geoBy.setAttribute('aria-expanded',String(Boolean(message)));
   return;
  }
- citySuggestions.innerHTML=items.map((item,i)=>'<button type="button" class="geo-city-option" role="option" data-city-index="'+i+'"><strong>'+esc(item.navn)+' · '+esc(item.nr)+'</strong><small>Begræns søgning til dette postnummer</small></button>').join('');
+ const cityOnlyOption=query&&!/^\\d{4}$/.test(query)?'<button type="button" class="geo-city-option" role="option" data-city-only="1"><strong>Brug kun byen: '+esc(query)+'</strong><small>Vis adresser i denne by på tværs af postnumre</small></button>':'';
+ citySuggestions.innerHTML=cityOnlyOption+items.map((item,i)=>'<button type="button" class="geo-city-option" role="option" data-city-index="'+i+'"><strong>'+esc(item.navn)+' · '+esc(item.nr)+'</strong><small>Begræns søgning til dette postnummer</small></button>').join('');
  citySuggestions.classList.add('is-open');
  geoBy.setAttribute('aria-expanded','true');
+ citySuggestions.querySelector('[data-city-only]')?.addEventListener('click',()=>{
+  selectedCity={nr:'',navn:query,cityOnly:true};
+  verifiedPostnummer='';
+  geoPostnummer.value='';
+  geoPostnummer.dataset.verified='';
+  geoBy.value=query;
+  closeCitySuggestions();
+  chosenAddress=null;
+  syncAddressQuery();
+  searchStatus.textContent='Geografisk filter valgt: '+query+'. Forslag fra andre byer bliver sorteret fra.';
+ });
  citySuggestions.querySelectorAll('[data-city-index]').forEach(button=>button.addEventListener('click',()=>{
   const item=items[Number(button.dataset.cityIndex)];
   if(!item)return;
@@ -814,7 +826,7 @@ async function searchPostnumre(query){
   if(controller!==cityController)return;
   if(!response.ok||!data.ok)throw new Error(data.error||'Postnumre kunne ikke hentes');
   const results=Array.isArray(data.results)?data.results:(data.nr?[data]:[]);
-  showCitySuggestions(results.filter(x=>x.nr&&x.navn).slice(0,20));
+  showCitySuggestions(results.filter(x=>x.nr&&x.navn).slice(0,20),'',query);
  }catch(error){
   if(error.name==='AbortError')return;
   if(controller===cityController)showCitySuggestions([], 'By/postnummer kunne ikke hentes lige nu. Prøv igen eller indtast et firecifret postnummer.');
@@ -822,7 +834,7 @@ async function searchPostnumre(query){
 }
 async function resolvePostnummer(nr){
  const code=String(nr||'').trim();
- if(!/^\\d{4}$/.test(code)){verifiedPostnummer='';selectedCity=null;geoBy.value='';return false;}
+ if(!/^\d{4}$/.test(code)){verifiedPostnummer='';selectedCity=null;geoBy.value='';return false;}
  if(verifiedPostnummer===code&&selectedCity&&geoBy.value===selectedCity.navn)return true;
  if(postcodeController)postcodeController.abort();
  postcodeController=new AbortController();
@@ -922,7 +934,7 @@ function renderSuggestions(items,note=''){
  suggestionsEl.querySelectorAll('.suggestion').forEach(b=>b.addEventListener('click',()=>chooseSuggestion(+b.dataset.index)));
 }
 function normalizeAddressMatch(value){
- return String(value||'').toLocaleLowerCase('da-DK').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[.,]/g,' ').replace(/\\s+/g,' ').trim();
+ return String(value||'').toLocaleLowerCase('da-DK').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[.,]/g,' ').replace(/\s+/g,' ').trim();
 }
 function findExactSuggestion(query,items){
  const q=normalizeAddressMatch(query),qTokens=new Set(q.split(' '));
@@ -935,7 +947,7 @@ function findExactSuggestion(query,items){
  });
  return filtered.find(x=>normalizeAddressMatch(x.label)===q)||
   filtered.find(x=>{const label=normalizeAddressMatch(x.label);return q.startsWith(label+',')||q.startsWith(label+' ');})||
-  filtered.find(x=>{const tokens=normalizeAddressMatch(x.label).split(' ').filter(Boolean);return tokens.length>=3&&tokens.some(t=>/\\d/.test(t))&&tokens.every(t=>qTokens.has(t));})||null;
+  filtered.find(x=>{const tokens=normalizeAddressMatch(x.label).split(' ').filter(Boolean);return tokens.length>=3&&tokens.some(t=>/\d/.test(t))&&tokens.every(t=>qTokens.has(t));})||null;
 }
 function chooseSuggestion(i){
  const item=currentSuggestions[i];if(!item)return;
@@ -1062,7 +1074,7 @@ geoPostnummer.addEventListener('input',()=>{
  if(cityController)cityController.abort();
  clearTimeout(postcodeTimer);
  const q=geoPostnummer.value.trim();
- if(!/^\\d{4}$/.test(q)){closeCitySuggestions();return;}
+ if(!/^\d{4}$/.test(q)){closeCitySuggestions();return;}
  postcodeTimer=setTimeout(async()=>{
   const ok=await resolvePostnummer(q);
   if(ok&&geoPostnummer.value.trim()===q){
