@@ -44,8 +44,8 @@ Den officielle Datafordeler-dokumentation beskriver BBR GraphQL som adgangsstyre
 - `GET /api/status` — viser om API key er konfigureret
 - `GET /api/adresser?q=<tekst>` — officielle adresseforslag
 - `GET /api/ejendom?adresseId=<id>` — forsøg på at hente BBR- og matrikeldata for adresse
-- `GET /api/ejendom?bfe=<BFE-nummer>` — matrikelrelateret opslag via BFE
-- `GET /api/matrikel?q=<matrikelnummer>` — matrikelsøgning
+- `GET /api/ejendom?bfe=<BFE-nummer>` — opslag af MAT-ejendomsrelation via BFE-nummer
+- `GET /api/matrikel?bfe=<BFE-nummer>` — MAT-opslag via BFE-nummer; matrikelbetegnelse alene skal kombineres med ejerlav
 
 ## Vigtige forbehold
 
