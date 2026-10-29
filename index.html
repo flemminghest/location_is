@@ -111,7 +111,7 @@ document.addEventListener('click',e=>{if(!document.getElementById('searchForm').
 function displayPlanDate(value){
  if(value===null||value===undefined||value==='')return 'Dato ikke oplyst';
  const raw=String(value);
- const match=raw.match(/^(\\d{4})-?(\\d{2})-?(\\d{2})/);
+ const match=raw.match(/^(\d{4})-?(\d{2})-?(\d{2})/);
  if(match){const dt=new Date(Number(match[1]),Number(match[2])-1,Number(match[3]));return dt.toLocaleDateString('da-DK');}
  const dt=new Date(raw);return Number.isNaN(dt.getTime())?raw:dt.toLocaleDateString('da-DK');
 }
@@ -122,7 +122,7 @@ function renderAreaHistory(data){
  const builtYear=bbr.byg026Opfoerelsesaar||null;
  const plans=data.localPlans||[],versions=data.planVersions||[],proposals=data.planProposals||[],repealed=data.repealedPlans||[];
  const events=data.planHistory||[];
- const years=events.map(e=>String(e.date||'').match(/(19|20)\\d{2}/)?.[0]).filter(Boolean).map(Number).sort((a,b)=>a-b);
+ const years=events.map(e=>String(e.date||'').match(/(19|20)\d{2}/)?.[0]).filter(Boolean).map(Number).sort((a,b)=>a-b);
  const parts=[];
  const address=chosenAddress?.label||document.getElementById('propertyAddress')?.textContent||'ejendommen';
  if(builtYear)parts.push('BBR registrerer hovedbygningens opførelsesår som '+builtYear+'. Det er registerets oplysning om bygningen og dokumenterer ikke i sig selv, hvornår hele området blev udbygget.');
@@ -147,7 +147,7 @@ function renderAreaHistory(data){
   const label=String(ev.label||'Planhændelse');
   const detail=String(ev.detail||'');
   const version=ev.version?' · version '+ev.version:'';
-  const doc=ev.documentUrl&&/^https?:\\/\\//i.test(ev.documentUrl)?'<a href="'+escapeHtml(ev.documentUrl)+'" target="_blank" rel="noreferrer">Åbn dokument ↗</a>':'';
+  const doc=ev.documentUrl&&/^https?:\/\//i.test(ev.documentUrl)?'<a href="'+escapeHtml(ev.documentUrl)+'" target="_blank" rel="noreferrer">Åbn dokument ↗</a>':'';
   return '<div style="border-left:2px solid #c8d7e4;padding:0 0 13px 12px;margin:2px 0 0 5px"><div style="font-size:11px;color:#687789">'+escapeHtml(displayPlanDate(ev.date))+' · '+escapeHtml(label)+escapeHtml(version)+'</div><div style="font-weight:700;margin:2px 0">'+escapeHtml(title)+'</div><div class="tiny">'+escapeHtml(detail)+(ev.current?' · markeret aktuel version':'')+'</div>'+doc+'</div>';
  }).join('');
 }
