@@ -799,14 +799,15 @@ function resetLookupModal(address){
   if(lookupFinished)return;
   Object.keys(lookupStepIds).forEach(key=>{
    const step=document.getElementById(lookupStepIds[key]);
-   if(step&&step.classList.contains('is-running'))setLookupStep(key,'error','Tidsgrænse','Kilden svarede ikke inden for den samlede tidsgrænse.');
-   else if(step&&!step.querySelector('.lookup-step-progress')&&step.querySelector('.lookup-step-state')?.textContent==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Afbrudt, fordi en anden del af opslaget tog for lang tid.');
+   if(step&&step.classList.contains('is-running'))setLookupStep(key,'error','Tidsgrænse','Dette opslag nåede ikke sin samlede tidsgrænse; andre kilder afsluttes separat.');
+   else if(step&&step.querySelector('.lookup-step-state')?.textContent==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Ingen forespørgsel blev gennemført for denne kilde.');
   });
-  searchStatus.textContent='Opslaget blev afbrudt efter 22 sekunder. En eller flere datakilder svarede ikke rettidigt.';
-  finishLookup('Opslaget tog for lang tid','En eller flere datakilder svarede ikke inden for 22 sekunder. Fejl og færdige opslag vises pr. kilde ovenfor. Prøv igen senere.',true);
+  searchStatus.textContent='Opslaget blev afbrudt efter 22 sekunder. Ikke alle datakilder svarede rettidigt.';
+  finishLookup('Opslaget tog for lang tid','En eller flere datakilder svarede ikke inden for 22 sekunder. Se den separate status for hver kilde.',true);
  },22000);
 }
 function finishLookup(title,description,warning){
+ if(lookupFinished)return;
  lookupFinished=true;
  if(lookupWatchdogTimer){clearTimeout(lookupWatchdogTimer);lookupWatchdogTimer=null;}
  Object.keys(lookupStepIds).forEach(stopLookupStepTimer);
@@ -818,7 +819,7 @@ function finishLookup(title,description,warning){
  document.getElementById('lookupResultText').textContent=description||'Kontrollér resultaterne i fanerne.';
  lookupDoneBtn.disabled=false;lookupDoneBtn.textContent='Luk og se resultater';lookupX.disabled=false;
  if(lookupCloseTimer)clearTimeout(lookupCloseTimer);
- lookupCloseTimer=setTimeout(closeLookupModal,900);
+ lookupCloseTimer=setTimeout(closeLookupModal,1800);
 }
 function closeLookupModal(){
  if(!lookupFinished)return;
@@ -1514,15 +1515,19 @@ function animateNumberInto(element,value,{unit='',decimals=0,asStat=false,durati
 }
 installMetricIcons();
 
+async function waitForPropertyCoordinates(propertyPromise){
+ const outcome=await propertyPromise;
+ if(!outcome.ok)throw new Error('Plandata afventer, fordi adresseopslaget ikke kunne gennemføres.');
+ const coords=outcome.result?.coordinates||null;
+ if(!coords)throw new Error('Datafordeleren returnerede ingen adresseposition til planopslaget.');
+ return coords;
+}
 async function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){
-  setLookupStep('address','error','Adresse-ID mangler','Der blev ikke sendt et konkret officielt adresse-ID til ejendomsopslaget.');
-  setLookupStep('bbr','warning','Ikke gennemført','BBR kræver et gyldigt officielt adresse-ID.');
-  setLookupStep('mat','warning','Ikke gennemført','Matrikel kræver et gyldigt officielt adresse-ID.');
-  setLookupStep('plan','warning','Ikke gennemført','Planopslag kræver en verificeret adresseposition.');
-  setLookupStep('history','warning','Ikke gennemført','Historik kræver en verificeret adresseposition.');
-  finishLookup('Adresse-ID mangler','Den valgte søgepost kunne ikke bruges som et officielt adresse-ID. Vælg et konkret officielt husnummer/adresse fra listen.',true);
+  setLookupStep('address','error','Adresse-ID mangler','Der blev ikke sendt et konkret officielt adresse-ID.');
+  ['bbr','mat','plan','history'].forEach(key=>setLookupStep(key,'warning','Ikke gennemført','Vælg en konkret officiel adresse først.'));
+  finishLookup('Adresse-ID mangler','Vælg en konkret officiel adresse eller et husnummer fra listen.',true);
   return;
  }
  if(!['adresse','husnummer'].includes(chosenAddress?.type)){
@@ -1530,73 +1535,102 @@ async function loadPropertyData(){
   finishLookup('Vælg en konkret adresse','Det valgte forslag identificerer ikke et bestemt husnummer.',true);
   return;
  }
- setLookupProgress(24,'TRIN 2 AF 5','Kontrollerer adressen','Det officielle adresseforslag er valgt. Vi følger registerrelationen til husnummer, bygning og jordstykke.');
+ const address=chosenAddress;
+ const param=address.type==='adresse'&&address.husnummerId?'husnummerId':(address.type==='husnummer'?'husnummerId':'adresseId');
+ const lookupId=param==='husnummerId'&&address.type==='adresse'?(address.husnummerId||id):id;
+ const requestJson=async(url,timeoutMs)=>{
+  const response=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(timeoutMs)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||data.detail||('HTTP '+response.status));
+  return data;
+ };
+ const timedSource=async(key,label,detail,work)=>{
+  setLookupStep(key,'running',label,detail);
+  const started=performance.now();
+  try{
+   const result=await work();
+   if(!lookupFinished)setLookupStep(key,'done','Kilde svarede','Afsluttet på '+((performance.now()-started)/1000).toFixed(1).replace('.',',')+' sek.');
+   return {ok:true,result};
+  }catch(error){
+   if(!lookupFinished)setLookupStep(key,'error','Kilde-fejl',String(error?.message||error||'Ukendt fejl').slice(0,160));
+   return {ok:false,error:String(error?.message||error||'Ukendt fejl')};
+  }
+ };
+ setLookupProgress(20,'TRIN 2 AF 5','Kontrollerer adressen','Registeropslag køres parallelt, hvor datagrundlaget tillader det. Hver kilde har sin egen fremdrift og tidsgrænse.');
  setLookupStep('address','running','Kontrollerer','Kontrollerer DAR-adresse og adgangsadresse');
- searchStatus.textContent='Henter BBR- og matrikeldata fra Datafordeleren…';
- setLookupProgress(31,'TRIN 2 AF 5','Kontakter Datafordeleren','Vi anmoder om de tilgængelige BBR- og matrikeloplysninger fra de officielle registre.');
- setLookupStep('bbr','running','Slår op','Anmoder om bygningsoplysninger');
- setLookupStep('mat','running','Slår op','Anmoder om jordstykke og matrikeldata');
- try{
-  const param=chosenAddress.type==='adresse'&&chosenAddress.husnummerId?'husnummerId':(chosenAddress.type==='husnummer'?'husnummerId':'adresseId');
-  const lookupId=param==='husnummerId'&&chosenAddress.type==='adresse'?(chosenAddress.husnummerId||id):id;
-  const resp=await fetch('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(9500)});
-  const data=await resp.json();
-  if(lookupFinished)return;
-  if(!resp.ok)throw new Error(data.error||'Ejendomsopslaget kunne ikke gennemføres');
-  currentPropertyData=data;
-  updateDrawingButton();
-  renderBuildingChangeReport(data);
+ searchStatus.textContent='Kontakter de officielle registre…';
+ const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og matrikelrelationer',()=>requestJson('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),10500));
+ const planPromise=(async()=>{
+  setLookupStep('plan','running','Søger','Venter på adresseposition og søger derefter i Plandata.dk');
+  setLookupStep('history','running','Søger','Venter på planversioner, forslag og aflysninger');
+  const started=performance.now();
+  try{
+   const coords=await Promise.race([
+    waitForPropertyCoordinates(propertyPromise),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Adressepositionen blev ikke tilgængelig inden for 11 sekunder.')),11000))
+   ]);
+   const result=await Promise.race([
+    loadPlansForCoordinates(coords),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Plandata overskred tidsgrænsen på 6 sekunder.')),6500))
+   ]);
+   const planLookup=window.__measInfoPlanLookup||{ok:false,error:result?.error||'Plandata-opslaget gav ikke et resultat'};
+   const pd=planLookup.data||{},errors=pd.errors||{};
+   const hasPlans=Boolean((pd.localPlans||[]).length||(pd.subAreas||[]).length||(pd.buildingFields||[]).length||(pd.municipalFrames||[]).length||(pd.zoneMap||[]).length);
+   const hasHistory=Boolean((pd.planVersions||[]).length||(pd.planProposals||[]).length||(pd.repealedPlans||[]).length||(pd.planHistory||[]).length);
+   const planFailed=!planLookup.ok||Boolean(errors.localPlansError||errors.municipalFramesError||errors.zoneMapError);
+   if(!lookupFinished){
+    setLookupStep('plan',planFailed?'error':(hasPlans?'done':'warning'),planFailed?'Kildefejl':(hasPlans?'Søgning udført':'Intet match'),planFailed?(planLookup.error||'Et eller flere plandatalag fejlede'):(hasPlans?'Planobjekter returneret · '+((performance.now()-started)/1000).toFixed(1).replace('.',',')+' sek.':'Ingen planobjekter i søgevinduet; kontrollér originalkort og plan'));
+    setLookupStep('history',hasHistory?'done':'warning',hasHistory?'Historik fundet':'Ingen historik',hasHistory?'Daterede planhændelser/versioner returneret':'Ingen daterede historikhændelser fundet; kommunearkiv kan stadig have materiale');
+   }
+   return {ok:!planFailed,planLookup,pd,hasPlans,hasHistory,planFailed};
+  }catch(error){
+   if(!lookupFinished){
+    setLookupStep('plan','error','Tidsgrænse/kildefejl',String(error.message||error).slice(0,150));
+    setLookupStep('history','warning','Ikke bekræftet','Planopslaget blev ikke fuldført inden for tidsgrænsen.');
+   }
+   return {ok:false,error:String(error.message||error),planLookup:window.__measInfoPlanLookup||{ok:false,error:String(error.message||error)},pd:{},hasPlans:false,hasHistory:false,planFailed:true};
+  }
+ })();
+ const propOutcomePromise=propertyPromise.then(outcome=>{
+  if(!outcome.ok)return outcome;
+  const data=outcome.result;
+  currentPropertyData=data;updateDrawingButton();renderBuildingChangeReport(data);
   const addressOk=Boolean(data.completeness?.address||data.completeness?.house||data.house);
   const bbrOk=Boolean(data.completeness?.bbr||data.bbrBuildings?.length||data.bbr?.id_lokalId);
   const matOk=Boolean(data.completeness?.cadastral||data.cadastral);
   const bbrError=data.errors?.bbr||null,matError=data.errors?.cadastral||null;
   setLookupStep('address',addressOk?'done':'warning',addressOk?'Identificeret':'Delvist',addressOk?'Registerrelation returneret':'Adressevalget kunne ikke fuldt bekræftes i Datafordeleren');
-  setLookupProgress(49,'TRIN 3 AF 5','Behandler registerresultater','BBR- og matrikelresultater er modtaget. Kun oplysninger, som registrene faktisk returnerer, bliver vist.');
-  setLookupStep('bbr',bbrError?'error':(bbrOk?'done':'warning'),bbrError?'Kilde-fejl':(bbrOk?'Data fundet':'Intet match'),bbrError?('BBR kunne ikke kontrolleres: '+String(bbrError).slice(0,140)):(bbrOk?'En eller flere BBR-bygninger returneret':'Ingen BBR-bygning returneret; kontrollér originalkilden'));
-  setLookupStep('mat',matError?'error':(matOk?'done':'warning'),matError?'Kilde-fejl':(matOk?'Data fundet':'Intet match'),matError?('Matriklen kunne ikke kontrolleres: '+String(matError).slice(0,140)):(matOk?'Matrikel-/jordstykkedata returneret':'Ingen matrikelrelation returneret; kontrollér ejerlav og original kilde'));
+  setLookupStep('bbr',bbrError?'error':(bbrOk?'done':'warning'),bbrError?'Kilde-fejl':(bbrOk?'Data fundet':'Intet match'),bbrError?String(bbrError).slice(0,150):(bbrOk?'En eller flere BBR-bygninger returneret':'Ingen BBR-bygning returneret; kontrollér originalkilden'));
+  setLookupStep('mat',matError?'error':(matOk?'done':'warning'),matError?'Kilde-fejl':(matOk?'data fundet':'Intet match'),matError?String(matError).slice(0,150):(matOk?'Matrikel-/jordstykkedata returneret':'Ingen matrikelrelation returneret; kontrollér originalkilden'));
   const b=data.bbr||{},m=data.cadastral||{};
-  const val=(v)=>v===null||v===undefined||v===''?'—':String(v);
-  const num=(v)=>{const n=Number(v);return Number.isFinite(n)&&v!==null&&v!==''?n.toLocaleString('da-DK'): '—'};
+  const val=v=>v===null||v===undefined||v===''?'—':String(v);
   document.getElementById('addressId').textContent=id;
   document.getElementById('bbrNumber').textContent=b.id_lokalId?'Bygning fundet':'Ingen BBR-bygning returneret';
   document.getElementById('matrikelId').textContent=[m.matrikelnummer,m.ejerlavLokalId].filter(Boolean).join(' · ')||'Ingen matrikel returneret';
   document.getElementById('buildingUse').textContent=val(b.byg021BygningensAnvendelse);
   animateNumberInto(document.getElementById('buildYear'),b.byg026Opfoerelsesaar,{duration:900});
   animateNumberInto(document.getElementById('bbrArea'),b.byg038SamletBygningsareal,{unit:'m²',duration:900});
-  const ground=data.areas?.groundArea??m.arealberegnet??m.areal??null,foot=data.areas?.footprint??b.byg041BebyggetAreal??null,res=data.areas?.residentialArea??b.byg039BygningensSamledeBoligAreal??null,basement=null;
-  for(const [key,v] of [['areaGround',ground],['areaFootprint',foot],['areaResidential',res],['areaBasement',basement]])animateNumberInto(document.getElementById(key),v,{unit:'m²',duration:950});
+  const ground=data.areas?.groundArea??m.arealberegnet??m.areal??null,foot=data.areas?.footprint??b.byg041BebyggetAreal??null,res=data.areas?.residentialArea??b.byg039BygningensSamledeBoligAreal??null;
+  for(const [key,v] of [['areaGround',ground],['areaFootprint',foot],['areaResidential',res],['areaBasement',null]])animateNumberInto(document.getElementById(key),v,{unit:'m²',duration:950});
   for(const [key,v] of [['statGround',ground],['statFootprint',foot],['statResidential',res]])animateNumberInto(document.getElementById(key),v,{unit:'m²',asStat:true,duration:1100});
-  const coverage=(ground>0&&foot>=0)?(foot/ground*100):null;
-  animateNumberInto(document.getElementById('statCoverage'),coverage,{unit:'%',asStat:true,decimals:1,duration:1100});
-  searchStatus.textContent='Data hentet '+new Date(data.fetchedAt).toLocaleString('da-DK')+' · BBR: '+(bbrOk?'fundet':'intet resultat')+' · Matrikel: '+(matOk?'fundet':'intet resultat');
-  setLookupProgress(72,'TRIN 4 AF 5','Undersøger planforhold','Vi søger i Plandata.dk efter lokalplaner, kommuneplanrammer, byggefelter og planhistorik omkring adressepunktet.');
-  setLookupStep('plan','running','Søger','Henter planlag og rammer fra Plandata.dk');
-  setLookupStep('history','running','Søger','Henter planversioner, forslag og aflysninger');
-  await loadPlansForCoordinates(data.coordinates);
-  if(lookupFinished)return;
-  const planLookup=window.__measInfoPlanLookup||{ok:false,error:'Plandata-opslaget gav ikke et resultat'};
-  const pd=planLookup.data||{},pe=pd.errors||{};
-  const hasPlans=Boolean((pd.localPlans||[]).length||(pd.subAreas||[]).length||(pd.buildingFields||[]).length||(pd.municipalFrames||[]).length||(pd.zoneMap||[]).length);
-  const hasHistory=Boolean((pd.planVersions||[]).length||(pd.planProposals||[]).length||(pd.repealedPlans||[]).length||(pd.planHistory||[]).length);
-  const planFailed=!planLookup.ok||Boolean(pe.localPlansError||pe.municipalFramesError||pe.zoneMapError);
-  setLookupStep('plan',planFailed?'error':(hasPlans?'done':'warning'),planFailed?'Kildefejl':(hasPlans?'Søgning udført':'Intet match'),planFailed?(planLookup.error||'Et eller flere plandatalag fejlede'):(hasPlans?'Plandata returnerede planobjekter i søgevinduet':'Ingen planobjekter fundet i søgevinduet; kontrollér originalkort og plan'));
-  setLookupStep('history',hasHistory?'done':'warning',hasHistory?'Historik fundet':'Ingen historik',hasHistory?'Daterede planhændelser/versioner returneret':'Ingen daterede historikhændelser fundet; kommunearkiv kan stadig have materiale');
-  const partial=!addressOk||!bbrOk||!matOk||Boolean(bbrError||matError)||planFailed||!hasPlans||!hasHistory;
-  setLookupProgress(96,'TRIN 5 AF 5','Samler datadækningen','Vi skelner mellem fund, ingen match og tekniske fejl, før oversigten åbnes.');
-  const events2025=(pd.planHistory||[]).filter(ev=>/^2025/.test(String(ev.date||'')));
-  const summary='Adresse: '+(addressOk?'identificeret':'delvist verificeret')+' · BBR: '+(bbrOk?'data fundet':'ingen bygning returneret')+' · Matrikel: '+(matOk?'data fundet':'ingen matrikelrelation returneret')+' · Planer: '+(planLookup.ok?((pd.localPlans||[]).length+' lokalplan(er) i søgevinduet'):'ikke gennemført')+' · Historik: '+(hasHistory?'hændelser fundet':'ingen historik fundet')+' · 2025: '+events2025.length+' dateret(e) hændelse(r)';
-  finishLookup(partial?'Opslag afsluttet med forbehold':'Alle kilder svarede',summary,partial);
-  toast(events2025.length?'Opslag færdigt · '+events2025.length+' hændelse(r) fra 2025. Se Historik & område.':'Opslag færdigt. Resultaterne er vist i oversigten.');
- }catch(err){
-  setLookupStep('address','error','Kilde-fejl','Det officielle adresse-ID kunne ikke hentes fra Datafordeleren: '+String(err.message||'ukendt fejl').slice(0,120));
-  setLookupStep('bbr','warning','Ikke verificeret','BBR-opslag blev ikke gennemført, fordi adressekontrollen fejlede først.');
-  setLookupStep('mat','warning','Ikke verificeret','Matrikelopslag blev ikke gennemført, fordi adressekontrollen fejlede først.');
-  setLookupStep('plan','warning','Ikke kørt','Planopslag afventer brugbart adressepunkt');
-  setLookupStep('history','warning','Ikke kørt','Planhistorik blev ikke undersøgt');
-  searchStatus.textContent='Adresse valgt, men BBR/matrikelopslag fejlede: '+err.message;
-  finishLookup('Dataopslaget kunne ikke gennemføres',String(err.message||'Ukendt fejl')+'. Kontrollér API-status og adgangsrettigheder.',true);
-  toast('Data kunne ikke hentes. Fejlen vises i opslagets modal.');
+  animateNumberInto(document.getElementById('statCoverage'),ground>0&&foot>=0?(foot/ground*100):null,{unit:'%',asStat:true,decimals:1,duration:1100});
+  searchStatus.textContent='Data hentet '+new Date(data.fetchedAt||Date.now()).toLocaleString('da-DK')+' · BBR: '+(bbrOk?'fundet':'ingen bygning')+' · Matrikel: '+(matOk?'fundet':'ingen relation');
+  return {ok:true,data,addressOk,bbrOk,matOk,bbrError,matError};
+ });
+ setLookupProgress(38,'TRIN 3 AF 5','Afventer kilderne','Hvert opslag kan afsluttes separat. Et langsomt svar forhindrer ikke de øvrige statussignaler i at blive opdateret.');
+ const [propOutcome,planOutcome]=await Promise.all([propOutcomePromise,planPromise]);
+ if(lookupFinished)return;
+ const pd=planOutcome.pd||{},planLookup=planOutcome.planLookup||{ok:false,error:planOutcome.error||'Plandata-opslaget gav ikke et resultat'};
+ const events2025=(pd.planHistory||[]).filter(ev=>/^2025/.test(String(ev.date||'')));
+ if(!propOutcome.ok){
+  setLookupStep('address','error','Datafordeler-fejl',String(propOutcome.error||'Ejendomsopslaget fejlede').slice(0,150));
+  if(!document.getElementById('lookupStepMat').classList.contains('is-error'))setLookupStep('mat','warning','Ikke bekræftet','Ejendomsendepunktet kunne ikke hente relationen til matriklen.');
  }
+ const partial=!propOutcome.ok||!propOutcome.bbrOk||!propOutcome.matOk||Boolean(propOutcome.bbrError||propOutcome.matError)||planOutcome.planFailed||!planOutcome.hasPlans||!planOutcome.hasHistory;
+ setLookupProgress(96,'TRIN 5 AF 5','Samler datadækningen','Resultaterne samles, når hvert opslag er afsluttet eller har ramt sin tidsgrænse.');
+ const summary='Adresse: '+(propOutcome.ok?(propOutcome.addressOk?'identificeret':'delvist verificeret'):'ikke verificeret')+' · BBR: '+(propOutcome.bbrOk?'data fundet':'ingen data bekræftet')+' · Matrikel: '+(propOutcome.matOk?'data fundet':'ingen relation bekræftet')+' · Planer: '+(planLookup.ok?((pd.localPlans||[]).length+' lokalplan(er) i søgevinduet'):'ikke gennemført')+' · Historik: '+(planOutcome.hasHistory?'hændelser fundet':'ingen historik bekræftet')+' · 2025: '+events2025.length+' hændelse(r)';
+ finishLookup(partial?'Opslag afsluttet med forbehold':'Alle kilder svarede',summary,partial);
+ toast(events2025.length?'Opslag færdigt · '+events2025.length+' hændelse(r) fra 2025. Se Historik & område.':'Opslag færdigt. Resultaterne er vist i oversigten.');
 }
 async function runPropertyLookupSafely(){
  try{
