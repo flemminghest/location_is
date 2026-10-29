@@ -499,6 +499,11 @@ p{line-height:1.55}
 .advanced-search-panel,.advanced-search-inner,.geo-field{overflow:visible}
 .advanced-search-panel{position:relative;z-index:20}
 @media(max-width:700px){.geo-city-suggestions{width:calc(100vw - 24px);max-height:42vh;border-radius:12px}.geo-city-option{min-height:50px}}
+
+/* Explicit loading feedback for city/postcode autocomplete */
+.geo-city-message{display:flex;align-items:center;gap:9px;min-height:44px;padding:12px;color:#667f90;font-size:11px;line-height:1.5}
+.geo-city-message:first-letter{font-weight:700}
+.geoBy[aria-busy="true"]{cursor:progress}
 </style>
 </head>
 <body><div class="app">
@@ -962,16 +967,24 @@ async function searchPostnumre(query){
  if(cityController)cityController.abort();
  cityController=new AbortController();
  const controller=cityController;
+ geoBy.setAttribute('aria-busy','true');
+ showCitySuggestions([], 'Søger efter byer og postnumre…');
  try{
-  const response=await fetch('/api/postnummer?q='+encodeURIComponent(query),{signal:controller.signal,headers:{Accept:'application/json'},cache:'no-store'});
+  const response=await fetch('/api/postnummer?q='+encodeURIComponent(query),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(6500)]),headers:{Accept:'application/json'},cache:'no-store'});
   const data=await response.json();
   if(controller!==cityController)return;
   if(!response.ok||!data.ok)throw new Error(data.error||'Postnumre kunne ikke hentes');
   const results=Array.isArray(data.results)?data.results:(data.nr?[data]:[]);
-  showCitySuggestions(results.filter(x=>x.nr&&x.navn).slice(0,20),'',query);
+  const valid=results.filter(x=>x.nr&&x.navn).slice(0,20);
+  geoBy.setAttribute('aria-busy','false');
+  if(valid.length)showCitySuggestions(valid,'',query);
+  else showCitySuggestions([], 'Ingen byer eller postnumre fundet. Kontrollér stavningen.');
  }catch(error){
   if(error.name==='AbortError')return;
-  if(controller===cityController)showCitySuggestions([], 'By/postnummer kunne ikke hentes lige nu. Prøv igen eller indtast et firecifret postnummer.');
+  if(controller===cityController){
+   geoBy.setAttribute('aria-busy','false');
+   showCitySuggestions([], 'By/postnummer kunne ikke hentes lige nu. Prøv igen om lidt.');
+  }
  }
 }
 async function resolvePostnummer(nr){
