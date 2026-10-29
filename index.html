@@ -343,50 +343,48 @@ function renderAreaHistory(data){
  }).join('');
 }
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
 async function loadPlansForCoordinates(coords){
  const nameEl=document.getElementById('planName'),useEl=document.getElementById('planUse'),coverageEl=document.getElementById('planCoverage'),frameEl=document.getElementById('planFrame'),zoneEl=document.getElementById('planZone'),noticeEl=document.getElementById('planNotice');
  if(!coords||!Number.isFinite(Number(coords.x))||!Number.isFinite(Number(coords.y))){
   nameEl.textContent='Position ikke tilgængelig';useEl.textContent='Afventer opslag';coverageEl.textContent='Se planbestemmelser';frameEl.textContent='Afventer opslag';zoneEl.textContent='Afventer opslag';
   noticeEl.textContent='Datafordeleren returnerede ikke en læsbar adresseposition. Lokalplan kan derfor ikke kobles sikkert til adressen.';
   renderAreaHistory({localPlans:[],planVersions:[],planProposals:[],repealedPlans:[],planHistory:[]});
-  return;
+  return {ok:false,skipped:true,error:'Adressepunkt mangler'};
  }
  nameEl.textContent='Søger i Plandata.dk…';useEl.textContent='Afventer opslag';coverageEl.textContent='Se planbestemmelser';frameEl.textContent='Søger…';zoneEl.textContent='Søger…';
- noticeEl.textContent='Søger efter vedtagne lokalplaner, delområder og byggefelter omkring adressens adgangspunkt.';
+ noticeEl.textContent='Søger efter vedtagne lokalplaner, delområder, byggefelter og kommuneplanrammer omkring adressens adgangspunkt.';
  try{
   const url='/api/planer?x='+encodeURIComponent(coords.x)+'&y='+encodeURIComponent(coords.y)+'&crs='+encodeURIComponent(coords.crs||'EPSG:25832');
   const response=await fetch(url,{headers:{Accept:'application/json'}});
   const data=await response.json();
   if(!response.ok)throw new Error(data.error||'Plandata-opslaget fejlede');
   const plans=data.localPlans||[],subAreas=data.subAreas||[],fields=data.buildingFields||[],frames=data.municipalFrames||[],zones=data.zoneMap||[];
+  const errors=data.errors||{};
   renderAreaHistory(data);
-  if(!plans.length){
-   nameEl.textContent='Ingen match i søgevinduet';useEl.textContent='Ikke fundet';coverageEl.textContent='Se kommuneplan / plan';frameEl.textContent=frames.length?'Kommuneplanramme fundet':'Ikke fundet i søgevinduet';zoneEl.textContent=zones.length?'Zoneoplysning fundet':'Ikke fundet i søgevinduet';
-   noticeEl.textContent='Der blev ikke fundet en vedtaget lokalplan i det lille søgevindue omkring adressen. Det beviser ikke, at ejendommen er uden planbindinger; kontrollér kortet og de officielle dokumenter.';
-   searchStatus.textContent='Adresseopslag gennemført. BBR: afventer/ikke fundet · Plandata WFS: ingen lokalplan i søgevinduet.';
-   return;
-  }
-  const first=plans[0],p=first.properties||{};
-  const planNo=p.plannr||p.plannummer||p.planid||p.lokalplanid||p.plan_id||first.id||'Lokalplan fundet';
-  const planTitle=p.plannavn||p.plannavnkort||p.plantitel||p.titel||p.navn||'Vedtaget lokalplan fundet';
-  nameEl.textContent=(planNo&&planTitle&&planTitle!=='Vedtaget lokalplan fundet')?String(planNo)+' · '+String(planTitle):String(planNo||planTitle);
+  const first=plans[0],p=first?.properties||{};
+  const planNo=p.plannr||p.plannummer||p.planid||p.lokalplanid||p.plan_id||first?.id;
+  const planTitle=p.plannavn||p.plannavnkort||p.plantitel||p.titel||p.navn;
+  nameEl.textContent=plans.length?String(planNo&&planTitle?planNo+' · '+planTitle:(planNo||planTitle||'Vedtaget lokalplan fundet')):'Ingen match i søgevinduet';
   const use=p.anvendelse||p.anvendelseskategori||p.generelanvendelse||p.anvgen||p.plananvendelse||p.anvendelsekategori;
-  useEl.textContent=use?String(use):'Se original plan';
+  useEl.textContent=use?String(use):(plans.length?'Se original plan':'Ikke fundet');
   const coverage=p.bebyggelsesprocent||p.bebygprocent||p.bebyggelsesgrad||p.maxbebyggelse;
   coverageEl.textContent=coverage?String(coverage):'Se planbestemmelser';
-  const frameProps=frames[0]?.properties||{};
-  const frameName=frameProps.rammenavn||frameProps.rammebetegnelse||frameProps.rammenummer||frameProps.rammenr||frameProps.plannavn||frameProps.plannr||frameProps.planid;
+  const frameProps=frames[0]?.properties||{},frameName=frameProps.rammenavn||frameProps.rammebetegnelse||frameProps.rammenummer||frameProps.rammenr||frameProps.plannavn||frameProps.plannr||frameProps.planid;
   frameEl.textContent=frameName?String(frameName):(frames.length?frames.length+' ramme(r) fundet':'Ikke fundet i søgevinduet');
-  const zoneProps=zones[0]?.properties||{};
-  const zoneName=zoneProps.zonetype||zoneProps.zone||zoneProps.zonenavn||zoneProps.zonebetegnelse||zoneProps.status;
+  const zoneProps=zones[0]?.properties||{},zoneName=zoneProps.zonetype||zoneProps.zone||zoneProps.zonenavn||zoneProps.zonebetegnelse||zoneProps.status;
   zoneEl.textContent=zoneName?String(zoneName):(zones.length?zones.length+' zonefeature(s) fundet':'Ikke fundet i søgevinduet');
-  noticeEl.textContent='Plandata.dk WFS: '+plans.length+' vedtaget lokalplan(er), '+subAreas.length+' delområde(r), '+fields.length+' byggefelt(er), '+frames.length+' kommuneplanramme(r) og '+zones.length+' zonefeature(s) inden for søgevinduet. Nærhedsopslag er ikke en juridisk konklusion; kontrollér præcis geometri og originale bestemmelser.';
-  searchStatus.textContent='Data hentet '+new Date(data.fetchedAt).toLocaleString('da-DK')+' · lokalplaner: '+plans.length+' · kommuneplanrammer: '+frames.length+' · zoner: '+zones.length;
+  const planErr=errors.localPlansError||errors.planVersionsError||errors.planProposalsError;
+  noticeEl.textContent=planErr?'Plandata kunne ikke hente alle planlag: '+String(planErr):'Plandata.dk WFS: '+plans.length+' vedtaget(e) lokalplan(er), '+subAreas.length+' delområde(r), '+fields.length+' byggefelt(er), '+frames.length+' kommuneplanramme(r) og '+zones.length+' zonefeature(s) i søgevinduet. Kontrollér altid den præcise plangeometri og de originale bestemmelser.';
+  searchStatus.textContent='Planopslag afsluttet · lokalplaner: '+plans.length+' · kommuneplanrammer: '+frames.length+' · zoner: '+zones.length;
+  return {ok:!planErr,data,hasPlanData:plans.length+subAreas.length+fields.length+frames.length+zones.length>0,hasHistory:(data.planHistory||[]).length>0,error:planErr||null};
  }catch(e){
   nameEl.textContent='Plandata kunne ikke hentes';useEl.textContent='Ikke verificeret';coverageEl.textContent='Se original plan';frameEl.textContent='Ikke verificeret';zoneEl.textContent='Ikke verificeret';
   noticeEl.textContent='Fejl ved Plandata WFS: '+String(e.message||'ukendt fejl').slice(0,180);
+  return {ok:false,error:String(e.message||'Plandata-fejl')};
  }
 }
+
 async function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){searchStatus.textContent='Vælg et forslag fra den officielle danske adressekilde for at slå BBR og matrikel op.';toast('Vælg et officielt adresseforslag først.');return}
