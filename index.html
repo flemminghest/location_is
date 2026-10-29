@@ -40,7 +40,7 @@ try{
  const url='/api/adresser?q='+encodeURIComponent(q);
  const res=await fetch(url,{signal:activeSearchController.signal,headers:{Accept:'application/json'}});
  if(!res.ok)throw new Error('Officiel adressekilde er ikke tilgængelig');const data=await res.json();
- const items=(Array.isArray(data)?data:[]).map(x=>({label:x.tekst||x.adresse?.adressebetegnelse||'',detail:x.adresse?.kommunenavn||x.adresse?.postnummer?.nr||'',source:'official-dar',id:x.adresse?.id||x.id,properties:x})).filter(x=>x.label);
+ const items=(Array.isArray(data?.fund)?data.fund:[]).map(x=>({label:x.titel||x.adressebetegnelse||'',detail:[x.postnr,x.postdistrikt].filter(Boolean).join(' '),source:'official-dar',id:x.id,type:x.type,husnummerId:x.husnummerId||null,properties:x})).filter(x=>x.label);
  if(items.length){renderSuggestions(items,'Adresseforslag fra Danmarks officielle adressekilde / Dataforsyningen.');searchStatus.textContent='Vælg en adresse fra hele Danmark.';return}
  renderSuggestions([],'Ingen match i den officielle adressetjeneste.');searchStatus.textContent='Ingen adresseforslag fundet.';return;
 }catch(e){if(e.name==='AbortError')return;
