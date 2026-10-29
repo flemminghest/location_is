@@ -6,6 +6,66 @@
 <style>
 :root{--navy:#142638;--blue:#2e6ca4;--ink:#1c2b3a;--muted:#687789;--line:#e1e7ed;--bg:#f3f6f9;--green:#16815d}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px/1.45 Inter,system-ui,sans-serif;color:var(--ink)}button,input{font:inherit}button{cursor:pointer}.app{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:100vh}.side{background:var(--navy);color:#dce6ef;padding:22px 14px;display:flex;flex-direction:column;gap:22px}.brand{font-size:20px;font-weight:750;color:#fff;padding:4px 10px 15px}.brand span{color:#7bc6ba}.navlabel{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#8da4b8;padding:0 12px}.nav{display:grid;gap:5px}.nav button{background:transparent;color:#cbd7e2;border:0;border-radius:9px;padding:11px 12px;text-align:left;display:flex;gap:11px;align-items:center}.nav button.active,.nav button:hover{background:#29455d;color:#fff}.sidefoot{margin-top:auto;color:#92a7b8;font-size:11px;padding:10px}.main{min-width:0}.top{background:#fff;border-bottom:1px solid var(--line);padding:17px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:5}.top h1{font-size:19px;margin:0}.sub{color:var(--muted);font-size:12px;margin-top:3px}.searchwrap{width:min(650px,58%);min-width:250px;position:relative}.search{display:flex;gap:8px;width:100%;position:relative}.search input{width:100%;border:1px solid #cfd8e2;border-radius:9px;padding:12px;outline:none}.search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #2e6ca41a}.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:10px 13px;color:var(--ink);font-weight:650}.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.suggestions{position:absolute;z-index:20;top:calc(100% + 7px);left:0;right:82px;background:#fff;border:1px solid #d7e0e7;border-radius:11px;box-shadow:0 12px 30px #14263820;overflow:hidden;display:none;max-height:350px;overflow-y:auto}.suggestions.open{display:block}.suggestion{width:100%;border:0;border-bottom:1px solid #edf0f3;background:#fff;text-align:left;padding:11px 13px;display:flex;gap:10px;align-items:flex-start;color:var(--ink)}.suggestion:hover,.suggestion[aria-selected=true]{background:#f0f6fb}.suggestion strong{display:block;font-size:13px}.suggestion small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.suggestion-note,.searchstatus{padding:9px 12px;color:var(--muted);font-size:11px}.searchstatus{padding:4px 1px;min-height:20px}.content{padding:22px 28px 38px;max-width:1700px;margin:auto}.demo{display:flex;gap:10px;padding:10px 13px;border:1px solid #f0d59b;background:#fff8e7;color:#775216;border-radius:9px;font-size:12px;margin-bottom:18px}.grid{display:grid;grid-template-columns:1.03fr 1.4fr .94fr;gap:14px}.card{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;min-width:0;box-shadow:0 2px 5px #182f4205}.cardhead{padding:15px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}.cardhead h2,.card h3{font-size:14px;margin:0}.cardbody{padding:15px 16px}.tiny{font-size:11px;color:var(--muted)}.eyebrow{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:750}.address{font-size:18px;font-weight:760;line-height:1.25;margin:8px 0}.pill,.tag{display:inline-flex;padding:4px 8px;border-radius:20px;background:#e8f6ef;color:#18724f;font-size:11px;font-weight:700}.kv{display:grid;grid-template-columns:1fr auto;gap:9px;padding:8px 0;border-bottom:1px solid #edf0f3;font-size:12px}.kv span:first-child{color:var(--muted)}.kv strong{text-align:right;font-weight:650}.photo{height:118px;background:linear-gradient(160deg,#a6c5b1,#e3e6ce 45%,#8da68e);position:relative}.house{position:absolute;width:115px;height:65px;left:38%;top:32px;background:#f0eee5;border:2px solid #6d7d7b;transform:skewY(-7deg);box-shadow:9px 8px 0 #607f6b}.roof{position:absolute;left:calc(38% - 8px);top:13px;width:133px;height:45px;background:#526575;clip-path:polygon(50% 0,100% 42%,100% 55%,50% 14%,0 55%,0 42%)}.map{height:376px;position:relative;overflow:hidden;background:#dbe7d0;background-image:linear-gradient(25deg,transparent 48%,#f7f4df 49%,#f7f4df 52%,transparent 53%),linear-gradient(115deg,transparent 48%,#f7f4df 49%,#f7f4df 52%,transparent 53%),linear-gradient(0deg,#b5d2a7 1px,transparent 1px),linear-gradient(90deg,#b5d2a7 1px,transparent 1px);background-size:180px 160px,220px 190px,35px 35px,35px 35px}.parcel{position:absolute;left:16%;top:13%;width:65%;height:72%;background:#4e9dd244;border:3px solid #287cc3;transform:rotate(-8deg);clip-path:polygon(8% 0,100% 10%,88% 100%,0 80%)}.building{position:absolute;left:42%;top:39%;width:24%;height:24%;background:#d9a16b;border:2px solid #fff;transform:rotate(-8deg)}.maplabel{position:absolute;left:35%;top:29%;background:#173650;color:white;border-radius:6px;padding:6px 9px;font-size:12px;font-weight:750}.maptools{position:absolute;right:12px;top:12px;background:#fff;border:1px solid #d7e0e7;border-radius:9px;padding:10px;box-shadow:0 4px 15px #21394b16;font-size:11px;display:grid;gap:7px}.maptools label{display:flex;gap:7px;align-items:center;cursor:pointer}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}.stat{padding:15px;background:#fff;border:1px solid var(--line);border-radius:12px}.value{font-size:22px;font-weight:780;letter-spacing:-.6px;margin:5px 0}.note{font-size:11px;color:var(--muted)}.tabs{display:flex;gap:5px;overflow:auto;padding:6px;background:#e9eef3;border-radius:10px;margin:18px 0 14px}.tabs button{border:0;background:transparent;padding:10px 13px;white-space:nowrap;border-radius:7px;color:#566779;font-size:12px;font-weight:650}.tabs button.active{background:#fff;color:#1b4568;box-shadow:0 1px 3px #14263814}.lower{display:grid;grid-template-columns:1.1fr 1.1fr 1fr;gap:14px}.sectiontitle{font-size:16px;margin:20px 0 10px}.warning{background:#fff7e9;color:#8a5d18;border:1px solid #f1dfb9;padding:11px;border-radius:9px;font-size:12px}.source{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:8px 0;border-bottom:1px solid #edf0f3}.source em{color:var(--muted);font-style:normal}.hidden{display:none!important}.toast{position:fixed;bottom:22px;right:22px;background:#173650;color:white;padding:12px 17px;border-radius:9px;box-shadow:0 8px 30px #0003;z-index:30;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}footer{padding:20px 0;color:var(--muted);font-size:11px}a{color:#2e6ca4}@media(max-width:1100px){.app{grid-template-columns:72px minmax(0,1fr)}.side{padding:18px 8px}.brand{font-size:0;text-align:center}.brand:first-letter{font-size:20px}.navlabel,.nav button span:not(:first-child),.sidefoot{display:none}.nav button{justify-content:center;padding:12px}.grid{grid-template-columns:1fr 1.2fr}.grid>.card:last-child{grid-column:1/-1}.lower{grid-template-columns:1fr 1fr}.top,.content{padding:18px}.searchwrap{width:55%}}@media(max-width:700px){.app{display:block}.side{display:none}.top{position:static;align-items:flex-start;flex-direction:column}.searchwrap{width:100%;min-width:0}.suggestions{right:80px}.content{padding:13px}.grid,.lower{grid-template-columns:1fr}.grid>.card:last-child{grid-column:auto}.map{height:300px}.stats{grid-template-columns:1fr 1fr}.demo{flex-direction:column}}@media print{.side,.top,.tabs,.btn,.maptools,.demo{display:none!important}.app{display:block}.content{padding:0}.card,.stat{break-inside:avoid;box-shadow:none}.grid{grid-template-columns:1fr 1fr 1fr}.map{height:240px}}
+
+/* Polished interface and live-search modal */
+:root{--navy:#142638;--navy2:#24475f;--blue:#2e6ca4;--teal:#5bc6b3;--ink:#1c2b3a;--muted:#687789;--line:#e1e7ed;--bg:#f3f6f9;--green:#16815d;--amber:#c58116}
+body{background:linear-gradient(180deg,#f6f8fb 0%,#eef3f7 100%);color:var(--ink);letter-spacing:-.01em}
+.side{position:sticky;top:0;height:100vh;background:linear-gradient(180deg,#142638 0%,#1a3448 100%);box-shadow:8px 0 28px #1426380a}
+.brand{letter-spacing:-.7px}.brand:before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--teal);margin:0 8px 1px 0;box-shadow:0 0 0 5px #5bc6b319}
+.nav button{transition:background .18s,transform .18s}.nav button:hover{transform:translateX(2px)}
+.top{box-shadow:0 5px 20px #14263806;backdrop-filter:blur(14px);padding-top:20px;padding-bottom:20px}
+.top h1{font-size:21px;letter-spacing:-.7px}.search input{border-color:#d8e1eb;border-radius:12px;padding:13px 15px;box-shadow:inset 0 1px 1px #14263804}
+.btn{transition:transform .16s,box-shadow .16s,border-color .16s;border-radius:11px}.btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px #14263812}
+.btn.primary{background:linear-gradient(135deg,#142638,#244b67);box-shadow:0 5px 15px #14263818}
+.content{padding-top:26px}.card{border-color:#e0e7ee;border-radius:16px;box-shadow:0 4px 16px #1f385006;transition:box-shadow .2s,border-color .2s}
+.card:hover{box-shadow:0 9px 25px #1f38500c;border-color:#d5e0e9}
+.cardhead{padding:16px 18px}.cardbody{padding:17px 18px}.cardhead h2{letter-spacing:-.2px}
+.stat{border-radius:15px;box-shadow:0 4px 14px #1f385006;position:relative;overflow:hidden}
+.stat:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#b4d9d3}
+.stat .value{letter-spacing:-1px}.tabs{background:#e9eff4;border:1px solid #e0e7ed;padding:5px;border-radius:12px}.tabs button{transition:background .16s,color .16s}.tabs button.active{color:#173c57}
+.demo{border-radius:12px;box-shadow:0 4px 14px #b27a1210}
+.lookup-overlay{position:fixed;inset:0;z-index:1000;display:none;place-items:center;padding:20px;background:rgba(12,27,42,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.lookup-overlay.is-open{display:grid}
+.lookup-modal{width:min(820px,100%);max-height:calc(100vh - 40px);overflow:auto;background:#fff;border:1px solid #ffffff80;border-radius:24px;box-shadow:0 32px 100px #08152252;animation:lookupIn .24s ease-out}
+@keyframes lookupIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+.lookup-modal-head{display:flex;align-items:flex-start;gap:16px;padding:24px 26px 22px;background:radial-gradient(circle at 92% 10%,#3c7389 0,transparent 33%),linear-gradient(125deg,#142638 0%,#24475f 100%);color:#fff}
+.lookup-mark{width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:15px;background:#ffffff17;border:1px solid #ffffff2b;font-size:23px;box-shadow:inset 0 1px #ffffff28}
+.lookup-heading{flex:1;min-width:0}.lookup-eyebrow{font-size:10px;letter-spacing:1.7px;text-transform:uppercase;color:#a9dacf;font-weight:800;margin:1px 0 5px}
+.lookup-modal-head h2{font-size:23px;line-height:1.15;margin:0 0 7px;letter-spacing:-.7px}.lookup-modal-head p{font-size:12px;line-height:1.55;color:#d5e1e9;margin:0;max-width:580px}
+.lookup-x{border:1px solid #ffffff2b;background:#ffffff0d;color:#fff;border-radius:10px;width:36px;height:36px;font-size:19px;flex:none}.lookup-x:disabled{opacity:.35;cursor:not-allowed}
+.lookup-body{padding:22px 26px 12px}
+.lookup-address-pill{display:flex;gap:9px;align-items:center;padding:10px 12px;border:1px solid #dfe8ee;background:#f6f9fb;border-radius:11px;color:#2a4e66;font-weight:700;font-size:12px;overflow-wrap:anywhere}
+.lookup-address-pill .pin{font-size:17px;color:#2e6ca4}
+.lookup-main{display:grid;grid-template-columns:minmax(185px,.78fr) minmax(0,1.22fr);gap:24px;padding:21px 0 12px}
+.lookup-progress-column{border:1px solid #e4ebf0;border-radius:16px;padding:18px 16px 15px;text-align:center;background:linear-gradient(180deg,#fbfdfe,#f6f9fb)}
+.lookup-ring{--progress:0;width:134px;height:134px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#54bfae calc(var(--progress)*1%),#e2eaf0 0);position:relative;box-shadow:0 6px 16px #1426380a}
+.lookup-ring:before{content:"";position:absolute;inset:8px;border-radius:50%;background:#fff;border:1px solid #e8eef2;box-shadow:inset 0 2px 6px #14263808}
+.lookup-ring-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center}
+.lookup-ring-inner strong{font-size:31px;line-height:1.1;letter-spacing:-1.4px;color:#17374d;font-variant-numeric:tabular-nums}
+.lookup-ring-inner small{margin-top:5px;font-size:9px;font-weight:800;letter-spacing:1.3px;color:#8092a1}
+.lookup-stage-kicker{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;font-weight:800;color:#16815d;margin-bottom:4px}
+.lookup-progress-column h3{font-size:15px;line-height:1.3;margin:0 0 6px;letter-spacing:-.3px}.lookup-progress-column p{font-size:11px;line-height:1.55;color:#718191;margin:0;min-height:50px}
+.lookup-track{height:6px;border-radius:8px;background:#e7edf2;overflow:hidden;margin:15px 0 7px}.lookup-track-fill{height:100%;width:0%;border-radius:8px;background:linear-gradient(90deg,#2e6ca4,#57c4b1);transition:width .35s ease}
+.lookup-track-caption{font-size:10px;color:#8090a0;display:flex;justify-content:space-between}
+.lookup-steps{display:grid;align-content:start;gap:9px}
+.lookup-step{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 12px;border:1px solid #e5ebf0;border-radius:12px;background:#fff;transition:background .2s,border-color .2s}
+.lookup-step-icon{width:32px;height:32px;display:grid;place-items:center;background:#f1f5f8;color:#8193a1;border-radius:10px;font-size:15px;font-weight:800}
+.lookup-step-name{font-size:12px;font-weight:750;color:#263e50}.lookup-step-detail{font-size:10px;color:#82909c;margin-top:2px;line-height:1.35}
+.lookup-step-state{font-size:9px;letter-spacing:.3px;color:#82909c;white-space:nowrap;font-weight:750}
+.lookup-step.is-running{background:#f1f8fc;border-color:#b7d8eb}.lookup-step.is-running .lookup-step-icon{background:#dceefa;color:#276b96}.lookup-step.is-running .lookup-step-state{color:#276b96}
+.lookup-step.is-done{background:#f4fbf8;border-color:#cfe8df}.lookup-step.is-done .lookup-step-icon{background:#dff3ea;color:#167553}.lookup-step.is-done .lookup-step-state{color:#167553}
+.lookup-step.is-warning{background:#fffaf0;border-color:#f0dfb8}.lookup-step.is-warning .lookup-step-icon{background:#fff0cf;color:#956316}.lookup-step.is-warning .lookup-step-state{color:#956316}
+.lookup-step.is-error{background:#fff6f5;border-color:#f0cfca}.lookup-step.is-error .lookup-step-icon{background:#ffe4df;color:#ab493c}.lookup-step.is-error .lookup-step-state{color:#ab493c}
+.lookup-result{margin:8px 0 5px;padding:14px 15px;border-radius:13px;border:1px solid #cfe8df;background:linear-gradient(135deg,#f2fbf7,#f9fcfb)}
+.lookup-result.is-warning{background:#fff9eb;border-color:#f1dfb9}
+.lookup-result h3{margin:0 0 5px;font-size:14px;letter-spacing:-.25px}.lookup-result p{margin:0;color:#627381;font-size:11px;line-height:1.55}
+.lookup-footer{padding:15px 26px 22px;border-top:1px solid #edf1f4;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.lookup-footnote{font-size:10px;line-height:1.45;color:#8a98a4;max-width:460px}
+.lookup-action{min-width:156px;justify-content:center}.lookup-action:disabled{opacity:.55;cursor:wait;transform:none;box-shadow:none}
+body.modal-open{overflow:hidden}
+@media(max-width:740px){.lookup-overlay{padding:10px}.lookup-modal{max-height:calc(100vh - 20px);border-radius:18px}.lookup-modal-head{padding:19px 18px}.lookup-modal-head h2{font-size:20px}.lookup-body{padding:15px 16px 8px}.lookup-main{grid-template-columns:1fr;gap:12px;padding-top:14px}.lookup-progress-column{display:grid;grid-template-columns:86px 1fr;grid-template-rows:auto auto auto;column-gap:13px;text-align:left;padding:12px}.lookup-ring{width:78px;height:78px;grid-row:1/4;margin:auto}.lookup-ring:before{inset:5px}.lookup-ring-inner strong{font-size:21px}.lookup-ring-inner small{font-size:7px}.lookup-progress-column .lookup-track,.lookup-progress-column .lookup-track-caption{grid-column:1/3}.lookup-progress-column p{min-height:0}.lookup-step{padding:9px 10px;grid-template-columns:30px minmax(0,1fr) auto}.lookup-step-icon{width:28px;height:28px}.lookup-footer{padding:13px 16px 17px;align-items:flex-start;flex-direction:column}.lookup-action{width:100%}}
+@media print{.lookup-overlay{display:none!important}}
+
 </style>
 </head>
 <body><div class="app">
@@ -65,7 +125,62 @@
  </section>
 </div>
 <div class="lower tabpanel hidden" data-panel="dokumenter"><section class="card"><div class="cardhead"><h2>Kilder og dokumenter</h2></div><div class="cardbody"><div class="source"><span>Danmarks Adresseregister</span><em>Adresseforslag</em></div><div class="source"><span>BBR</span><em>Datafordeler API</em></div><div class="source"><span>Matrikel / Dataforsyningen</span><em>Datafordeler API</em></div><div class="source"><span>Plandata.dk</span><em>Eksternt link</em></div><div class="source"><span>Miljøportal</span><em>Eksternt link</em></div><button class="btn primary" style="margin-top:12px" id="printBtn">Udskriv / gem som PDF</button></div></section><section class="card"><div class="cardhead"><h2>Rapportindhold</h2></div><div class="cardbody"><p>✓ Adresse og søgestatus</p><p>✓ Arealopgørelse</p><p>✓ Plan- og myndighedstjekliste</p><p>✓ Datamangler og forbehold</p></div></section><section class="card"><div class="cardhead"><h2>Datakvalitet</h2></div><div class="cardbody"><p>Officielle ejendomsdata skal stadig kobles på.</p></div></section></div>
-</div><footer>ByggeInfo · Interaktiv konceptprototype · Brug ikke eksempeldata som grundlag for myndighedsprojekt eller byggeri.</footer></div></main></div><div class="toast" id="toast" role="status"></div>
+</div><footer>ByggeInfo · Interaktiv konceptprototype · Brug ikke eksempeldata som grundlag for myndighedsprojekt eller byggeri.</footer></div></main></div>
+<div class="lookup-overlay" id="lookupOverlay" aria-hidden="true">
+ <section class="lookup-modal" role="dialog" aria-modal="true" aria-labelledby="lookupTitle" aria-describedby="lookupIntro">
+  <div class="lookup-modal-head">
+   <div class="lookup-mark" aria-hidden="true">⌕</div>
+   <div class="lookup-heading">
+    <div class="lookup-eyebrow">Live ejendomsanalyse</div>
+    <h2 id="lookupTitle">Vi undersøger ejendommen</h2>
+    <p id="lookupIntro">ByggeInfo kontrollerer de tilgængelige registre og samler de resultater, der kan knyttes sikkert til adressen.</p>
+   </div>
+   <button class="lookup-x" id="lookupX" type="button" aria-label="Luk opslag" disabled>×</button>
+  </div>
+  <div class="lookup-body">
+   <div class="lookup-address-pill"><span class="pin" aria-hidden="true">⌖</span><span id="lookupAddress">Adresse ikke valgt</span></div>
+   <div class="lookup-main">
+    <div class="lookup-progress-column">
+     <div class="lookup-ring" id="lookupRing" style="--progress:0" role="img" aria-label="0 procent færdig">
+      <div class="lookup-ring-inner"><strong id="lookupPercent">0%</strong><small>FREMGANG</small></div>
+     </div>
+     <div class="lookup-stage-kicker" id="lookupStageKicker">Klar til opslag</div>
+     <h3 id="lookupStageTitle">Venter på start</h3>
+     <p id="lookupStageDesc">Når du vælger en konkret adresse, kontrollerer vi kilderne trin for trin.</p>
+     <div class="lookup-track"><div class="lookup-track-fill" id="lookupTrackFill"></div></div>
+     <div class="lookup-track-caption"><span>0%</span><span id="lookupTrackCaption">0 af 100</span><span>100%</span></div>
+    </div>
+    <div class="lookup-steps" aria-label="Opslagets trin">
+     <div class="lookup-step" id="lookupStepAddress">
+      <div class="lookup-step-icon">⌖</div><div><div class="lookup-step-name">Adresse og placering</div><div class="lookup-step-detail">Identificerer det valgte husnummer og adressepunkt</div></div><div class="lookup-step-state">Afventer</div>
+     </div>
+     <div class="lookup-step" id="lookupStepBbr">
+      <div class="lookup-step-icon">▤</div><div><div class="lookup-step-name">BBR og bygninger</div><div class="lookup-step-detail">Anvendelse, opførelsesår og registrerede arealer</div></div><div class="lookup-step-state">Afventer</div>
+     </div>
+     <div class="lookup-step" id="lookupStepMat">
+      <div class="lookup-step-icon">⌑</div><div><div class="lookup-step-name">Matrikel og grund</div><div class="lookup-step-detail">Jordstykke, matrikelbetegnelse og grundareal, når tilgængeligt</div></div><div class="lookup-step-state">Afventer</div>
+     </div>
+     <div class="lookup-step" id="lookupStepPlan">
+      <div class="lookup-step-icon">▧</div><div><div class="lookup-step-name">Lokalplan og kommuneplan</div><div class="lookup-step-detail">Vedtagne planer, rammer, zonekort og byggefelter</div></div><div class="lookup-step-state">Afventer</div>
+     </div>
+     <div class="lookup-step" id="lookupStepHistory">
+      <div class="lookup-step-icon">◷</div><div><div class="lookup-step-name">Planhistorik og område</div><div class="lookup-step-detail">Versioner, forslag, aflysninger og daterede hændelser</div></div><div class="lookup-step-state">Afventer</div>
+     </div>
+    </div>
+   </div>
+   <div class="lookup-result hidden" id="lookupResult" aria-live="polite">
+    <h3 id="lookupResultTitle">Opslag gennemført</h3>
+    <p id="lookupResultText">Resultaterne er klar i ejendomsoversigten.</p>
+   </div>
+  </div>
+  <div class="lookup-footer">
+   <div class="lookup-footnote">Oplysninger vises med deres faktiske datastatus. Manglende resultat er ikke bevis for, at en bygning, matrikel eller plan ikke findes.</div>
+   <button class="btn primary lookup-action" type="button" id="lookupDoneBtn" disabled>Opslag kører…</button>
+  </div>
+ </section>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
 <script>
 const toastEl=document.getElementById('toast');let toastTimer;function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2800)}
 async function checkIntegrationStatus(){
