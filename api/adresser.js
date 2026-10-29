@@ -138,9 +138,7 @@ export default async function handler(req,res) {
     if(structured){
       if(!vejnavn&&q){
         // The visible one-field search remains usable even with a geographic filter selected.
-        const dawaParams={q,postnummer:postnummer||undefined,by:by||undefined};
         const results=await Promise.allSettled([
-          requestDawaAddresses(dawaParams,50),
           requestSearch("/adresser/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"filtered-text-address"))),
           requestSearch("/husnumre/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"filtered-text-house")))
         ]);
@@ -149,11 +147,11 @@ export default async function handler(req,res) {
           else errors.push(String(result.reason?.message||"adresseopslag fejlede").slice(0,150));
         }
       }else if(vejnavn){
-        const dawaParams={vejnavn,husnummer:husnummer||undefined,postnummer:postnummer||undefined,by:by||undefined,etage:etage||undefined,doer:doer||undefined};
         const searchText=[vejnavn,husnummer,postnummer,by].filter(Boolean).join(" ");
+        const parsedStreet=husnummer&&postnummer?{vejnavn,husnummer,postnummer,postdistrikt:by||null}:null;
         const paths=(etage||doer)?["/adresser/soeg/"]:(husnummer?["/husnumre/soeg/","/adresser/soeg/"]:["/husnumre/soeg/"]);
         const results=await Promise.allSettled([
-          requestDawaAddresses(dawaParams,60),
+          ...(parsedStreet?[requestExactHouseFromDar(parsedStreet)]:[]),
           ...paths.map(path=>requestSearch(path,{tekst:searchText},50).then(hits=>hits.map(x=>normalize(x,path.includes("adresser")?"structured-address":"structured-house"))))
         ]);
         for(const result of results){
@@ -176,10 +174,8 @@ export default async function handler(req,res) {
 
     const parsed=parseAddressQuery(q);
     if(parsed){
-      const structured={vejnavn:parsed.vejnavn,husnummer:parsed.husnummer,postnummer:parsed.postnummer,by:parsed.postdistrikt||undefined};
       const results=await Promise.allSettled([
         requestExactHouseFromDar(parsed),
-        requestDawaAddresses(structured,40),
         requestSearch("/husnumre/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"structured-house"))),
         requestSearch("/adresser/soeg/",{tekst:q},40).then(hits=>hits.map(x=>normalize(x,"structured-address"))),
         requestAddressWash(q)
