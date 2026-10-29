@@ -35,14 +35,15 @@ async function checkIntegrationStatus(){
   const r=await fetch('/api/status',{headers:{Accept:'application/json'},cache:'no-store'});
   const data=await r.json();
   if(data.ok){
-   statusEl.textContent='Datafordeleren: forbindelse OK · BBR: '+data.bbr+' · Matrikel: '+data.cadastral;
+   statusEl.textContent='Datafordeler: liveforbindelse OK · adresse, BBR og matrikel-endpoints er tilgængelige.';
    statusEl.style.color='#18724f';
   }else{
-   statusEl.textContent='Datafordeler-forbindelsen skal kontrolleres: '+(data.error||data.dataApi||'ukendt status');
+   const failures=Object.entries(data.checks||{}).filter(([_,v])=>!v.ok).map(([name,v])=>name+': '+(v.error||'fejl')).join(' · ');
+   statusEl.textContent='Datafordeler: '+(data.dataApi||'skal kontrolleres')+(failures?' · '+failures:(data.error?' · '+data.error:''));
    statusEl.style.color='#87590d';
   }
  }catch(e){
-  statusEl.textContent='Forbindelsesstatus kunne ikke hentes. Brug /api/status til fejlsøgning.';
+  statusEl.textContent='Forbindelsesstatus kunne ikke hentes. Åbn /api/status for detaljer.';
   statusEl.style.color='#87590d';
  }
 }
