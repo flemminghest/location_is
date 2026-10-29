@@ -467,6 +467,13 @@ async function loadPropertyData(){
   const data=await resp.json();
   if(!resp.ok)throw new Error(data.error||'Ejendomsopslaget kunne ikke gennemføres');
   currentPropertyData=data;
+  const addressOk=Boolean(data.completeness?.address||data.completeness?.house||data.house);
+  const bbrOk=Boolean(data.completeness?.bbr||data.bbrBuildings?.length||data.bbr?.id_lokalId);
+  const matOk=Boolean(data.completeness?.cadastral||data.cadastral);
+  setLookupStep('address',addressOk?'done':'warning',addressOk?'Identificeret':'Delvist',addressOk?'Registerrelation returneret':'Adressevalget kunne ikke fuldt bekræftes i Datafordeleren');
+  setLookupProgress(43,'TRIN 2 AF 5','Behandler registerresultater','BBR- og matrikelresultater er modtaget. Kun oplysninger, som registrene faktisk returnerer, bliver vist.');
+  setLookupStep('bbr',bbrOk?'done':'warning',bbrOk?'Data fundet':'Intet match',bbrOk?'En eller flere BBR-bygninger returneret':'Ingen BBR-bygning returneret; kontrollér originalkilden');
+  setLookupStep('mat',matOk?'done':'warning',matOk?'Data fundet':'Intet match',matOk?'Matrikel-/jordstykkedata returneret':'Ingen matrikelrelation returneret; kontrollér ejerlav og original kilde');
   const b=data.bbr||{},m=data.cadastral||{};
   const val=(v)=>v===null||v===undefined||v===''?'—':String(v);
   const num=(v)=>{const n=Number(v);return Number.isFinite(n)&&v!==null&&v!==''?n.toLocaleString('da-DK'): '—'};
