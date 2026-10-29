@@ -779,18 +779,25 @@ function setLookupStep(key,state,stateLabel,detail){
  }else{
   stopLookupStepTimer(key);
   const progress=el.querySelector('.lookup-step-progress');
+  const waitingForLateResponse=state==='warning'&&stateLabel==='Langsomt svar';
+  const progressLabel=waitingForLateResponse?'Venter på svar':(state==='done'?'Kilde svarede':(state==='error'?'Kilde fejlede':'Kontrol afsluttet'));
   if(progress){
    const label=progress.querySelector('.lookup-step-progress-label');
    const pct=progress.querySelector('.lookup-step-percent');
    const fill=progress.querySelector('.lookup-step-fill');
-   if(pct)pct.textContent='100%';
-   if(fill)fill.style.width='100%';
-   if(label)label.textContent=state==='done'?'Kilde svarede':(state==='error'?'Kilde fejlede':'Kontrol afsluttet');
+   if(waitingForLateResponse){
+    if(pct)pct.textContent='…';
+    if(fill)fill.style.width='92%';
+   }else{
+    if(pct)pct.textContent='100%';
+    if(fill)fill.style.width='100%';
+   }
+   if(label)label.textContent=progressLabel;
   }else if(state){
    const p=ensureLookupStepProgress(el);
-   p.querySelector('.lookup-step-percent').textContent='100%';
-   p.querySelector('.lookup-step-fill').style.width='100%';
-   p.querySelector('.lookup-step-progress-label').textContent=state==='done'?'Kilde svarede':(state==='error'?'Kilde fejlede':'Kontrol afsluttet');
+   p.querySelector('.lookup-step-percent').textContent=waitingForLateResponse?'…':'100%';
+   p.querySelector('.lookup-step-fill').style.width=waitingForLateResponse?'92%':'100%';
+   p.querySelector('.lookup-step-progress-label').textContent=progressLabel;
   }
   if(!state){
    const stale=el.querySelector('.lookup-step-progress');
