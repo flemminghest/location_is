@@ -72,7 +72,7 @@ export default async function handler(req,res){
     catch(e){results[key]=[];results[key+"Error"]=String(e.message||"WFS-opslag fejlede").slice(0,220);}
   });
   await Promise.all(tasks);
-  const historyFeatures=[...(results.localPlans||[]),...(results.planVersions||[]),...(results.planProposals||[]),...(results.repealedPlans||[])];
+  const historyFeatures=[...(results.localPlans||[]),...(results.municipalFrames||[]),...(results.planVersions||[]),...(results.planProposals||[]),...(results.repealedPlans||[])];
   const planHistory=buildHistory(historyFeatures);
   const versions=(results.planVersions||[]).map(x=>({id:x.id,properties:x.properties||{},geometry:x.geometry||null}));
   res.setHeader("Cache-Control","private, max-age=300");
