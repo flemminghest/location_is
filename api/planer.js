@@ -4,8 +4,8 @@ const LAYERS = {
   localPlans: "pdk:theme_pdk_lokalplan_vedtaget",
   subAreas: "pdk:theme_pdk_lokalplandelomraade_vedtaget",
   buildingFields: "pdk:theme_pdk_byggefelt_vedtaget",
-  municipalFrames: "pdk:theme_pdk_kommuneplanramme_alle_vedtaget",
-  zoneMap: "pdk:theme_pdk_zonekort",
+  municipalFrames: "pdk:theme_pdk_kommuneplanramme_alle_vedtaget_v",
+  zoneMap: "pdk:theme_pdk_zonekort_v",
   planProposals: "pdk:theme_pdk_lokalplan_forslag",
   repealedPlans: "pdk:theme_pdk_lokalplan_aflyst",
   planVersions: "pdk:theme_pdk_lokalplan_vedtaget_version"
