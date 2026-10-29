@@ -2,7 +2,9 @@ const WFS = "https://geoserver.plandata.dk/geoserver/wfs";
 const LAYERS = {
   localPlans: "theme_pdk_lokalplan_vedtaget",
   subAreas: "theme_pdk_lokalplandelomraade_vedtaget",
-  buildingFields: "theme_pdk_byggefelt_vedtaget"
+  buildingFields: "theme_pdk_byggefelt_vedtaget",
+  municipalFrames: "theme_pdk_kommuneplanramme_alle",
+  zoneMap: "theme_pdk_zonekort"
 };
 async function fetchLayer(layer, bbox) {
   const url = new URL(WFS);
@@ -47,6 +49,8 @@ export default async function handler(req,res){
     localPlans:plans,
     subAreas:results.subAreas||[],
     buildingFields:results.buildingFields||[],
+    municipalFrames:results.municipalFrames||[],
+    zoneMap:results.zoneMap||[],
     errors:Object.fromEntries(Object.entries(results).filter(([k])=>k.endsWith("Error")))
   });
 }
