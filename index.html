@@ -859,7 +859,7 @@ const advancedPanel=document.getElementById('advancedSearchPanel'),advancedToggl
 // City suggestions live at viewport level so scroll, panel animation, and overflow never clip them.
 document.body.appendChild(citySuggestions);
 let cityActiveIndex=-1;
-let addressTimer=null,postcodeTimer=null,cityTimer=null,postcodeController=null,cityController=null,activeSearchController=null,currentSuggestions=[],selectedSuggestion=-1,chosenAddress=null,currentPropertyData=null,verifiedPostnummer='',selectedCity=null,advancedOpen=false;
+let addressTimer=null,postcodeTimer=null,cityTimer=null,postcodeController=null,cityController=null,activeSearchController=null,lastAddressLookupError=null,currentSuggestions=[],selectedSuggestion=-1,chosenAddress=null,currentPropertyData=null,verifiedPostnummer='',selectedCity=null,advancedOpen=false;
 
 function hasAdvancedValues(){
  return Boolean(geoBy.value.trim()||geoPostnummer.value.trim()||geoVejnavn.value.trim()||geoHusnummer.value.trim()||geoEtage.value.trim()||geoDoer.value.trim());
@@ -1131,6 +1131,7 @@ async function lookupAddressSuggestions(q){
  if(activeSearchController)activeSearchController.abort();
  activeSearchController=new AbortController();
  const controller=activeSearchController;
+ lastAddressLookupError=null;
  const zip=activePostnummer(),city=activeBy();
  if(query.length<2){closeSuggestions();return [];}
  const params=new URLSearchParams();
@@ -1145,7 +1146,7 @@ async function lookupAddressSuggestions(q){
   if(door)params.set('doer',door);
   if(zip)params.set('postnummer',zip);
   if(city)params.set('by',city);
-  if(!street&&!zip&&!city){params.set('q',query);}
+  if(!street&&!zip&&!city)params.set('q',query);
   else if(street&&!zip&&!city)params.set('q',query);
  }else{
   params.set('q',query);
@@ -1154,10 +1155,13 @@ async function lookupAddressSuggestions(q){
  }
  searchStatus.textContent=(zip||city)?'Søger kun i '+[city,zip?'('+zip+')':''].filter(Boolean).join(' ')+'…':'Søger efter adressen…';
  try{
-  const response=await fetch('/api/adresser?'+params.toString(),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(6500)]),headers:{Accept:'application/json'},cache:'no-store'});
-  const data=await response.json();
+  const response=await fetch('/api/adresser?'+params.toString(),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8500)]),headers:{Accept:'application/json'},cache:'no-store'});
+  const data=await response.json().catch(()=>({}));
   if(controller!==activeSearchController)return [];
-  if(!response.ok)throw new Error(data.error||'Adressekilden svarede ikke.');
+  if(!response.ok){
+   const detail=Array.isArray(data.details)?data.details.join(' · '):'';
+   throw new Error([data.error||'Adressekilden svarede ikke.',detail].filter(Boolean).join(' '));
+  }
   const items=(Array.isArray(data.fund)?data.fund:[]).map(item=>({
    label:item.label||item.titel||item.adressebetegnelse||'',
    detail:item.detail||[item.postnr,item.postdistrikt].filter(Boolean).join(' '),
@@ -1179,10 +1183,15 @@ async function lookupAddressSuggestions(q){
   searchStatus.textContent=(zip||city)?'Ingen adresse fundet inden for det valgte område.':'Ingen adresseforslag fundet.';
   return [];
  }catch(error){
-  if(error.name==='AbortError')return [];
   if(controller!==activeSearchController)return [];
-  renderSuggestions([],'Adressekilden kunne ikke svare inden for tidsgrænsen. Prøv igen.');
-  searchStatus.textContent='Søgningen fejlede: '+String(error.message||'ukendt fejl').slice(0,130);
+  if(error.name==='AbortError'&&controller.signal.aborted)return [];
+  lastAddressLookupError=String(error?.message||error||'Ukendt fejl');
+  const isTimeout=error.name==='TimeoutError'||/timeout|tidsgrænse|timed out/i.test(lastAddressLookupError);
+  const message=isTimeout
+   ?'Adressekilden brugte for lang tid. Vent et øjeblik og prøv Søg igen.'
+   :'Adressekilden kunne ikke svare: '+lastAddressLookupError.slice(0,180)+'. Prøv igen.';
+  renderSuggestions([],message);
+  searchStatus.textContent=message;
   return [];
  }
 }
@@ -1707,6 +1716,12 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
  setLookupProgress(5,'TRIN 1 AF 5','Søger i adresseregisteret','Søger i officielle adressekilder'+(activePostnummer()?' inden for postnummer '+activePostnummer():'')+'.');
  setLookupStep('address','running','Søger','Officielle adresseforslag og adressevalidering');
  const items=await lookupAddressSuggestions(q);
+ if(lastAddressLookupError){
+  setLookupStep('address','error','Kilde-fejl',lastAddressLookupError.slice(0,160));
+  ['bbr','mat','plan','history'].forEach(key=>setLookupStep(key,'warning','Ikke gennemført','Adresseopslaget skal lykkes, før ejendomsdata kan hentes.'));
+  finishLookup('Adressekilden svarede ikke',lastAddressLookupError+'. Prøv igen, når adressekilden er tilgængelig.',true);
+  return;
+ }
  const match=findExactPrimaryMatch(q,items);
  if(match){
   chosenAddress=match;
