@@ -985,7 +985,7 @@ function showCitySuggestions(items,message='',query=''){
   chosenAddress=null;
   syncAddressQuery();
   searchStatus.textContent='Geografisk filter valgt: '+item.navn+' ('+item.nr+'). Forslag fra andre postnumre bliver sorteret fra.';
-  if(geoVejnavn.value.trim().length>=2)lookupAddressSuggestions(searchInput.value.trim());
+  if(geoVejnavn.value.trim().length>=2)lookupAddressSuggestions(formatAddressQuery());
  }));
 }
 async function searchPostnumre(query){
@@ -1725,6 +1725,7 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
  event.preventDefault();
  const q=advancedOpen?formatAddressQuery().trim():searchInput.value.trim();
  if(!q){(advancedOpen?geoVejnavn:searchInput).focus();searchStatus.textContent=advancedOpen?'Skriv en gade eller vælg en adresse i de udvidede felter.':'Skriv en adresse, et vejnavn eller et postnummer.';return;}
+ if(advancedOpen&&!geoVejnavn.value.trim()){geoVejnavn.focus();searchStatus.textContent='Skriv en gade / vej, og vælg et officielt adresseforslag, før du søger.';return;}
  if(/^\\d{4}$/.test(q)&&!advancedOpen){
   geoPostnummer.value=q;
   const ok=await resolvePostnummer(q);
