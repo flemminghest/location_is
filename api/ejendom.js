@@ -4,7 +4,7 @@ async function graphql(query) {
   const key = process.env.DATAFORDELER_API_KEY;
   if (!key) { const e = new Error("DATAFORDELER_API_KEY mangler i Vercel Production."); e.status = 503; throw e; }
   const url = new URL(ENDPOINT); url.searchParams.set("apiKey", key);
-  const response = await fetch(url, { method:"POST", headers:{"content-type":"application/json",accept:"application/json"}, body:JSON.stringify({query}), signal:AbortSignal.timeout(5500) });
+  const response = await fetch(url, { method:"POST", headers:{"content-type":"application/json",accept:"application/json"}, body:JSON.stringify({query}), signal:AbortSignal.timeout(4000) });
   const payload = await response.json().catch(() => ({}));
   const errors = (payload.errors || []).map(x => x.message).join("; ");
   if (!response.ok || errors) { const e = new Error(errors || payload.message || ("Datafordeler HTTP " + response.status)); e.status = 502; throw e; }
@@ -122,20 +122,15 @@ export default async function handler(req, res) {
   const [buildingResult, parcelResult] = await Promise.allSettled([
     (async()=>{
       if(!house||!house.id_lokalId)throw new Error("Der blev ikke fundet et husnummer, som kan kobles til BBR.");
-      try{
-        let found=await getBuildingsForHouse(String(house.id_lokalId),now);
-        if(!found.length&&house.adgangTilBygning){
-          const direct=await getBuildingById(String(house.adgangTilBygning),now);
-          if(direct)found=[direct];
-        }
-        return found;
-      }catch(firstError){
-        if(house.adgangTilBygning){
-          const direct=await getBuildingById(String(house.adgangTilBygning),now);
-          if(direct)return [direct];
-        }
-        throw firstError;
-      }
+      const attempts=[getBuildingsForHouse(String(house.id_lokalId),now)];
+      if(house.adgangTilBygning)attempts.push(getBuildingById(String(house.adgangTilBygning),now).then(item=>item?[item]:[]));
+      const results=await Promise.allSettled(attempts);
+      const successful=results.filter(x=>x.status==="fulfilled").map(x=>x.value||[]);
+      const found=successful.find(list=>list.length);
+      if(found)return found;
+      const failures=results.filter(x=>x.status==="rejected").map(x=>String(x.reason?.message||"BBR-kald fejlede"));
+      if(failures.length===results.length)throw new Error(failures.join(" · "));
+      return [];
     })(),
     (async()=>{
       if(!parcelId)throw new Error("DAR returnerede ikke et jordstykke-ID for adressen.");
