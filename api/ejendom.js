@@ -175,7 +175,17 @@ export default async function handler(req, res) {
   else errors.bbr=String(buildingResult.reason?.message||"BBR-opslag fejlede").slice(0,500);
   if(parcelResult.status==="fulfilled")cadastral=parcelResult.value||null;
   else errors.cadastral=String(parcelResult.reason?.message||"Matrikelopslag fejlede").slice(0,500);
-  const bbr = buildings[0] || null;
+  // Prefer the BBR building explicitly linked by DAR to this house number.
+  // The first BBR result can be a historical/inactive record, so array order alone is not reliable.
+  const linkedBuildingId = house && (house.adgangTilBygning || house.buildingId) || null;
+  const bbr = (linkedBuildingId && buildings.find(item => String(item.id_lokalId || "") === String(linkedBuildingId)))
+    || buildings.find(item => String(item.status || "") === "6" && (
+      numberValue(item, ["byg041BebyggetAreal"]) !== null ||
+      numberValue(item, ["byg039BygningensSamledeBoligAreal"]) !== null ||
+      numberValue(item, ["byg026Opfoerelsesaar"]) !== null
+    ))
+    || buildings[0]
+    || null;
   if (bfe) {
     try { estate = await getEstateByBfe(bfe, now); }
     catch(error) { errors.estate = String(error.message || "BFE-opslag fejlede").slice(0,500); }
