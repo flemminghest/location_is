@@ -326,6 +326,21 @@ p{line-height:1.55}
  .search input{padding:0 11px;font-size:14px}
  .search input::placeholder{font-size:14px}
 }
+
+/* Building drawing action beneath the map */
+.map-plan-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 20px 19px!important;border-top:1px solid #e7edf2;background:linear-gradient(180deg,#fff,#fbfdfe)}
+.map-plan-copy{min-width:0;flex:1}
+.map-plan-copy>strong{display:flex;align-items:center;gap:9px;font-family:var(--font-heading);font-size:14px;line-height:1.35;letter-spacing:-.025em;color:#20394b}
+.map-plan-icon{display:grid;place-items:center;width:31px;height:31px;flex:none;border:1px solid #dce9eb;border-radius:10px;background:#edf6f6;color:#337b83}
+.map-plan-icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.map-plan-copy p{margin:7px 0 5px;font-size:11px;line-height:1.5;color:#758696;max-width:490px}
+.drawing-status{display:block;color:#7d8b98;font-size:10px;line-height:1.45}
+.drawing-status.is-ready{color:#18724f}
+.drawing-status.is-error{color:#986123}
+.map-plan-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;flex:none;padding:0 15px;border-radius:12px;font-size:12px;font-weight:750;white-space:nowrap}
+.map-plan-button svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.map-plan-button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+@media(max-width:700px){.map-plan-footer{align-items:stretch;flex-direction:column;gap:12px;padding:15px!important}.map-plan-button{width:100%;min-height:45px}.map-plan-copy p{max-width:none}}
 </style>
 </head>
 <body><div class="app">
@@ -334,7 +349,7 @@ p{line-height:1.55}
 <main class="main"><header class="top"><div class="top-heading"><div class="top-heading-main"><span class="top-heading-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10.5H3Z"/><path d="M8 20.5v-7h8v7M9 8h.01M15 8h.01"/></svg></span><h1>Ejendomsanalyse</h1></div><div class="sub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v13H4z"/><path d="M8 9.5h8M8 13h5"/></svg><span>Kortlæg ejendommen før du projekterer</span></div></div><div class="searchwrap"><form class="search" id="searchForm" autocomplete="off"><input id="query" aria-label="Adresse eller BBR-nummer" placeholder="Søg adresse, vej + husnummer eller postnummer" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false" role="combobox"><button class="btn primary search-submit" type="submit"><span>Søg</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button><div class="suggestions" id="suggestions" role="listbox"></div></form><div class="searchstatus" id="searchStatus">Tip: vejnavn + husnummer + postnummer giver de mest præcise forslag.</div></div></header>
 <div class="content"><div id="integrationAlert" class="integration-alert hidden" role="alert" aria-live="assertive"><span class="integration-alert-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 22 21H2L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg></span><div class="integration-alert-copy"><strong>Der er problemer med en datakilde</strong><p id="integrationAlertText">Forbindelsen kunne ikke kontrolleres.</p></div><button type="button" class="integration-alert-close" id="integrationAlertClose" aria-label="Luk advarsel">×</button></div>
 <div class="grid"><section class="card"><div class="photo"><div class="roof"></div><div class="house"></div></div><div class="cardbody"><div class="eyebrow">Ejendomsprofil</div><h2 class="address address-street" id="propertyAddress">Vælg en adresse i søgefeltet</h2><div class="address-locality" id="propertyPostalCity">Postnummer og by vises her</div><div class="profile-metrics" aria-label="Ejendommens nøgleoplysninger"><a class="profile-metric profile-metric-link" id="googleMapsLink" href="#" target="_blank" rel="noopener noreferrer" aria-label="Åbn adressen i Google Maps" aria-disabled="true"><span class="profile-icon profile-map-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span class="profile-label">Kortplacering</span><strong class="profile-value">Åbn Google Maps ↗</strong><span class="profile-map-help">Se adressen på kort</span></a><div class="profile-metric"><span class="profile-icon" aria-hidden="true">▤</span><span class="profile-label">BBR-status</span><strong class="profile-value" id="bbrNumber">Afventer opslag</strong></div><div class="profile-metric"><span class="profile-icon" aria-hidden="true">⌑</span><span class="profile-label">Matrikel</span><strong class="profile-value" id="matrikelId">Afventer opslag</strong></div><div class="profile-metric"><span class="profile-icon" aria-hidden="true">⌂</span><span class="profile-label">Bygningsanvendelse</span><strong class="profile-value" id="buildingUse">Afventer opslag</strong></div><div class="profile-metric"><span class="profile-icon" aria-hidden="true">◷</span><span class="profile-label">Opførelsesår</span><strong class="profile-value" id="buildYear">Afventer opslag</strong></div><div class="profile-metric"><span class="profile-icon" aria-hidden="true">▦</span><span class="profile-label">BBR bygningsareal</span><strong class="profile-value" id="bbrArea">—</strong></div><div class="profile-metric profile-status"><span class="profile-icon" aria-hidden="true">✓</span><span class="profile-label">Datastatus</span><strong class="profile-value"><span class="tag">Ikke verificeret</span></strong></div></div></div></section>
-<section class="card"><div class="cardhead"><h2>Matrikel- og bygningskort</h2><span class="tiny">Illustrativt kort</span></div><div class="map"><div class="parcel" id="parcel"></div><div class="building" id="building"></div><div class="maplabel">Grund / matrikel</div><div class="maptools"><label><input type="checkbox" checked data-layer="parcel"> Matrikelgrænse</label><label><input type="checkbox" checked data-layer="building"> Bygning (BBR)</label><label><input type="checkbox" checked data-layer="plan"> Lokalplan</label><label><input type="checkbox" data-layer="terrain"> Terræn (demo)</label><label><input type="checkbox" data-layer="nature"> Natur / beskyttelse</label></div></div><div class="cardbody tiny">Kortet er en visuel pladsholder indtil officielle geodata forbindes.</div></section>
+<section class="card"><div class="cardhead"><h2>Matrikel- og bygningskort</h2><span class="tiny">Illustrativt kort</span></div><div class="map"><div class="parcel" id="parcel"></div><div class="building" id="building"></div><div class="maplabel">Grund / matrikel</div><div class="maptools"><label><input type="checkbox" checked data-layer="parcel"> Matrikelgrænse</label><label><input type="checkbox" checked data-layer="building"> Bygning (BBR)</label><label><input type="checkbox" checked data-layer="plan"> Lokalplan</label><label><input type="checkbox" data-layer="terrain"> Terræn (demo)</label><label><input type="checkbox" data-layer="nature"> Natur / beskyttelse</label></div></div><div class="cardbody map-plan-footer"><div class="map-plan-copy"><strong><span class="map-plan-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3.5h7l4.5 4.5v13h-13v-17.5Z"/><path d="M14 3.5V8h4.5M8.5 12h7M8.5 15.5h7M8.5 19h4"/></svg></span>Plantegning for valgt bygning</strong><p>Originale tegninger hentes fra kommunens byggesagsarkiv, hvis de er tilgængelige. De er ikke en del af de almindelige BBR-data.</p><span id="drawingStatus" class="drawing-status">Vælg en adresse for at undersøge mulighederne.</span></div><button class="btn primary map-plan-button" type="button" id="downloadFloorPlan" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M5 16v4h14v-4"/></svg><span>Hent plantegning</span></button></div></section>
 <section class="card"><div class="cardhead"><h2>Lokalplan og rammer</h2><span class="pill">Afventer opslag</span></div><div class="cardbody"><div style="height:118px;border-radius:8px;background:repeating-linear-gradient(45deg,#f4dba5 0 24px,#f6e8bf 24px 48px,#d6e6ca 48px 72px);position:relative"><div style="position:absolute;left:24%;top:15%;width:50%;height:68%;border:2px solid #3783c4;background:#78b6e844;transform:rotate(-8deg)"></div><span style="position:absolute;top:42%;left:35%;font-weight:800">Planområde</span></div><h3 style="margin-top:13px">Planoplysninger</h3><div class="sub">Findes når plandata er tilsluttet</div><div class="kv"><span>Gældende lokalplan</span><strong id="planName">Afventer adresse</strong></div><div class="kv"><span>Plananvendelse</span><strong id="planUse">Afventer opslag</strong></div><div class="kv"><span>Bebyggelsesprocent</span><strong id="planCoverage">Se planbestemmelser</strong></div><div class="kv"><span>Kommuneplanramme</span><strong id="planFrame">Afventer opslag</strong></div><div class="kv"><span>Zonekort</span><strong id="planZone">Afventer opslag</strong></div><div class="warning" style="margin-top:12px" id="planNotice">Planoplysninger kræver en verificeret adresseposition og kontrol af den originale plan.</div><button class="btn" style="width:100%;margin-top:10px" data-go="planer">Undersøg planforhold →</button></div></section></div>
 <div class="stats"><div class="stat"><div class="eyebrow">Grundareal</div><div class="value" id="statGround">— <span style="font-size:13px">m²</span></div><div class="note">Kræver matrikeldata</div></div><div class="stat"><div class="eyebrow">Bebygget areal</div><div class="value" id="statFootprint">— <span style="font-size:13px">m²</span></div><div class="note">Kræver BBR-data</div></div><div class="stat"><div class="eyebrow">Boligareal</div><div class="value" id="statResidential">— <span style="font-size:13px">m²</span></div><div class="note">Kræver BBR-data</div></div><div class="stat"><div class="eyebrow">Beregnet bebyggelse</div><div class="value" id="statCoverage">—</div><div class="note">Beregnes når datagrundlag findes</div></div></div>
 <section class="section-navigator" aria-label="Ejendomsrapportens sektioner">
@@ -573,6 +588,30 @@ async function checkIntegrationStatus(){
 checkIntegrationStatus();
 const searchInput=document.getElementById('query'), suggestionsEl=document.getElementById('suggestions'), searchStatus=document.getElementById('searchStatus');let addressTimer=null,activeSearchController=null,currentSuggestions=[],selectedSuggestion=-1,chosenAddress=null,currentPropertyData=null;
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function updateDrawingButton(){
+ const button=document.getElementById('downloadFloorPlan');
+ const status=document.getElementById('drawingStatus');
+ if(!button||!status)return;
+ const valid=Boolean(chosenAddress?.source==='official-dar'&&['adresse','husnummer'].includes(chosenAddress?.type)&&chosenAddress?.id);
+ button.disabled=!valid;
+ if(!valid){status.textContent='Vælg en konkret adresse for at undersøge mulighederne.';status.className='drawing-status';}
+ else if(currentPropertyData){status.textContent='Adresse valgt. Vi leder efter en direkte tegning; ellers åbnes kommunens byggesagsarkiv.';status.className='drawing-status is-ready';}
+ else{status.textContent='Adresse valgt. Gennemfør Søg for at undersøge bygningen.';status.className='drawing-status';}
+}
+document.getElementById('downloadFloorPlan')?.addEventListener('click',()=>{
+ if(!chosenAddress?.id||chosenAddress?.source!=='official-dar'){toast('Vælg en konkret adresse først.');return;}
+ const candidates=[];
+ const addCandidate=(obj)=>{if(!obj||typeof obj!=='object')return;for(const [k,v] of Object.entries(obj)){if(typeof v==='string'&&/^https?:\/\//i.test(v)&&/(tegning|plantegning|floor.?plan|drawing|document|dokument)/i.test(k+' '+v))candidates.push(v);}};
+ addCandidate(currentPropertyData);
+ addCandidate(currentPropertyData?.bbr);
+ (currentPropertyData?.bbrBuildings||[]).forEach(addCandidate);
+ const unique=[...new Set(candidates)];
+ if(unique.length){window.open(unique[0],'_blank','noopener,noreferrer');document.getElementById('drawingStatus').textContent='En mulig tegning eller dokumentlink blev fundet. Kontrollér, at dokumentet er en original plantegning for den valgte bygning.';document.getElementById('drawingStatus').className='drawing-status is-ready';return;}
+ const status=document.getElementById('drawingStatus');
+ status.textContent='Ingen original plantegning er tilknyttet de data, MeasLookUp har adgang til. Byggesagsarkivet åbnes, hvor du kan søge på adressen.';
+ status.className='drawing-status is-error';
+ window.open('https://www.borger.dk/handlingsside?selfserviceId=2cfcaab0-5874-4d75-a667-4d1fd6ccd302','_blank','noopener,noreferrer');
+});
 function setPropertyAddressDisplay(value){
  const raw=String(value||'').trim();
  const mapLink=document.getElementById('googleMapsLink');
@@ -615,6 +654,7 @@ function renderSuggestions(items,note=''){
 function chooseSuggestion(i){
  const x=currentSuggestions[i];if(!x)return;
  chosenAddress=x;
+ updateDrawingButton();
  searchInput.value=x.label;
  closeSuggestions();
  if(x.source==='official-dar'&&(x.type==='adresse'||x.type==='husnummer')){
@@ -836,6 +876,7 @@ async function loadPropertyData(){
   const data=await resp.json();
   if(!resp.ok)throw new Error(data.error||'Ejendomsopslaget kunne ikke gennemføres');
   currentPropertyData=data;
+  updateDrawingButton();
   renderBuildingChangeReport(data);
   const addressOk=Boolean(data.completeness?.address||data.completeness?.house||data.house);
   const bbrOk=Boolean(data.completeness?.bbr||data.bbrBuildings?.length||data.bbr?.id_lokalId);
