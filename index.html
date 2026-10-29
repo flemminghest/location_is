@@ -76,12 +76,20 @@ body.modal-open{overflow:hidden}
 .brand-name span{color:#65d1bc}
 .lookup-mark{padding:0;overflow:hidden}
 
+
+.suggestion{grid-template-columns:26px minmax(0,1fr);align-items:start}
+.suggestion-ico{width:26px;height:26px;display:grid;place-items:center;border-radius:8px;background:#edf5f8;color:#2e6ca4;font-weight:800}
+.suggestion-copy{display:block;min-width:0}
+.suggestion-copy strong{display:block;overflow-wrap:anywhere}
+.suggestion-type{display:inline-block;margin-top:4px;border-radius:4px;padding:2px 5px;background:#edf2f6;color:#536b7c;font-size:8px;line-height:1.2;font-weight:800;letter-spacing:.8px}
+.suggestion-copy small{display:block}
+
 </style>
 </head>
 <body><div class="app">
 <aside class="side"><div class="brand"><svg class="brand-icon" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#203e53"/><path d="M13 47V18h38v29M8 18h48" fill="none" stroke="#5bc6b3" stroke-width="4" stroke-linejoin="round"/><path d="M20 47V31l12-8 12 8v16M25 47V36h14v11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brand-name">Meas<span>INFO</span></span></div><div class="navlabel">Ejendomsanalyse</div><nav class="nav">
 <button class="active" data-section="overblik"><span>⌂</span><span>Overblik</span></button><button data-section="grund"><span>▤</span><span>Ejendomsdata</span></button><button data-section="planer"><span>◈</span><span>Kort og planer</span></button><button data-section="planer"><span>▧</span><span>Lokalplan</span></button><button data-section="krav"><span>▣</span><span>Byggeregler</span></button><button data-section="miljo"><span>♧</span><span>Miljø og natur</span></button><button data-section="infrastruktur"><span>⇄</span><span>Infrastruktur</span></button><button data-section="naeromraade"><span>⌖</span><span>Nærområde</span></button><button data-section="historik"><span>◷</span><span>Historik & område</span></button><button data-section="dokumenter"><span>▤</span><span>Dokumenter</span></button></nav><div class="sidefoot">STUDIEVÆRKTØJ · PROTOTYPE<br>Eksempeldata – ingen live BBR</div></aside>
-<main class="main"><header class="top"><div><h1>Ejendomsanalyse</h1><div class="sub">Kortlæg ejendommen før du projekterer</div></div><div class="searchwrap"><form class="search" id="searchForm" autocomplete="off"><input id="query" aria-label="Adresse eller BBR-nummer" placeholder="Søg på adresse, vej, by eller postnummer" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false" role="combobox"><button class="btn primary">Søg ↗</button><div class="suggestions" id="suggestions" role="listbox"></div></form><div class="searchstatus" id="searchStatus">Søg i hele Danmark via den officielle adressekilde.</div></div><button class="btn" id="reportBtn">⇩ PDF-rapport</button></header>
+<main class="main"><header class="top"><div><h1>Ejendomsanalyse</h1><div class="sub">Kortlæg ejendommen før du projekterer</div></div><div class="searchwrap"><form class="search" id="searchForm" autocomplete="off"><input id="query" aria-label="Adresse eller BBR-nummer" placeholder="Søg adresse, vej + husnr. eller postnummer" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false" role="combobox"><button class="btn primary">Søg ↗</button><div class="suggestions" id="suggestions" role="listbox"></div></form><div class="searchstatus" id="searchStatus">Tip: vejnavn + husnummer + postnummer giver de mest præcise forslag.</div></div><button class="btn" id="reportBtn">⇩ PDF-rapport</button></header>
 <div class="content"><div class="demo"><strong>⚠ Datakilder og verificering</strong><span id="integrationStatus">Kontrollerer forbindelsen til Datafordeleren…</span><span id="integrationNote">Adresseforslag er live; arealer vises kun, når de officielle BBR-/MAT-opslag returnerer dem.</span></div>
 <div class="grid"><section class="card"><div class="photo"><div class="roof"></div><div class="house"></div></div><div class="cardbody"><div class="eyebrow">Ejendomsprofil <span class="pill">Eksempeldata</span></div><h2 class="address" id="propertyAddress">Vælg en adresse i søgefeltet</h2><div class="kv"><span>Adresse-ID</span><strong id="addressId">Ikke valgt</strong></div><div class="kv"><span>BBR-status</span><strong id="bbrNumber">Afventer opslag</strong></div><div class="kv"><span>Matrikel</span><strong id="matrikelId">Afventer opslag</strong></div><div class="kv"><span>Bygningsanvendelse</span><strong id="buildingUse">Afventer opslag</strong></div><div class="kv"><span>Opførelsesår</span><strong id="buildYear">Afventer opslag</strong></div><div class="kv"><span>BBR bygningsareal</span><strong id="bbrArea">—</strong></div><div class="kv"><span>Datastatus</span><strong><span class="tag">Ikke verificeret</span></strong></div></div></section>
 <section class="card"><div class="cardhead"><h2>Matrikel- og bygningskort</h2><span class="tiny">Illustrativt kort</span></div><div class="map"><div class="parcel" id="parcel"></div><div class="building" id="building"></div><div class="maplabel">Grund / matrikel</div><div class="maptools"><label><input type="checkbox" checked data-layer="parcel"> Matrikelgrænse</label><label><input type="checkbox" checked data-layer="building"> Bygning (BBR)</label><label><input type="checkbox" checked data-layer="plan"> Lokalplan</label><label><input type="checkbox" data-layer="terrain"> Terræn (demo)</label><label><input type="checkbox" data-layer="nature"> Natur / beskyttelse</label></div></div><div class="cardbody tiny">Kortet er en visuel pladsholder indtil officielle geodata forbindes.</div></section>
@@ -281,20 +289,75 @@ checkIntegrationStatus();
 const searchInput=document.getElementById('query'), suggestionsEl=document.getElementById('suggestions'), searchStatus=document.getElementById('searchStatus');let addressTimer=null,activeSearchController=null,currentSuggestions=[],selectedSuggestion=-1,chosenAddress=null,currentPropertyData=null;
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function closeSuggestions(){suggestionsEl.classList.remove('open');searchInput.setAttribute('aria-expanded','false');selectedSuggestion=-1}
-function renderSuggestions(items,note=''){currentSuggestions=items;selectedSuggestion=-1;if(!items.length){suggestionsEl.innerHTML='<div class="suggestion-note">Ingen forslag fundet. Prøv at skrive vejnavn, husnummer eller postnummer.</div>';suggestionsEl.classList.add('open');searchInput.setAttribute('aria-expanded','true');return}suggestionsEl.innerHTML=items.map((x,i)=>'<button type="button" role="option" aria-selected="false" class="suggestion" data-index="'+i+'"><span>'+((x.source==='official-dar')?'✓':'⌖')+'</span><span><strong>'+esc(x.label)+'</strong><small>'+esc(x.detail||'Dansk adresseforslag')+'</small></span></button>').join('')+(note?'<div class="suggestion-note">'+esc(note)+'</div>':'');suggestionsEl.classList.add('open');searchInput.setAttribute('aria-expanded','true');suggestionsEl.querySelectorAll('.suggestion').forEach(b=>b.addEventListener('click',()=>chooseSuggestion(+b.dataset.index)))}
-function chooseSuggestion(i){const s=currentSuggestions[i];if(!s)return;chosenAddress=s;searchInput.value=s.label;closeSuggestions();searchStatus.textContent=s.source==='official-dar'?'Officielt adresseforslag valgt ('+(s.type||'adresse')+'). Vælg Søg for ejendomsopslag.':'Adresse valgt. Officiel registervalidering mangler.';searchInput.focus()}
-async function lookupAddressSuggestions(q){if(activeSearchController)activeSearchController.abort();activeSearchController=new AbortController();searchStatus.textContent='Søger i det danske adresseregister…';
-try{
- // Official nationwide address API. If deployment policy/CORS changes, use a same-origin server proxy.
- const url='/api/adresser?q='+encodeURIComponent(q);
- const res=await fetch(url,{signal:activeSearchController.signal,headers:{Accept:'application/json'}});
- if(!res.ok)throw new Error('Officiel adressekilde er ikke tilgængelig');const data=await res.json();
- const items=(Array.isArray(data?.fund)?data.fund:[]).map(x=>({label:x.titel||x.adressebetegnelse||'',detail:[x.postnr,x.postdistrikt].filter(Boolean).join(' '),source:'official-dar',id:x.id,type:x.type,husnummerId:x.husnummerId||null,properties:x})).filter(x=>x.label);
- if(items.length){renderSuggestions(items,'Adresseforslag fra Danmarks officielle adressekilde / Dataforsyningen.');searchStatus.textContent='Vælg en adresse fra hele Danmark.';return}
- renderSuggestions([],'Ingen match i den officielle adressetjeneste.');searchStatus.textContent='Ingen adresseforslag fundet.';return;
-}catch(e){if(e.name==='AbortError')return;
- try{const u='https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&limit=7&lang=da';const r=await fetch(u,{signal:activeSearchController.signal,headers:{Accept:'application/json'}});if(!r.ok)throw new Error('fallback failed');const d=await r.json();const items=(d.features||[]).map(f=>{const p=f.properties||{};return{label:p.name||(p.street?[p.street,p.housenumber].filter(Boolean).join(' '):''),detail:[p.postcode,p.city||p.town||p.village||p.county].filter(Boolean).join(' '),source:'osm',properties:p}}).filter(x=>x.label);if(items.length){renderSuggestions(items,'Sekundære OpenStreetMap-forslag — ikke officiel dansk registervalidering.');searchStatus.textContent='Officiel tjeneste svarede ikke; viser sekundære forslag.';return}}catch(f){if(f.name==='AbortError')return}
- renderSuggestions([{label:q,detail:'Brug din egen indtastning',source:'manual'}],'Live forslag kunne ikke hentes.');searchStatus.textContent='Live adresseopslag kunne ikke nås.'}}
+function renderSuggestions(items,note=''){
+ currentSuggestions=items;selectedSuggestion=-1;
+ if(!items.length){
+  suggestionsEl.innerHTML='<div class="suggestion-note"><strong>Ingen præcise forslag endnu.</strong><br>Prøv fx vejnavn + husnummer + postnummer (fx “Nørregade 12, 8000”).</div>';
+  suggestionsEl.classList.add('open');searchInput.setAttribute('aria-expanded','true');return;
+ }
+ const typeLabels={adresse:'PRÆCIS ADRESSE',husnummer:'HUSNUMMER',navngivenvejpostnummer:'VEJ + POSTNR.',vejnavn:'VEJNAVN',vejnavnhusnummer:'FORSLAG'};
+ suggestionsEl.innerHTML=items.map((x,i)=>{
+  const kind=x.kindLabel||typeLabels[x.type]||'SØGEFORSLAG';
+  const detail=x.detail||((x.type==='husnummer')?'Vælg for at hente ejendomsdata':(x.type==='adresse'?'Vælg for at hente bygning og matrikel':'Tilføj flere oplysninger for at indsnævre søgningen'));
+  const icon=x.type==='adresse'?'⌖':x.type==='husnummer'?'⌂':'↳';
+  return '<button type="button" role="option" aria-selected="false" class="suggestion" data-index="'+i+'"><span class="suggestion-ico">'+icon+'</span><span class="suggestion-copy"><strong>'+esc(x.label)+'</strong><span class="suggestion-type">'+esc(kind)+'</span><small>'+esc(detail)+'</small></span></button>';
+ }).join('')+(note?'<div class="suggestion-note">'+esc(note)+'</div>':'');
+ suggestionsEl.classList.add('open');searchInput.setAttribute('aria-expanded','true');
+ suggestionsEl.querySelectorAll('.suggestion').forEach(b=>b.addEventListener('click',()=>chooseSuggestion(+b.dataset.index)));
+}
+function chooseSuggestion(i){
+ const x=currentSuggestions[i];if(!x)return;
+ chosenAddress=x;
+ searchInput.value=x.label;
+ closeSuggestions();
+ if(x.source==='official-dar'&&(x.type==='adresse'||x.type==='husnummer')){
+  searchStatus.textContent=(x.type==='adresse'?'Præcis adresse valgt':'Husnummer valgt')+' · '+(x.detail||'Officiel DAR-post')+'. Tryk Søg for BBR, matrikel og planforhold.';
+  toast('Adresse valgt. Tryk Søg for at starte MeasINFO-opslaget.');
+ }else if(x.source==='official-dar'){
+  searchStatus.textContent='Dette forslag er et vejnavn/postnummer — ikke en entydig ejendom. Vælg et konkret husnummer nedenfor, eller tilføj husnummer til søgningen.';
+  toast('Tilføj et husnummer for at få ejendomsoplysninger.');
+ }else{
+  searchStatus.textContent='Dette er et sekundært kortforslag. Vælg et officielt adresseforslag for at hente registerdata.';
+ }
+ searchInput.focus();
+}
+async function lookupAddressSuggestions(q){
+ if(activeSearchController)activeSearchController.abort();
+ activeSearchController=new AbortController();
+ searchStatus.textContent='Søger efter adresser og husnumre i hele Danmark…';
+ try{
+  const res=await fetch('/api/adresser?q='+encodeURIComponent(q),{signal:activeSearchController.signal,headers:{Accept:'application/json'},cache:'no-store'});
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.error||'Den officielle adressekilde svarede ikke.');
+  const items=(Array.isArray(data?.fund)?data.fund:[]).map(x=>({
+   label:x.label||x.titel||x.adressebetegnelse||'',
+   detail:x.detail||[x.postnr,x.postdistrikt].filter(Boolean).join(' '),
+   kindLabel:x.kindLabel,source:x.source||'official-dar',id:x.id||null,type:String(x.type||'').toLowerCase(),
+   husnummerId:x.husnummerId||null,vejnavn:x.vejnavn||null,husnummer:x.husnummer||null,
+   postnr:x.postnr||null,postdistrikt:x.postdistrikt||null,antal_husnumre:x.antal_husnumre,
+   specific:x.specific,properties:x
+  })).filter(x=>x.label);
+  if(items.length){
+   renderSuggestions(items,data.hint||'Forslag fra Klimadatastyrelsens officielle Adressevælger. Brug postnummer for mere præcise matches.');
+   const precise=items.filter(x=>x.type==='adresse'||x.type==='husnummer').length;
+   searchStatus.textContent=precise?precise+' præcise adresse-/husnummerforslag fundet.':'Søgningen fandt veje/postnumre. Tilføj husnummer eller postnummer for at indsnævre.';
+   return;
+  }
+  renderSuggestions([],'Prøv vejnavn + husnummer + postnummer/by, eller ret stavningen lidt.');
+  searchStatus.textContent='Ingen match i det officielle adresseregister.';
+ }catch(e){
+  if(e.name==='AbortError')return;
+  try{
+   const u='https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&limit=8&lang=da';
+   const r=await fetch(u,{signal:activeSearchController.signal,headers:{Accept:'application/json'}});
+   if(!r.ok)throw new Error('Sekundært opslag fejlede');
+   const d=await r.json();
+   const items=(d.features||[]).map(f=>{const p=f.properties||{};return{label:p.name||(p.street?[p.street,p.housenumber].filter(Boolean).join(' '):''),detail:[p.postcode,p.city||p.town||p.village||p.county].filter(Boolean).join(' · '),kindLabel:'SEKUNDÆRT KORTMATCH',source:'osm',properties:p}}).filter(x=>x.label);
+   if(items.length){renderSuggestions(items,'Sekundære OpenStreetMap-forslag. Disse må ikke bruges som officiel adressevalidering.');searchStatus.textContent='Den officielle tjeneste svarede ikke; viser vejledende kortforslag.';return;}
+  }catch(f){if(f.name==='AbortError')return;}
+  renderSuggestions([],'Live søgning er midlertidigt utilgængelig. Prøv igen, eller brug vejnavn + husnummer + postnummer.');
+  searchStatus.textContent='Adresseforslag kunne ikke hentes lige nu.';
+ }}
 searchInput.addEventListener('input',()=>{chosenAddress=null;clearTimeout(addressTimer);const q=searchInput.value.trim();if(q.length<2){closeSuggestions();searchStatus.textContent='Skriv mindst 2 tegn for at søge i Danmark.';return}addressTimer=setTimeout(()=>lookupAddressSuggestions(q),300)});
 searchInput.addEventListener('keydown',e=>{if(!suggestionsEl.classList.contains('open'))return;if(e.key==='ArrowDown'){e.preventDefault();selectedSuggestion=Math.min(selectedSuggestion+1,currentSuggestions.length-1)}else if(e.key==='ArrowUp'){e.preventDefault();selectedSuggestion=Math.max(selectedSuggestion-1,0)}else if(e.key==='Escape'){closeSuggestions();return}else if(e.key==='Enter'&&selectedSuggestion>=0){e.preventDefault();chooseSuggestion(selectedSuggestion);return}else return;suggestionsEl.querySelectorAll('.suggestion').forEach((b,i)=>{b.setAttribute('aria-selected',i===selectedSuggestion?'true':'false');if(i===selectedSuggestion)b.scrollIntoView({block:'nearest'})})});
 document.addEventListener('click',e=>{if(!document.getElementById('searchForm').contains(e.target))closeSuggestions()});
