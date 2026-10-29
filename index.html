@@ -498,6 +498,20 @@ p{line-height:1.55}
 .geo-city-message{display:flex;align-items:center;gap:9px;min-height:44px;padding:12px;color:#667f90;font-size:11px;line-height:1.5}
 .geo-city-message:first-letter{font-weight:700}
 .geoBy[aria-busy="true"]{cursor:progress}
+
+/* Consistent, quiet line icons for property metrics */
+.metric-label{display:inline-flex!important;align-items:center;gap:8px;min-width:0}
+.metric-icon{display:inline-grid;place-items:center;flex:none;width:25px;height:25px;border-radius:8px;background:#eef5f7;color:#648696;vertical-align:middle}
+.metric-icon svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+.kv .metric-label .metric-icon{width:24px;height:24px}
+.stat .eyebrow.metric-label{font-size:10px;letter-spacing:.055em}
+.stat .eyebrow .metric-icon{width:25px;height:25px;background:#edf5f7;color:#3d7682}
+.kv strong.metric-empty,.value .metric-empty{color:#99a6b0;font-weight:600}
+.kv strong.metric-filled{font-variant-numeric:tabular-nums}
+.metric-unit{font-size:13px;font-weight:650;color:#75899a;margin-left:4px;letter-spacing:0}
+.value .metric-unit{font-size:13px;font-weight:650;color:#75899a}
+@media(max-width:700px){.metric-icon{width:23px;height:23px}.metric-icon svg{width:14px;height:14px}.kv .metric-label{gap:6px}}
+@media(prefers-reduced-motion:reduce){.metric-counting{transition:none!important}}
 </style>
 </head>
 <body><div class="app">
@@ -1411,6 +1425,95 @@ async function loadPlansForCoordinates(coords){
  }
 }
 
+
+const metricIconPaths={
+ plot:'<path d="M3 20h18"/><path d="m5 16 4-6 4 3 4-8 3 3"/>',
+ building:'<path d="M4 21V4.8A1.8 1.8 0 0 1 5.8 3h8.4A1.8 1.8 0 0 1 16 4.8V21"/><path d="M2 21h20M8 7h.01M12 7h.01M8 11h.01M12 11h.01M8 15h.01M12 15h.01M18 10h2v11"/><path d="M9 21v-3h3v3"/>',
+ home:'<path d="m3 10 9-7 9 7v10.5H3Z"/><path d="M9 20.5v-7h6v7"/>',
+ layers:'<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/>',
+ calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M7 14h3M7 17h5"/>',
+ ruler:'<path d="M3 17.5 17.5 3 21 6.5 6.5 21 3 17.5Z"/><path d="m13 7 4 4M10 10l2 2M7 13l4 4"/>',
+ map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"/><path d="M9 3v15M15 6v15"/>',
+ pin:'<path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.3"/>',
+ leaf:'<path d="M20.5 3.5C11 3.5 5 7.5 5 14c0 3.5 2.5 6 5.5 6 6 0 10-6.5 10-16.5Z"/><path d="M3 21c2.5-5 6.5-8.5 12-12"/>',
+ route:'<path d="M5 5h.01M19 19h.01"/><path d="M5 5a3 3 0 1 0 0 6h6a3 3 0 1 1 0 6h8"/><circle cx="5" cy="5" r="2.5"/><circle cx="19" cy="19" r="2.5"/>',
+ file:'<path d="M7 3.5h7l4.5 4.5v13h-13v-17.5Z"/><path d="M14 3.5V8h4.5M8.5 12h7M8.5 15.5h7M8.5 19h4"/>',
+ shield:'<path d="M12 3 20 6v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
+ chart:'<path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/>',
+ compass:'<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8 4.8-2.2Z"/>',
+ info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/>'
+};
+function metricIconForLabel(label){
+ const text=String(label||'').toLocaleLowerCase('da');
+ if(/grundareal|matrikel|jordstykke|bebyggelsesprocent/.test(text))return 'plot';
+ if(/boligareal|bolig|lejlighed|anvendelse|ophold/.test(text))return 'home';
+ if(/kælder|basement/.test(text))return 'layers';
+ if(/år|dato|historik|opført|opførels|ændring/.test(text))return 'calendar';
+ if(/areal|m²|bygning|bbr|bygnings/.test(text))return 'building';
+ if(/plan|zone|ramme|lokalplan/.test(text))return 'map';
+ if(/adresse|placering|koordinat|postnummer|by/.test(text))return 'pin';
+ if(/miljø|natur|fredning|beskytt/.test(text))return 'leaf';
+ if(/infrastruktur|vej|forsyning|adgang/.test(text))return 'route';
+ if(/risiko|fare|oversvømmelse/.test(text))return 'shield';
+ if(/dokument|kilde|rapport/.test(text))return 'file';
+ if(/bebygg|andel|procent/.test(text))return 'chart';
+ return 'info';
+}
+function installMetricIcons(){
+ document.querySelectorAll('.kv>span,.stat .eyebrow').forEach(label=>{
+  if(label.querySelector('.metric-icon'))return;
+  const iconName=metricIconForLabel(label.textContent);
+  const icon=document.createElement('span');
+  icon.className='metric-icon';
+  icon.setAttribute('aria-hidden','true');
+  icon.innerHTML='<svg viewBox="0 0 24 24">'+(metricIconPaths[iconName]||metricIconPaths.info)+'</svg>';
+  label.classList.add('metric-label');
+  label.prepend(icon);
+ });
+}
+function formatMetricNumber(value,decimals=0){
+ return Number(value).toLocaleString('da-DK',{maximumFractionDigits:decimals});
+}
+function animateNumberInto(element,value,{unit='',decimals=0,asStat=false,duration=850}={}){
+ if(!element)return;
+ const numeric=Number(value);
+ if(value===null||value===undefined||value===''||!Number.isFinite(numeric)){
+  element.classList.remove('metric-filled','metric-counting');
+  element.classList.add('metric-empty');
+  if(asStat){element.innerHTML='<span class="metric-number">—</span>'+(unit?'<span class="metric-unit">'+unit+'</span>':'');}
+  else element.textContent='—'+(unit?' '+unit:'');
+  return;
+ }
+ element.classList.remove('metric-empty');
+ element.classList.add('metric-filled','metric-counting');
+ let numberEl=element.querySelector('.metric-number');
+ if(asStat){
+  if(!numberEl){element.innerHTML='<span class="metric-number"></span>'+(unit?'<span class="metric-unit">'+unit+'</span>':'');numberEl=element.querySelector('.metric-number');}
+  else if(unit&&!element.querySelector('.metric-unit'))element.insertAdjacentHTML('beforeend','<span class="metric-unit">'+unit+'</span>');
+ }else{
+  numberEl=element;
+ }
+ const token=(element._metricAnimationToken||0)+1;
+ element._metricAnimationToken=token;
+ const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const start=performance.now();
+ const draw=now=>{
+  if(element._metricAnimationToken!==token)return;
+  const t=reduced?1:Math.min(1,(now-start)/duration);
+  const eased=1-Math.pow(1-t,3);
+  const current=numeric*eased;
+  numberEl.textContent=formatMetricNumber(current,decimals)+(asStat?'':' '+unit).trim();
+  if(t<1)requestAnimationFrame(draw);
+  else{
+   numberEl.textContent=formatMetricNumber(numeric,decimals);
+   element.classList.remove('metric-counting');
+  }
+ };
+ if(reduced){numberEl.textContent=formatMetricNumber(numeric,decimals);element.classList.remove('metric-counting');}
+ else requestAnimationFrame(draw);
+}
+installMetricIcons();
+
 async function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){
@@ -1458,13 +1561,13 @@ async function loadPropertyData(){
   document.getElementById('bbrNumber').textContent=b.id_lokalId?'Bygning fundet':'Ingen BBR-bygning returneret';
   document.getElementById('matrikelId').textContent=[m.matrikelnummer,m.ejerlavLokalId].filter(Boolean).join(' · ')||'Ingen matrikel returneret';
   document.getElementById('buildingUse').textContent=val(b.byg021BygningensAnvendelse);
-  document.getElementById('buildYear').textContent=val(b.byg026Opfoerelsesaar);
-  document.getElementById('bbrArea').textContent=b.byg038SamletBygningsareal!=null?num(b.byg038SamletBygningsareal)+' m²':'—';
+  animateNumberInto(document.getElementById('buildYear'),b.byg026Opfoerelsesaar,{duration:900});
+  animateNumberInto(document.getElementById('bbrArea'),b.byg038SamletBygningsareal,{unit:'m²',duration:900});
   const ground=data.areas?.groundArea??m.arealberegnet??m.areal??null,foot=data.areas?.footprint??b.byg041BebyggetAreal??null,res=data.areas?.residentialArea??b.byg039BygningensSamledeBoligAreal??null,basement=null;
-  for(const [key,v] of [['areaGround',ground],['areaFootprint',foot],['areaResidential',res],['areaBasement',basement]])document.getElementById(key).textContent=v==null?'— m²':num(v)+' m²';
-  for(const [key,v] of [['statGround',ground],['statFootprint',foot],['statResidential',res]])document.getElementById(key).innerHTML=v==null?'— <span style="font-size:13px">m²</span>':num(v)+' <span style="font-size:13px">m²</span>';
+  for(const [key,v] of [['areaGround',ground],['areaFootprint',foot],['areaResidential',res],['areaBasement',basement]])animateNumberInto(document.getElementById(key),v,{unit:'m²',duration:950});
+  for(const [key,v] of [['statGround',ground],['statFootprint',foot],['statResidential',res]])animateNumberInto(document.getElementById(key),v,{unit:'m²',asStat:true,duration:1100});
   const coverage=(ground>0&&foot>=0)?(foot/ground*100):null;
-  document.getElementById('statCoverage').textContent=coverage==null?'—':coverage.toLocaleString('da-DK',{maximumFractionDigits:1})+' %';
+  animateNumberInto(document.getElementById('statCoverage'),coverage,{unit:'%',asStat:true,decimals:1,duration:1100});
   searchStatus.textContent='Data hentet '+new Date(data.fetchedAt).toLocaleString('da-DK')+' · BBR: '+(bbrOk?'fundet':'intet resultat')+' · Matrikel: '+(matOk?'fundet':'intet resultat');
   setLookupProgress(72,'TRIN 4 AF 5','Undersøger planforhold','Vi søger i Plandata.dk efter lokalplaner, kommuneplanrammer, byggefelter og planhistorik omkring adressepunktet.');
   setLookupStep('plan','running','Søger','Henter planlag og rammer fra Plandata.dk');
