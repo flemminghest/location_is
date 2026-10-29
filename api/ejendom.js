@@ -149,9 +149,15 @@ export default async function handler(req, res) {
 
   const coords = parseCoordinates(house);
   const groundArea = numberValue(cadastral, ["registreretAreal","arealberegnet","samletAreal"]);
-  const footprint = numberValue(bbr, ["byg041BebyggetAreal"]);
-  const residentialArea = numberValue(bbr, ["byg039BygningensSamledeBoligAreal"]);
-  const buildingArea = numberValue(bbr, ["byg038SamletBygningsareal"]);
+  // Sum only actual values from all returned BBR buildings; null means no registered area was returned.
+  const sumBuildingField = (field) => {
+    const values = buildings.map(item => numberValue(item, [field])).filter(value => value !== null);
+    return values.length ? values.reduce((sum, value) => sum + value, 0) : null;
+  };
+  const primaryFootprint = numberValue(bbr, ["byg041BebyggetAreal"]);
+  const footprint = sumBuildingField("byg041BebyggetAreal");
+  const residentialArea = sumBuildingField("byg039BygningensSamledeBoligAreal");
+  const buildingArea = sumBuildingField("byg038SamletBygningsareal");
   res.setHeader("Cache-Control","private, max-age=60");
   return res.status(200).json({
     source:"Datafordeler Flexible GraphQL v3",
@@ -159,7 +165,7 @@ export default async function handler(req, res) {
     address:address?{id:address.id_lokalId,designation:address.adressebetegnelse||null,status:address.status||null}:null,
     house:house?{id:house.id_lokalId,designation:house.adgangsadressebetegnelse||null,streetNumber:house.husnummertekst||null,status:house.status||null,buildingId:house.adgangTilBygning||null,parcelId:house.jordstykke||house.placeretPaaForeloebigtJordstykke||null}:null,
     coordinates:coords,bbr,bbrBuildings:buildings,cadastral,estate,
-    areas:{groundArea,footprint,residentialArea,buildingArea},
+    areas:{groundArea,footprint,primaryFootprint,residentialArea,buildingArea},
     completeness:{address:Boolean(address),house:Boolean(house),bbr:buildings.length>0,cadastral:Boolean(cadastral),estate:Boolean(estate)},
     errors,
     note:"Arealer vises kun, hvis de officielle registre returnerer dem. Manglende BBR-/matrikeldata er ikke bevis for, at forholdet ikke findes."
