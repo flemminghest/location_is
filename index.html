@@ -471,6 +471,21 @@ p{line-height:1.55}
 .search-example-link button{display:inline-flex;align-items:center;gap:5px;padding:0;border:0;background:transparent;color:#4e7488;font-family:var(--font-ui);font-size:10px;font-weight:700;cursor:pointer}
 .search-example-link button:hover{color:#244f68;text-decoration:underline}
 .search-example-link button span{font-size:14px}
+
+/* Per-source percentage spinners: progress is approximate while a request is pending */
+.lookup-step-progress{grid-column:2/-1;display:grid;gap:4px;width:100%;margin-top:2px;min-width:0}
+.lookup-step-progress-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:9px;line-height:1.25;color:#81919e}
+.lookup-step-progress-label{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.lookup-step-progress-label::before{content:"";display:inline-block;width:7px;height:7px;flex:none;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:lookupStepSpin .75s linear infinite}
+.lookup-step-progress strong{font-size:9px;font-weight:800;font-variant-numeric:tabular-nums;color:#3e6f8a}
+.lookup-step-track{height:4px;width:100%;overflow:hidden;border-radius:999px;background:#e8eef2}
+.lookup-step-fill{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,#4b91b4,#4bb8a8);transition:width .18s linear}
+.lookup-step.is-done .lookup-step-progress-label::before{content:"✓";width:10px;height:10px;border:0;border-radius:0;background:none;animation:none;color:#16805d;font-size:10px;line-height:10px}
+.lookup-step.is-warning .lookup-step-progress-label::before,.lookup-step.is-error .lookup-step-progress-label::before{content:"!";width:10px;height:10px;border:0;border-radius:50%;background:currentColor;color:#fff;animation:none;font-size:8px;line-height:10px;text-align:center}
+.lookup-step.is-warning .lookup-step-progress strong{color:#986822}
+.lookup-step.is-error .lookup-step-progress strong{color:#ad493d}
+@keyframes lookupStepSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.lookup-step-progress-label::before{animation:none}}
 </style>
 </head>
 <body><div class="app">
@@ -660,6 +675,41 @@ const lookupDoneBtn=document.getElementById('lookupDoneBtn');
 const lookupX=document.getElementById('lookupX');
 let lookupFinished=false,lookupCloseTimer=null;
 const lookupStepIds={address:'lookupStepAddress',bbr:'lookupStepBbr',mat:'lookupStepMat',plan:'lookupStepPlan',history:'lookupStepHistory'};
+const lookupStepTimers=Object.create(null),lookupStepStartedAt=Object.create(null);
+let lookupWatchdogTimer=null;
+const lookupStepBudgets={address:6500,bbr:9500,mat:9500,plan:6000,history:6000};
+function stopLookupStepTimer(key){
+ if(lookupStepTimers[key]){clearInterval(lookupStepTimers[key]);delete lookupStepTimers[key];}
+ delete lookupStepStartedAt[key];
+}
+function ensureLookupStepProgress(el){
+ let progress=el.querySelector('.lookup-step-progress');
+ if(!progress){
+  progress=document.createElement('div');
+  progress.className='lookup-step-progress';
+  progress.innerHTML='<div class="lookup-step-progress-meta"><span class="lookup-step-progress-label">Kontakter kilde…</span><strong class="lookup-step-percent">0%</strong></div><div class="lookup-step-track"><span class="lookup-step-fill"></span></div>';
+  el.appendChild(progress);
+ }
+ return progress;
+}
+function startLookupStepTimer(key,el){
+ if(lookupStepTimers[key])return;
+ const progress=ensureLookupStepProgress(el);
+ const label=progress.querySelector('.lookup-step-progress-label');
+ if(label)label.textContent='Venter på kildesvar';
+ lookupStepStartedAt[key]=Date.now();
+ const budget=lookupStepBudgets[key]||8000;
+ const tick=()=>{
+  const elapsed=Date.now()-lookupStepStartedAt[key];
+  const pct=Math.min(94,Math.max(2,Math.floor(elapsed/budget*90)));
+  const p=ensureLookupStepProgress(el);
+  p.querySelector('.lookup-step-percent').textContent=pct+'%';
+  p.querySelector('.lookup-step-fill').style.width=pct+'%';
+  if(pct>=90&&p.querySelector('.lookup-step-progress-label'))p.querySelector('.lookup-step-progress-label').textContent='Langsomt kildesvar';
+ };
+ tick();
+ lookupStepTimers[key]=setInterval(tick,220);
+}
 function setLookupProgress(percent,kicker,title,description){
  const p=Math.max(0,Math.min(100,Math.round(percent)));
  lookupRing.style.setProperty('--progress',p);
@@ -681,9 +731,34 @@ function setLookupStep(key,state,stateLabel,detail){
  const icon=el.querySelector('.lookup-step-icon');
  if(icon&&state==='done')icon.textContent='✓';
  else if(icon)icon.textContent=({address:'⌖',bbr:'▤',mat:'⌑',plan:'▧',history:'◷'}[key]||'•');
+ if(state==='running'){
+  startLookupStepTimer(key,el);
+ }else{
+  stopLookupStepTimer(key);
+  const progress=el.querySelector('.lookup-step-progress');
+  if(progress){
+   const label=progress.querySelector('.lookup-step-progress-label');
+   const pct=progress.querySelector('.lookup-step-percent');
+   const fill=progress.querySelector('.lookup-step-fill');
+   if(pct)pct.textContent='100%';
+   if(fill)fill.style.width='100%';
+   if(label)label.textContent=state==='done'?'Kilde svarede':(state==='error'?'Kilde fejlede':'Kontrol afsluttet');
+  }else if(state){
+   const p=ensureLookupStepProgress(el);
+   p.querySelector('.lookup-step-percent').textContent='100%';
+   p.querySelector('.lookup-step-fill').style.width='100%';
+   p.querySelector('.lookup-step-progress-label').textContent=state==='done'?'Kilde svarede':(state==='error'?'Kilde fejlede':'Kontrol afsluttet');
+  }
+  if(!state){
+   const stale=el.querySelector('.lookup-step-progress');
+   if(stale)stale.remove();
+  }
+ }
 }
 function resetLookupModal(address){
  lookupFinished=false;
+ Object.keys(lookupStepIds).forEach(stopLookupStepTimer);
+ if(lookupWatchdogTimer){clearTimeout(lookupWatchdogTimer);lookupWatchdogTimer=null;}
  document.getElementById('lookupAddress').textContent=address||'Adresse ikke valgt';
  document.getElementById('lookupTitle').textContent='Vi undersøger ejendommen';
  document.getElementById('lookupIntro').textContent='MeasLookUp kontrollerer de tilgængelige registre og samler resultater, der kan knyttes sikkert til adressen.';
@@ -694,9 +769,21 @@ function resetLookupModal(address){
  if(lookupCloseTimer){clearTimeout(lookupCloseTimer);lookupCloseTimer=null;}
  lookupDoneBtn.disabled=true;lookupDoneBtn.textContent='Opslag kører…';lookupX.disabled=true;
  lookupOverlay.classList.add('is-open');lookupOverlay.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');
+ lookupWatchdogTimer=setTimeout(()=>{
+  if(lookupFinished)return;
+  Object.keys(lookupStepIds).forEach(key=>{
+   const step=document.getElementById(lookupStepIds[key]);
+   if(step&&step.classList.contains('is-running'))setLookupStep(key,'error','Tidsgrænse','Kilden svarede ikke inden for den samlede tidsgrænse.');
+   else if(step&&!step.querySelector('.lookup-step-progress')&&step.querySelector('.lookup-step-state')?.textContent==='Afventer')setLookupStep(key,'warning','Ikke gennemført','Afbrudt, fordi en anden del af opslaget tog for lang tid.');
+  });
+  searchStatus.textContent='Opslaget blev afbrudt efter 22 sekunder. En eller flere datakilder svarede ikke rettidigt.';
+  finishLookup('Opslaget tog for lang tid','En eller flere datakilder svarede ikke inden for 22 sekunder. Fejl og færdige opslag vises pr. kilde ovenfor. Prøv igen senere.',true);
+ },22000);
 }
 function finishLookup(title,description,warning){
  lookupFinished=true;
+ if(lookupWatchdogTimer){clearTimeout(lookupWatchdogTimer);lookupWatchdogTimer=null;}
+ Object.keys(lookupStepIds).forEach(stopLookupStepTimer);
  setLookupProgress(100,warning?'OPSLAG AFSLUTTET · DELVIST':'OPSLAG AFSLUTTET','Resultaterne er klar',warning?'Nogle kilder returnerede ikke brugbare oplysninger. Se status nedenfor og kontrollér originalkilderne.':'De tilgængelige registre er gennemgået. Resultaterne er nu vist i ejendomsoversigten.');
  document.getElementById('lookupTitle').textContent=warning?'Opslag afsluttet med forbehold':'Opslag gennemført';
  document.getElementById('lookupIntro').textContent='Her er en kort opsummering af datadækningen for den valgte adresse.';
@@ -1264,8 +1351,20 @@ async function loadPlansForCoordinates(coords){
 
 async function loadPropertyData(){
  const id=chosenAddress?.id;
- if(!id||chosenAddress?.source!=='official-dar'){searchStatus.textContent='Vælg et forslag fra den officielle danske adressekilde for at slå BBR og matrikel op.';toast('Vælg et officielt adresseforslag først.');return}
- if(!['adresse','husnummer'].includes(chosenAddress?.type)){searchStatus.textContent='Dette forslag er et vejnavn/område. Skriv vejnavn og husnummer, og vælg en specifik adresse.';toast('Vælg en specifik husnummer- eller adressepost.');return}
+ if(!id||chosenAddress?.source!=='official-dar'){
+  setLookupStep('address','error','Adresse-ID mangler','Der blev ikke sendt et konkret officielt adresse-ID til ejendomsopslaget.');
+  setLookupStep('bbr','warning','Ikke gennemført','BBR kræver et gyldigt officielt adresse-ID.');
+  setLookupStep('mat','warning','Ikke gennemført','Matrikel kræver et gyldigt officielt adresse-ID.');
+  setLookupStep('plan','warning','Ikke gennemført','Planopslag kræver en verificeret adresseposition.');
+  setLookupStep('history','warning','Ikke gennemført','Historik kræver en verificeret adresseposition.');
+  finishLookup('Adresse-ID mangler','Den valgte søgepost kunne ikke bruges som et officielt adresse-ID. Vælg et konkret officielt husnummer/adresse fra listen.',true);
+  return;
+ }
+ if(!['adresse','husnummer'].includes(chosenAddress?.type)){
+  setLookupStep('address','error','Forkert adressetype','Vælg en konkret adresse eller et husnummer – ikke kun et vejnavn.');
+  finishLookup('Vælg en konkret adresse','Det valgte forslag identificerer ikke et bestemt husnummer.',true);
+  return;
+ }
  setLookupProgress(24,'TRIN 2 AF 5','Kontrollerer adressen','Det officielle adresseforslag er valgt. Vi følger registerrelationen til husnummer, bygning og jordstykke.');
  setLookupStep('address','running','Kontrollerer','Kontrollerer DAR-adresse og adgangsadresse');
  searchStatus.textContent='Henter BBR- og matrikeldata fra Datafordeleren…';
@@ -1277,6 +1376,7 @@ async function loadPropertyData(){
   const lookupId=param==='husnummerId'&&chosenAddress.type==='adresse'?(chosenAddress.husnummerId||id):id;
   const resp=await fetch('/api/ejendom?'+param+'='+encodeURIComponent(lookupId),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(9500)});
   const data=await resp.json();
+  if(lookupFinished)return;
   if(!resp.ok)throw new Error(data.error||'Ejendomsopslaget kunne ikke gennemføres');
   currentPropertyData=data;
   updateDrawingButton();
@@ -1308,6 +1408,7 @@ async function loadPropertyData(){
   setLookupStep('plan','running','Søger','Henter planlag og rammer fra Plandata.dk');
   setLookupStep('history','running','Søger','Henter planversioner, forslag og aflysninger');
   await loadPlansForCoordinates(data.coordinates);
+  if(lookupFinished)return;
   const planLookup=window.__measInfoPlanLookup||{ok:false,error:'Plandata-opslaget gav ikke et resultat'};
   const pd=planLookup.data||{},pe=pd.errors||{};
   const hasPlans=Boolean((pd.localPlans||[]).length||(pd.subAreas||[]).length||(pd.buildingFields||[]).length||(pd.municipalFrames||[]).length||(pd.zoneMap||[]).length);
@@ -1332,6 +1433,18 @@ async function loadPropertyData(){
   toast('Data kunne ikke hentes. Fejlen vises i opslagets modal.');
  }
 }
+async function runPropertyLookupSafely(){
+ try{
+  await loadPropertyData();
+ }catch(error){
+  if(lookupFinished)return;
+  const message=String(error?.message||error||'Ukendt fejl').slice(0,180);
+  setLookupStep('address','error','Opslagsfejl',message);
+  ['bbr','mat','plan','history'].forEach(key=>setLookupStep(key,'warning','Ikke gennemført','En tidligere del af opslaget fejlede.'));
+  finishLookup('Opslaget kunne ikke gennemføres',message+'. Prøv igen. Hvis fejlen gentager sig, skal API-loggen undersøges.',true);
+ }
+}
+
 function findExactPrimaryMatch(query,items){
  const normalizedQuery=normalizeAddressMatch(query);
  const candidates=items.filter(item=>{
@@ -1381,6 +1494,9 @@ document.getElementById('searchForm').addEventListener('submit',async event=>{
   }
   resetLookupModal(q);
   setLookupProgress(8,'TRIN 1 AF 5','Adresse valgt','Det officielle adresse-ID bruges til opslaget.');
+  setLookupStep('address','running','Kontrollerer','Starter opslag på det valgte officielle adresse-ID');
+  setLookupStep('bbr','running','Forbereder','Venter på BBR-kaldet');
+  setLookupStep('mat','running','Forbereder','Venter på matrikelkaldet');
   setPropertyAddressDisplay(chosenAddress.label||q);
   document.getElementById('addressId').textContent=chosenAddress.id;
   closeSuggestions();
