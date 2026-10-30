@@ -2160,7 +2160,7 @@ async function loadEnvironmentData(coords){
  const token=++environmentLookupSequence;
  const x=Number(coords?.x),y=Number(coords?.y);
  if(!Number.isFinite(x)||!Number.isFinite(y)){
-  ['envSoilStatus','envNatureStatus','envGroundwaterStatus'].forEach(id=>envSetStatus(id,'error'));
+  ['envSoilStatus','envNatureStatus','envGroundwaterStatus','envNoiseStatus'].forEach(id=>envSetStatus(id,'error'));
   envSetText('envOverallStatus','Koordinat mangler');
   envSetText('envCaveat','Miljøopslag blev ikke kørt, fordi DAR ikke returnerede en gyldig adresseposition.');
   return;
@@ -2190,9 +2190,9 @@ async function loadEnvironmentData(coords){
   envSetText('envGroundwaterAgreements',envCount(gw.agreements)+' fundet');
   envRenderItems('envGroundwaterItems',[...(gw.bnbo||[]),...(gw.actionPlans||[]),...(gw.agreements||[])],'groundwater');
   envSetStatus('envFloodStatus','not_queried');
-  const day=noise.day?.[0],night=noise.night?.[0];
-  envSetText('envNoiseDay',day?(day.Isov1+'–'+day.Isov2+' dB'):'Intet match');
-  envSetText('envNoiseNight',night?(night.Isov1+'–'+night.Isov2+' dB'):'Intet match');
+  const highestNoiseBand=items=>{const valid=(items||[]).filter(item=>Number.isFinite(Number(item.Isov1))&&Number.isFinite(Number(item.Isov2)));if(!valid.length)return 'Intet match';const top=valid.reduce((a,b)=>Number(b.Isov2)>Number(a.Isov2)?b:a);return Number(top.Isov1)===Number(top.Isov2)?'≥ '+top.Isov1+' dB':top.Isov1+'–'+top.Isov2+' dB';};
+  envSetText('envNoiseDay',highestNoiseBand(noise.day));
+  envSetText('envNoiseNight',highestNoiseBand(noise.night));
   envSetText('envNoiseSummary',noise.summary||'Støjkortet returnerede ikke et resultat.');
   const hasError=[soil,nature,gw,noise].some(item=>item.status==='error');
   envSetText('envOverallStatus',hasError?'Delvist gennemført':'GIS-opslag gennemført');
