@@ -947,11 +947,24 @@ function setInfrastructureFailureState(message){
  if(route)route.classList.add('hidden');
 }
 function renderInfrastructureData(data){
- const house=data?.house||null,coords=data?.coordinates||null,b=data?.bbr||null;
+ // Datafordeleren kan levere BBR-kodefelter som både skalarer og indlejrede objekter.
+ // Normalisér dem her, så UI aldrig viser "[object Object]" eller mister gyldige registerværdier.
+ const scalar=(value)=>{
+  let current=value;
+  for(let i=0;i<4&&current&&typeof current==='object';i++){
+   if(Array.isArray(current)){current=current[0];continue;}
+   current=current.value??current.code??current.kode??current.numericValue??current.id??current.label??current.navn??null;
+  }
+  return current===undefined||current===null||current===''?null:current;
+ };
+ const house=data?.house||null,coords=data?.coordinates||null;
+ const buildings=Array.isArray(data?.bbrBuildings)?data.bbrBuildings.filter(Boolean):[];
+ const b=data?.bbr||buildings.find(item=>item?.id_lokalId)||buildings[0]||null;
  const designation=data?.address?.designation||house?.designation||'';
  const code=(value,labels)=>{
-  if(value===null||value===undefined||value==='')return 'Ingen værdi registreret i BBR';
-  const key=String(value);
+  const normalized=scalar(value);
+  if(normalized===null)return 'Ingen værdi registreret i BBR';
+  const key=String(normalized);
   return (labels[key]||('BBR-kode '+key))+' · kode '+key;
  };
  const waterLabels={
@@ -975,8 +988,8 @@ function renderInfrastructureData(data){
   '29':'Mekanisk rensning med nedsivningsanlæg (med tilladelse)',
   '30':'Mekanisk rensning med nedsivningsanlæg (uden tilladelse)',
   '31':'Mekanisk rensning med direkte udledning','32':'Mekanisk og biologisk rensning',
-  '70':'Udledning uden rensning','80':'Anden type afløb','90':'Ingen udledning',
-  '701':'Intet afløb','75':'Blandet afløbsforhold på ejendommen'
+  '70':'Udledning uden rensning','75':'Blandet afløbsforhold på ejendommen',
+  '80':'Anden type afløb','90':'Ingen udledning','701':'Intet afløb'
  };
  const heatLabels={
   '1':'Fjernvarme/blokvarme','2':'Centralvarme fra eget anlæg',
@@ -984,54 +997,59 @@ function renderInfrastructureData(data){
   '6':'Centralvarme med to fyringsenheder','7':'Elvarme',
   '8':'Gasradiator','9':'Ingen varmeinstallation','99':'Blandet varmeinstallation'
  };
- const hasAddress=Boolean(house?.id&&designation);
- const hasPoint=Boolean(coords&&Number.isFinite(Number(coords.x))&&Number.isFinite(Number(coords.y)));
- setInfrastructureText('infrastructureAccess',hasPoint?'DAR-adgangspunkt verificeret':(hasAddress?'DAR-adresse verificeret · adgangspunkt mangler':'Ingen DAR-adresse returneret'));
- setInfrastructureText('infrastructureWater',b?code(b.byg030Vandforsyning,waterLabels):'Ingen BBR-hovedbygning returneret');
- setInfrastructureText('infrastructureDrain',b?code(b.byg031Afloebsforhold,drainLabels):'Ingen BBR-hovedbygning returneret');
- const drainCode=b?.byg031Afloebsforhold;
- const drainKey=drainCode===null||drainCode===undefined?'':String(drainCode);
+ const houseId=house?.id||house?.id_lokalId||null;
+ const hasAddress=Boolean(houseId||designation);
+ const x=Number(scalar(coords?.x)),y=Number(scalar(coords?.y));
+ const hasPoint=Boolean(coords&&Number.isFinite(x)&&Number.isFinite(y));
+ const water=scalar(b?.byg030Vandforsyning),drain=scalar(b?.byg031Afloebsforhold),heating=scalar(b?.byg056Varmeinstallation);
+ setInfrastructureText('infrastructureAccess',hasPoint?'DAR-adgangspunkt verificeret':(hasAddress?'DAR-adresse verificeret · koordinat mangler':'Ingen DAR-adresse returneret'));
+ setInfrastructureText('infrastructureWater',b?code(water,waterLabels):'Ingen BBR-bygning returneret');
+ setInfrastructureText('infrastructureDrain',b?code(drain,drainLabels):'Ingen BBR-bygning returneret');
  let rainwater='Afløbskode ikke registreret i BBR';
- if(drainKey){
-  const label=drainLabels[drainKey]||('BBR-afløbskode '+drainKey);
-  if(['1','2','4','5','6','8'].includes(drainKey))rainwater=label;
-  else if(['29','30','104','106','107','503'].includes(drainKey))rainwater=label+' · nedsivning registreret i koden';
+ if(drain!==null){
+  const key=String(drain),label=drainLabels[key]||('BBR-afløbskode '+key);
+  if(['1','2','4','5','6','8'].includes(key))rainwater=label;
+  else if(['29','30','104','106','107','503'].includes(key))rainwater=label+' · nedsivning registreret i koden';
   else rainwater=label+' · ingen særskilt regnvandsregistrering udledt';
  }
  setInfrastructureText('infrastructureRainwater',rainwater);
- setInfrastructureText('infrastructureHeating',b?code(b.byg056Varmeinstallation,heatLabels):'Ingen BBR-hovedbygning returneret');
+ setInfrastructureText('infrastructureHeating',b?code(heating,heatLabels):'Ingen BBR-bygning returneret');
+ // LER er bevidst markeret som ikke forespurgt; der udledes ikke ledningsplacering af BBR.
  setInfrastructureText('infrastructureUtilities','Ikke forespurgt i LER');
- const supplyFieldsComplete=Boolean(b&&b.byg030Vandforsyning!=null&&b.byg031Afloebsforhold!=null);
- setInfrastructureText('infrastructureStatus',hasPoint&&b?(supplyFieldsComplete?'DAR + BBR kontrolleret':'Delvist BBR-data'):(hasAddress?'Delvist registerdata':'Ingen verificeret adresse'));
+ const supplyFieldsComplete=Boolean(b&&water!==null&&drain!==null);
+ const status=hasPoint&&b?(supplyFieldsComplete?'DAR + BBR kontrolleret':'Delvist BBR-data'):(hasAddress?'Delvist registerdata':'Ingen verificeret adresse');
+ setInfrastructureText('infrastructureStatus',status);
  const coordinateText=hasPoint
-  ?'E '+Number(coords.x).toLocaleString('da-DK',{maximumFractionDigits:2})+' · N '+Number(coords.y).toLocaleString('da-DK',{maximumFractionDigits:2})+' (EPSG:25832)'
+  ?'E '+x.toLocaleString('da-DK',{maximumFractionDigits:2})+' · N '+y.toLocaleString('da-DK',{maximumFractionDigits:2})+' (EPSG:25832)'
   :'Ingen koordinat returneret fra DAR';
  setInfrastructureText('infrastructureCoordinates',coordinateText);
  setInfrastructureText('infrastructureAccessDetail',hasAddress
-  ?designation+' · Husnummer-ID '+house.id+(house.buildingId?' · koblet til BBR-bygning':'')
+  ?(designation||'DAR-husnummer identificeret')+(houseId?' · Husnummer-ID '+houseId:'')+(house?.buildingId?' · koblet til BBR-bygning':'')
   :'Ingen konkret DAR-adresse/husnummer i opslaget.');
- const bbrDate=b?.byg094Revisionsdato?new Date(b.byg094Revisionsdato).toLocaleDateString('da-DK'):'ikke oplyst';
+ const rawDate=scalar(b?.byg094Revisionsdato);
+ const bbrDate=rawDate?new Date(rawDate).toLocaleDateString('da-DK'):'ikke oplyst';
  const missing=[];
  if(!b)missing.push('ingen hovedbygning fra BBR');
  else{
-  if(b.byg030Vandforsyning==null)missing.push('vandforsyning mangler registrering i BBR');
-  if(b.byg031Afloebsforhold==null)missing.push('afløbsforhold mangler registrering i BBR');
+  if(water===null)missing.push('vandforsyning mangler registrering i BBR');
+  if(drain===null)missing.push('afløbsforhold mangler registrering i BBR');
  }
  setInfrastructureText('infrastructureNotice',
-  (b?'BBR-oplysningerne gælder den DAR-linkede hovedbygning; seneste BBR-revisionsdato: '+bbrDate+'. ':'')+
+  (b?'BBR-oplysningerne vises fra '+(buildings.length||1)+' registreret(e) bygning(er); hovedbygningens seneste BBR-revisionsdato: '+bbrDate+'. ':'')+
   (missing.length?'Manglende felter: '+missing.join('; ')+'. ':'')+
   'BBR-data dokumenterer ikke i sig selv den faktiske placering eller kapacitet af forsyningsledninger. Ledninger i jord skal afklares gennem en særskilt LER-forespørgsel.');
  setInfrastructureText('infrastructureMobilityStatus',hasPoint?'DAR-position fundet':'Afventer adresseposition');
  setInfrastructureText('infrastructureMobilityNote',hasAddress
-  ?'Rutevejledning til '+designation+'. Vælg selv transportform hos korttjenesten.'
+  ?'Rutevejledning til '+(designation||'den valgte adresse')+'. Vælg selv transportform hos korttjenesten.'
   :'Der kan ikke dannes en rute uden en verificeret adresse.');
  const route=document.getElementById('infrastructureRouteLink');
  if(route&&hasAddress){
-  route.href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(designation);
+  const destination=designation||house?.designation||'';
+  if(destination)route.href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(destination);
+  else route.href='https://www.google.com/maps';
   route.classList.remove('hidden');
  }else if(route)route.classList.add('hidden');
 }
-
 function setOverviewLoadingState(){
  setInfrastructureLoadingState();
  const spinner='<span class="inline-data-spinner" role="status" aria-label="Henter data"></span>';
