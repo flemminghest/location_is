@@ -632,6 +632,18 @@ button.btn.primary.search-submit.geo-search-submit:active{
 @media(max-width:1100px){#tabs.is-expanded{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){#tabs.is-expanded{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+
+/* Environmental screening */
+.env-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.env-card{min-width:0}
+.env-results{display:grid;gap:7px;margin-top:12px}
+.env-result{padding:9px 10px;border:1px solid #e7edf2;border-radius:9px;background:#f8fafc;font-size:11px;line-height:1.45}
+.env-result strong{display:block;font-size:12px;color:#24384b;margin-bottom:2px}
+.env-result span{display:block;color:#687789}
+.env-source-note{margin:12px 0 0;line-height:1.5}
+.env-link-list{display:grid;gap:8px;margin-top:12px;font-size:12px}
+.env-link-list a{font-weight:650}
+@media(max-width:850px){.env-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body><div class="app">
@@ -696,7 +708,66 @@ button.btn.primary.search-submit.geo-search-submit:active{
 <div id="planCardNotice" class="warning" role="status" aria-live="polite">Vælg en konkret adresse for at hente plandata.</div>
 </div></section><section class="card"><div class="cardhead"><h2>Planmæssig tjekliste</h2></div><div class="cardbody"><p>○ Find gældende lokalplan og tillæg</p><p>○ Læs anvendelsesbestemmelser</p><p>○ Kontrollér bebyggelsesprocent, højde og etager</p><p>○ Kontrollér afstande og byggelinjer</p></div></section><section class="card"><div class="cardhead"><h2>Officielle kilder</h2></div><div class="cardbody"><p><a href="https://www.plandata.dk/" target="_blank" rel="noreferrer">Plandata.dk ↗</a></p><p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Bygningsreglementet ↗</a></p></div></section></div>
 <div class="lower tabpanel hidden" data-panel="krav"><section class="card"><div class="cardhead"><h2>Byggeregler og krav</h2></div><div class="cardbody"><p>○ Planforhold og byggetilladelse</p><p>○ Bebyggelsesprocent og etageareal</p><p>○ Brandforhold og redningsberedskab</p><p>○ Konstruktioner og dokumentation</p><p>○ Energi og klimaskærm</p><p>○ Fugt, ventilation og indeklima</p><p>○ Tilgængelighed</p><p>○ Vand, afløb og regnvand</p><div class="warning">Faglig tjekliste, ikke juridisk konklusion. Krav afhænger af projekt og gældende regler.</div></div></section><section class="card"><div class="cardhead"><h2>Dokumentation</h2></div><div class="cardbody"><p>Situationsplan, snit, facader, brand- og konstruktionsdokumentation kan være relevante afhængigt af projektet.</p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Åbn BR18 ↗</a></div></section><section class="card"><div class="cardhead"><h2>Status</h2></div><div class="cardbody">Ingen krav verificeret for en konkret ejendom.</div></section></div>
-<div class="lower tabpanel hidden" data-panel="miljo"><section class="card"><div class="cardhead"><h2>Miljø og natur</h2></div><div class="cardbody"><div class="source"><span>Jordforurening V1/V2</span><em>Afventer opslag</em></div><div class="source"><span>Grundvand</span><em>Afventer opslag</em></div><div class="source"><span>Natura 2000 / §3-natur</span><em>Afventer opslag</em></div><div class="source"><span>Oversvømmelse / klimatilpasning</span><em>Afventer opslag</em></div><div class="source"><span>Støj</span><em>Afventer opslag</em></div></div></section><section class="card"><div class="cardhead"><h2>Hvorfor det er vigtigt</h2></div><div class="cardbody"><p>Kan påvirke fundering, udgravning, myndighedstilladelser, afvanding og projektøkonomi.</p><a href="https://arealinformation.miljoeportal.dk/" target="_blank" rel="noreferrer">Danmarks Arealinformation ↗</a></div></section><section class="card"><div class="cardhead"><h2>Status</h2></div><div class="cardbody">Miljøstatus er ikke kontrolleret.</div></section></div>
+<div class="env-grid tabpanel hidden" data-panel="miljo">
+ <section class="card env-card">
+  <div class="cardhead"><h2>Jordforurening · DKJord</h2><span class="tag" id="envSoilStatus">Afventer adresse</span></div>
+  <div class="cardbody">
+   <p class="tiny" id="envSoilSummary">Søger efter V1-, V2- og øvrige DKJord-registreringer inden for 100 m af DAR-adressepunktet.</p>
+   <div class="source"><span>V1 · mistanke om forurening</span><em id="envSoilV1">—</em></div>
+   <div class="source"><span>V2 · dokumenteret forurening</span><em id="envSoilV2">—</em></div>
+   <div class="source"><span>Uafklaret / nuanceret</span><em id="envSoilOther">—</em></div>
+   <div id="envSoilItems" class="env-results"><span class="tiny">Vælg en adresse for at starte opslaget.</span></div>
+   <p class="tiny env-source-note">Kilde: Danmarks Miljøportal / DKJord. Nærhedssøgning er screening og ikke en jordforureningsattest.</p>
+  </div>
+ </section>
+ <section class="card env-card">
+  <div class="cardhead"><h2>Beskyttet natur og Natura 2000</h2><span class="tag" id="envNatureStatus">Afventer adresse</span></div>
+  <div class="cardbody">
+   <p class="tiny" id="envNatureSummary">Søger efter § 3-beskyttede naturtyper og Natura 2000-udpegninger inden for 100 m.</p>
+   <div class="source"><span>§ 3-beskyttede naturtyper</span><em id="envNatureProtected">—</em></div>
+   <div class="source"><span>Natura 2000 · habitat</span><em id="envNatureHabitat">—</em></div>
+   <div class="source"><span>Natura 2000 · fuglebeskyttelse</span><em id="envNatureBirds">—</em></div>
+   <div id="envNatureItems" class="env-results"><span class="tiny">Vælg en adresse for at starte opslaget.</span></div>
+   <p class="tiny env-source-note">Kilde: Danmarks Arealinformation / DAI. § 3-udpegninger er vejledende; kommunen er myndighed.</p>
+  </div>
+ </section>
+ <section class="card env-card">
+  <div class="cardhead"><h2>Grundvandsbeskyttelse</h2><span class="tag" id="envGroundwaterStatus">Afventer adresse</span></div>
+  <div class="cardbody">
+   <p class="tiny" id="envGroundwaterSummary">Søger efter BNBO, indsatsplaner og aftalearealer i nærheden.</p>
+   <div class="source"><span>BNBO-status</span><em id="envGroundwaterBnbo">—</em></div>
+   <div class="source"><span>Indsatsplaner</span><em id="envGroundwaterPlans">—</em></div>
+   <div class="source"><span>Aftalearealer</span><em id="envGroundwaterAgreements">—</em></div>
+   <div id="envGroundwaterItems" class="env-results"><span class="tiny">Vælg en adresse for at starte opslaget.</span></div>
+   <p class="tiny env-source-note">Dette er beskyttelses- og planudpegninger – ikke målinger af grundvandsstand eller vandkvalitet. GEUS/Jupiter-boringer er endnu ikke koblet på.</p>
+  </div>
+ </section>
+ <section class="card env-card">
+  <div class="cardhead"><h2>Oversvømmelse og klima</h2><span class="tag" id="envFloodStatus">Ikke forespurgt</span></div>
+  <div class="cardbody">
+   <p id="envFloodSummary">Officielle oversvømmelsesdata er tilgængelige som WMS/WMTS og modellerede griddata. De er endnu ikke tilsluttet som et præcist punktopslag i denne integration.</p>
+   <div class="env-link-list"><a href="https://oversvommelse.kyst.dk/webgis-og-data/hent-og-vis-data" target="_blank" rel="noopener noreferrer">Oversvømmelsesdirektivet · officielle data ↗</a><a href="https://www.dmi.dk/oversvoemmelse" target="_blank" rel="noopener noreferrer">DMI · havvand på land ↗</a><a href="https://www.dmi.dk/skybrud/" target="_blank" rel="noopener noreferrer">DMI · skybrudskort ↗</a></div>
+   <p class="tiny env-source-note">Kyst- og vandløbsmodeller er screening og kan ikke stå alene som en ejendomsspecifik risikovurdering.</p>
+  </div>
+ </section>
+ <section class="card env-card">
+  <div class="cardhead"><h2>Støj</h2><span class="tag" id="envNoiseStatus">Ikke forespurgt</span></div>
+  <div class="cardbody">
+   <p id="envNoiseSummary">Støj er ikke slået op automatisk. Der er endnu ikke tilsluttet en verificeret, offentlig punkt-API for vej-, jernbane- og virksomhedsstøj.</p>
+   <div class="env-link-list"><a href="https://mst.dk/" target="_blank" rel="noopener noreferrer">Miljøstyrelsen · støj og vejledning ↗</a></div>
+   <p class="tiny env-source-note">Et fravær af et automatisk opslag må ikke læses som dokumentation for lave støjniveauer.</p>
+  </div>
+ </section>
+ <section class="card env-card">
+  <div class="cardhead"><h2>Opslagsstatus og metode</h2><span class="tag" id="envOverallStatus">Afventer adresse</span></div>
+  <div class="cardbody">
+   <div class="kv"><span>Seneste opslag</span><strong id="envFetchedAt">—</strong></div>
+   <div class="kv"><span>Søgepunkt</span><strong id="envLocationNote">—</strong></div>
+   <p class="tiny" id="envCaveat">Resultater vises med kilde og søgeafstand. Et tomt søgeresultat er ikke en garanti for, at ejendommen er fri for miljømæssige bindinger.</p>
+   <div class="env-link-list"><a href="https://arealinformation.miljoeportal.dk/" target="_blank" rel="noopener noreferrer">Danmarks Arealinformation ↗</a><a href="https://www.geus.dk/produkter-ydelser-og-faciliteter/data-og-kort/national-boringsdatabase-jupiter" target="_blank" rel="noopener noreferrer">GEUS · Jupiter ↗</a></div>
+  </div>
+ </section>
+</div>
 <div class="lower tabpanel hidden" data-panel="infrastruktur">
 <section class="card">
  <div class="cardhead"><h2>Forsyning og adgang</h2><span class="tag" id="infrastructureStatus">Afventer opslag</span></div>
@@ -2041,7 +2112,101 @@ async function waitForPropertyCoordinates(propertyPromise){
  if(!coords)throw new Error('Datafordeleren returnerede ingen adresseposition til planopslaget.');
  return coords;
 }
-async function loadPropertyData(){
+
+let environmentLookupSequence=0;
+function envSetText(id,value){
+ const el=document.getElementById(id);if(el)el.textContent=value===null||value===undefined||value===''?'—':String(value);
+}
+function envCount(value){return Array.isArray(value)?value.length:0;}
+function envStatusLabel(status){
+ return ({loading:'Søger…',hit:'Registreringer fundet',clear:'Intet match i søgeområdet',error:'Kildefejl',not_queried:'Ikke forespurgt'})[status]||'Afventer adresse';
+}
+function envSetStatus(id,status){
+ const el=document.getElementById(id);if(!el)return;
+ el.textContent=envStatusLabel(status);
+ el.classList.toggle('env-status-error',status==='error');
+}
+function envRenderItems(id,items,kind){
+ const el=document.getElementById(id);if(!el)return;
+ el.replaceChildren();
+ if(!Array.isArray(items)||!items.length){
+  const note=document.createElement('span');note.className='tiny';note.textContent='Ingen registreringer returneret i dette lag.';el.append(note);return;
+ }
+ for(const item of items.slice(0,10)){
+  const card=document.createElement('div');card.className='env-result';
+  const title=document.createElement('strong');
+  const props=item||{};
+  title.textContent=kind==='soil'
+   ?([props.Lokalitetsadresse,props.Lokalitetsnr?'lokalitet '+props.Lokalitetsnr:null].filter(Boolean).join(' · ')||'DKJord-registrering')
+   :kind==='nature'
+    ?([props.Natyp_navn,props.Temanavn,props.Objektnavn,props.Site_ident].find(Boolean)||'Natur-/Natura 2000-registrering')
+    :([props.Status_bnbo,props.Indsatsplan,props.Aftalestatus,props.Resttyp,props.Temanavn].find(Boolean)||'Grundvandsbeskyttelsesområde');
+  card.append(title);
+  const detail=document.createElement('span');
+  const parts=kind==='soil'
+   ?[props.Lokalitetetsforureningsstatus,props.Regionsnavn,props.Kortlaegningsdato?'Kortlagt '+props.Kortlaegningsdato:null,props._layer]
+   :kind==='nature'
+    ?[props.Status,props.Natyp_navn,props.Loc_ident,props.Gyldig_fra&&props.Gyldig_til?'Gyldig '+props.Gyldig_fra+'–'+props.Gyldig_til:null]
+    :[props.Aarsag,props.Dgunr?'DGU '+props.Dgunr:null,props.Kommunenav,props.Dato_pol_vedt?'Vedt. '+props.Dato_pol_vedt:null];
+  detail.textContent=parts.filter(Boolean).join(' · ');
+  if(detail.textContent)card.append(detail);
+  if(props.Link&&/^https:\/\//i.test(props.Link)){
+   const link=document.createElement('a');link.href=props.Link;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Åbn kilde ↗';card.append(link);
+  }
+  el.append(card);
+ }
+}
+async function loadEnvironmentData(coords){
+ const token=++environmentLookupSequence;
+ const x=Number(coords?.x),y=Number(coords?.y);
+ if(!Number.isFinite(x)||!Number.isFinite(y)){
+  ['envSoilStatus','envNatureStatus','envGroundwaterStatus'].forEach(id=>envSetStatus(id,'error'));
+  envSetText('envOverallStatus','Koordinat mangler');
+  envSetText('envCaveat','Miljøopslag blev ikke kørt, fordi DAR ikke returnerede en gyldig adresseposition.');
+  return;
+ }
+ ['envSoilStatus','envNatureStatus','envGroundwaterStatus','envOverallStatus'].forEach(id=>envSetStatus(id,'loading'));
+ envSetText('envSoilSummary','Kontakter DKJord for V1, V2 og øvrige registreringer inden for 100 m.');
+ envSetText('envNatureSummary','Kontakter DAI for § 3-beskyttede naturtyper og Natura 2000 inden for 100 m.');
+ envSetText('envGroundwaterSummary','Kontakter DAI for BNBO, indsatsplaner og aftalearealer inden for 100 m.');
+ try{
+  const response=await fetch('/api/miljo?x='+encodeURIComponent(x)+'&y='+encodeURIComponent(y)+'&radius=100',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(18000)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||('Miljøopslag fejlede (HTTP '+response.status+')'));
+  if(token!==environmentLookupSequence)return;
+  const soil=data.checks?.soil||{},nature=data.checks?.nature||{},gw=data.checks?.groundwater||{};
+  envSetStatus('envSoilStatus',soil.status);envSetStatus('envNatureStatus',nature.status);envSetStatus('envGroundwaterStatus',gw.status);
+  envSetText('envSoilSummary',soil.summary);
+  envSetText('envSoilV1',soil.v1+' fundet');envSetText('envSoilV2',soil.v2+' fundet');envSetText('envSoilOther',(Number(soil.unresolved||0)+Number(soil.nuanced||0))+' fundet');
+  envRenderItems('envSoilItems',soil.items,'soil');
+  envSetText('envNatureSummary',nature.summary);
+  envSetText('envNatureProtected',envCount(nature.protectedNature)+' fundet');
+  envSetText('envNatureHabitat',envCount(nature.naturaHabitat)+' fundet');
+  envSetText('envNatureBirds',envCount(nature.naturaBirds)+' fundet');
+  envRenderItems('envNatureItems',[...(nature.protectedNature||[]),...(nature.naturaHabitat||[]),...(nature.naturaBirds||[])],'nature');
+  envSetText('envGroundwaterSummary',gw.summary);
+  envSetText('envGroundwaterBnbo',envCount(gw.bnbo)+' fundet');
+  envSetText('envGroundwaterPlans',envCount(gw.actionPlans)+' fundet');
+  envSetText('envGroundwaterAgreements',envCount(gw.agreements)+' fundet');
+  envRenderItems('envGroundwaterItems',[...(gw.bnbo||[]),...(gw.actionPlans||[]),...(gw.agreements||[])],'groundwater');
+  envSetStatus('envFloodStatus','not_queried');envSetStatus('envNoiseStatus','not_queried');
+  const hasError=[soil,nature,gw].some(item=>item.status==='error');
+  envSetText('envOverallStatus',hasError?'Delvist gennemført':'GIS-opslag gennemført');
+  envSetText('envFetchedAt',new Date(data.fetchedAt||Date.now()).toLocaleString('da-DK'));
+  envSetText('envLocationNote','EPSG:25832 · radius '+(data.location?.radiusMeters||100)+' m');
+  envSetText('envCaveat',data.caveat||'Screening fra adressepunkt. Resultater er ikke en attest eller myndighedsafgørelse.');
+  if(hasError){
+   const errors=[soil.errors,nature.errors,gw.errors].flatMap(obj=>Object.values(obj||{}));
+   envSetText('envSoilSummary',(soil.summary||'')+(errors.length?' · Fejl: '+errors.slice(0,2).join(' / '):''));
+  }
+ }catch(error){
+  if(token!==environmentLookupSequence)return;
+  ['envSoilStatus','envNatureStatus','envGroundwaterStatus'].forEach(id=>envSetStatus(id,'error'));
+  envSetText('envOverallStatus','Miljøopslag fejlede');
+  envSetText('envCaveat',String(error?.message||error)+' Miljøopslag påvirker ikke BBR- eller matrikelresultaterne.');
+ }
+}
+\nasync function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){
   setLookupStep('address','error','Adresse-ID mangler','Der blev ikke sendt et konkret officielt adresse-ID.');
@@ -2114,7 +2279,7 @@ const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og mat
  const propOutcomePromise=propertyPromise.then(outcome=>{
   if(!outcome.ok){setOverviewFailureState(outcome.error);return outcome;}
   const data=outcome.result;
-  currentPropertyData=data;updateDrawingButton();renderBuildingChangeReport(data);renderInfrastructureData(data);
+  currentPropertyData=data;updateDrawingButton();renderBuildingChangeReport(data);renderInfrastructureData(data);void loadEnvironmentData(data.coordinates);
   const addressOk=Boolean(data.completeness?.address||data.completeness?.house||data.house);
   const bbrOk=Boolean(data.completeness?.bbr||data.bbrBuildings?.length||data.bbr?.id_lokalId);
   const matOk=Boolean(data.completeness?.cadastral||data.cadastral);
