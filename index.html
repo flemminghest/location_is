@@ -745,7 +745,7 @@ button.btn.primary.search-submit.geo-search-submit:active{
  <section class="card env-card">
   <div class="cardhead"><h2>Oversvømmelse og klima</h2><span class="tag" id="envFloodStatus">Ikke forespurgt</span></div>
   <div class="cardbody">
-   <p id="envFloodSummary">Officielle oversvømmelsesdata er tilgængelige som WMS/WMTS og modellerede griddata. De er endnu ikke tilsluttet som et præcist punktopslag i denne integration.</p>
+   <p id="envFloodSummary">Søger i Kystplanlæggers officielle 100-års oversvømmelsesscenarier for 2020, 2070 og 2120 inden for 100 m af adressen.</p><div id="envFloodItems" class="env-results"><span class="tiny">Vælg en adresse for at starte opslaget.</span></div>
    <div class="env-link-list"><a href="https://oversvommelse.kyst.dk/webgis-og-data/hent-og-vis-data" target="_blank" rel="noopener noreferrer">Oversvømmelsesdirektivet · officielle data ↗</a><a href="https://www.dmi.dk/oversvoemmelse" target="_blank" rel="noopener noreferrer">DMI · havvand på land ↗</a><a href="https://www.dmi.dk/skybrud/" target="_blank" rel="noopener noreferrer">DMI · skybrudskort ↗</a></div>
    <p class="tiny env-source-note">Kyst- og vandløbsmodeller er screening og kan ikke stå alene som en ejendomsspecifik risikovurdering.</p>
   </div>
@@ -2160,7 +2160,7 @@ async function loadEnvironmentData(coords){
  const token=++environmentLookupSequence;
  const x=Number(coords?.x),y=Number(coords?.y);
  if(!Number.isFinite(x)||!Number.isFinite(y)){
-  ['envSoilStatus','envNatureStatus','envGroundwaterStatus','envNoiseStatus'].forEach(id=>envSetStatus(id,'error'));
+  ['envSoilStatus','envNatureStatus','envGroundwaterStatus','envNoiseStatus','envFloodStatus'].forEach(id=>envSetStatus(id,'error'));
   envSetText('envOverallStatus','Koordinat mangler');
   envSetText('envCaveat','Miljøopslag blev ikke kørt, fordi DAR ikke returnerede en gyldig adresseposition.');
   return;
@@ -2174,8 +2174,8 @@ async function loadEnvironmentData(coords){
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||('Miljøopslag fejlede (HTTP '+response.status+')'));
   if(token!==environmentLookupSequence)return;
-  const soil=data.checks?.soil||{},nature=data.checks?.nature||{},gw=data.checks?.groundwater||{},noise=data.checks?.noise||{};
-  envSetStatus('envSoilStatus',soil.status);envSetStatus('envNatureStatus',nature.status);envSetStatus('envGroundwaterStatus',gw.status);envSetStatus('envNoiseStatus',noise.status);
+  const soil=data.checks?.soil||{},nature=data.checks?.nature||{},gw=data.checks?.groundwater||{},noise=data.checks?.noise||{},flood=data.checks?.flood||{};
+  envSetStatus('envSoilStatus',soil.status);envSetStatus('envNatureStatus',nature.status);envSetStatus('envGroundwaterStatus',gw.status);envSetStatus('envNoiseStatus',noise.status);envSetStatus('envFloodStatus',flood.status);
   envSetText('envSoilSummary',soil.summary);
   envSetText('envSoilV1',soil.v1+' fundet');envSetText('envSoilV2',soil.v2+' fundet');envSetText('envSoilOther',Number(soil.nuanced||0)+' fundet');
   envRenderItems('envSoilItems',soil.items,'soil');
@@ -2189,18 +2189,19 @@ async function loadEnvironmentData(coords){
   envSetText('envGroundwaterPlans',envCount(gw.actionPlans)+' fundet');
   envSetText('envGroundwaterAgreements',envCount(gw.agreements)+' fundet');
   envRenderItems('envGroundwaterItems',[...(gw.bnbo||[]),...(gw.actionPlans||[]),...(gw.agreements||[])],'groundwater');
-  envSetStatus('envFloodStatus','not_queried');
+  envSetText('envFloodSummary',flood.summary||'Oversvømmelseskilden returnerede ikke et resultat.');
+  envRenderItems('envFloodItems',flood.items,'flood');
   const highestNoiseBand=items=>{const valid=(items||[]).filter(item=>Number.isFinite(Number(item.Isov1))&&Number.isFinite(Number(item.Isov2)));if(!valid.length)return 'Intet match';const top=valid.reduce((a,b)=>Number(b.Isov2)>Number(a.Isov2)?b:a);return Number(top.Isov1)===Number(top.Isov2)?'≥ '+top.Isov1+' dB':top.Isov1+'–'+top.Isov2+' dB';};
   envSetText('envNoiseDay',highestNoiseBand(noise.day));
   envSetText('envNoiseNight',highestNoiseBand(noise.night));
   envSetText('envNoiseSummary',noise.summary||'Støjkortet returnerede ikke et resultat.');
-  const hasError=[soil,nature,gw,noise].some(item=>item.status==='error');
+  const hasError=[soil,nature,gw,noise,flood].some(item=>item.status==='error');
   envSetText('envOverallStatus',hasError?'Delvist gennemført':'GIS-opslag gennemført');
   envSetText('envFetchedAt',new Date(data.fetchedAt||Date.now()).toLocaleString('da-DK'));
   envSetText('envLocationNote','EPSG:25832 · radius '+(data.location?.radiusMeters||100)+' m');
   envSetText('envCaveat',data.caveat||'Screening fra adressepunkt. Resultater er ikke en attest eller myndighedsafgørelse.');
   if(hasError){
-   const errors=[soil.errors,nature.errors,gw.errors,noise.errors].flatMap(obj=>Object.values(obj||{}));
+   const errors=[soil.errors,nature.errors,gw.errors,noise.errors].flatMap(obj=>Object.values(obj||{})).concat(flood.errors||[]);
    envSetText('envSoilSummary',(soil.summary||'')+(errors.length?' · Fejl: '+errors.slice(0,2).join(' / '):''));
   }
  }catch(error){
