@@ -6,7 +6,7 @@ export default async function handler(req,res){
  try{
   const url=new URL(process.env.DATAFORDELER_GRAPHQL_URL||"https://graphql.datafordeler.dk/flexible/v3");url.searchParams.set("apiKey",key);
   const now=new Date().toISOString();
-  const query=`query { MAT_SamletFastEjendom(first:5,registreringstid:"${now}",virkningstid:"${now}",where:{BFEnummer:{eq:"${bfe}"}}){nodes{id_lokalId BFEnummer senesteSagLokalId status registreringFra virkningFra}} }`;
+  const query=`query { MAT_SamletFastEjendom(first:5,registreringstid:"${now}",virkningstid:"${now}",where:{BFEnummer:{eq:${bfe}}}){nodes{id_lokalId BFEnummer senesteSagLokalId status registreringFra virkningFra}} }`;
   const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json",accept:"application/json"},body:JSON.stringify({query}),signal:AbortSignal.timeout(20000)});
   const d=await r.json().catch(()=>({}));if(!r.ok||d.errors?.length)return res.status(502).json({error:(d.errors||[]).map(x=>x.message).join("; ")||"Datafordeleren MAT-fejl"});
   return res.status(200).json({source:"Datafordeleren/MAT",fetchedAt:new Date().toISOString(),results:d.data?.MAT_SamletFastEjendom?.nodes||[]});
