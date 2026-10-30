@@ -617,6 +617,21 @@ button.btn.primary.search-submit.geo-search-submit:active{
  transform:translateY(1px)!important;
 }
 
+
+/* Live Plandata results inside the Planforhold card. */
+.plan-card-details{display:grid;gap:12px;margin:16px 0 12px}
+.plan-result-group{display:grid;gap:7px}
+.plan-result-heading{font-size:12px;font-weight:800;color:#40586c}
+.plan-result-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid #e4ebf0;border-radius:10px;background:#f9fbfc}
+.plan-result-copy{min-width:0;display:grid;gap:3px}
+.plan-result-copy strong{font-size:12px;line-height:1.4;color:#20394e}
+.plan-result-copy small{font-size:10px;line-height:1.4;color:#708294}
+.plan-result-item a{flex:none;font-size:11px;font-weight:700;white-space:nowrap}
+.plan-card-details:empty{display:none}
+#tabs.is-expanded{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1100px){#tabs.is-expanded{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){#tabs.is-expanded{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 </style>
 </head>
 <body><div class="app">
@@ -653,12 +668,12 @@ button.btn.primary.search-submit.geo-search-submit:active{
  <div class="section-navigator-head">
   <div class="section-heading-copy"><span class="section-kicker">EJENDOMSANALYSE</span><h2>Sektioner</h2><p>Vælg et område, eller sammensæt din egen PDF-rapport.</p></div>
   <div class="section-toolbar-actions">
-   <button class="section-tool" type="button" id="toggleTabView" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="7" height="6" rx="1.5"/><rect x="13.5" y="4" width="7" height="6" rx="1.5"/><rect x="3.5" y="14" width="7" height="6" rx="1.5"/><rect x="13.5" y="14" width="7" height="6" rx="1.5"/></svg><span>Vis alle</span><svg class="tool-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+   <button class="section-tool is-selected" type="button" id="toggleTabView" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="7" height="6" rx="1.5"/><rect x="13.5" y="4" width="7" height="6" rx="1.5"/><rect x="3.5" y="14" width="7" height="6" rx="1.5"/><rect x="13.5" y="14" width="7" height="6" rx="1.5"/></svg><span>Kompakt visning</span><svg class="tool-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
    <button class="section-tool" type="button" id="togglePdfSelect" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4.5 4.5v13h-13v-17.5Z"/><path d="M14 3.5V8h4.5M8.5 13h7M8.5 16.5h4"/><path d="m15 17 2 2 4-4"/></svg><span>Vælg til PDF</span></button>
    <button class="section-tool section-pdf-button hidden" type="button" id="downloadSelectedPdf" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M5 15v5h14v-5"/></svg><span>Hent valgte som PDF</span><span class="pdf-count" id="pdfSelectionCount">0</span></button>
   </div>
  </div>
- <div class="tabs" id="tabs" role="group" aria-label="Vælg sektion">
+ <div class="tabs is-expanded" id="tabs" role="group" aria-label="Vælg sektion">
   <button class="active" data-tab="grund" aria-pressed="true"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10.5H3Z"/><path d="M8 20.5v-7h8v7M9 8h.01M15 8h.01"/></svg></span><span class="tab-copy"><strong>Grund og bygninger</strong><small>Arealer og BBR</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
   <button data-tab="planer" aria-pressed="false"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z"/><path d="M9 3v15M15 6v15"/></svg></span><span class="tab-copy"><strong>Planer og zoner</strong><small>Lokalplan og rammer</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
   <button data-tab="krav" aria-pressed="false"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4.5 4.5v13h-13v-17.5Z"/><path d="M14 3.5V8h4.5M8.5 13h7M8.5 16.5h4M8.5 9.5h2"/></svg></span><span class="tab-copy"><strong>Byggeregler</strong><small>Krav og tjeklister</small></span><span class="tab-selection-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span></button>
@@ -672,7 +687,14 @@ button.btn.primary.search-submit.geo-search-submit:active{
 </section>
 <div id="tabContent">
 <div class="lower tabpanel" data-panel="grund"><section class="card"><div class="cardhead"><h2>Arealopgørelse</h2><span class="tag" id="areaReportTag">Afventer data</span></div><div class="cardbody"><div class="kv"><span>Grundareal (matrikel)</span><strong id="areaGround">— m²</strong></div><div class="kv"><span>Samlet bebygget grundflade (BBR)</span><strong id="areaFootprint">— m²</strong></div><div class="kv"><span>Boligareal</span><strong id="areaResidential">— m²</strong></div><div class="kv"><span>Kælderareal</span><strong id="areaBasement">— m²</strong></div><div id="overviewLookupDiagnostic" class="lookup-failure-note hidden" role="status" aria-live="polite"></div><div class="sectiontitle">Beregner: etagearealandel (vejledende)</div><label class="tiny">Grundareal (m²)</label><input id="plotInput" type="number" placeholder="Grundareal" min="1" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;margin:4px 0 10px"><label class="tiny">Etageareal før eventuelle fradrag (m²)</label><input id="floorInput" type="number" placeholder="Etageareal før fradrag" min="0" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:7px;margin:4px 0 10px"><div class="stat" style="padding:10px"><div class="eyebrow">Din beregning</div><div class="value" id="calcResult">—</div><div class="tiny">Dette er kun et simpelt forhold mellem indtastet etageareal og grundareal – ikke en juridisk bebyggelsesprocent. BR18-fradrag, samlet fast ejendom og lokalplan skal vurderes særskilt. <a href="https://www.bygningsreglementet.dk/ovrige-bestemmelser/23/krav/?Layout=ShowAll" target="_blank" rel="noreferrer">Se BR18 § 453–455</a>.</div></div></div></section><section class="card"><div class="cardhead"><h2>Bygningsinformation (BBR)</h2><span class="tag">Liveopslag ved adressevalg</span></div><div class="cardbody"><div class="kv"><span>Bygninger</span><strong id="bbrBuildingCount">Afventer opslag</strong></div><div class="kv"><span>Ydervæg / tag</span><strong id="bbrMaterials">Afventer opslag</strong></div><div class="kv"><span>Varmeforsyning</span><strong id="bbrHeating">Afventer opslag</strong></div><div class="kv"><span>Boligenheder</span><strong id="bbrUnitCount">Afventer opslag</strong></div><div class="kv"><span>Energimærke</span><strong id="energyLabelValue">Ikke hentet fra energimærkeregister</strong></div><div class="warning" style="margin-top:12px">Oplysningerne nedenfor stammer fra BBR for hovedbygningen, medmindre andet er angivet. BBR-kode 3 for fibercement omfatter materialekategorien fibercement, herunder asbest; koden alene bekræfter ikke konkret asbestforekomst. Energimærke og servitutter kræver særskilte opslag.</div></div></section><section class="card"><div class="cardhead"><h2>Matrikel og ejendomsforhold</h2></div><div class="cardbody"><div class="kv"><span>Matrikelnummer</span><strong id="propertyMatrikelnummer">Afventer opslag</strong></div><div class="kv"><span>Ejerlav</span><strong id="propertyEjerlav">Afventer opslag</strong></div><div class="kv"><span>Kommune</span><strong id="propertyKommune">Afventer opslag</strong></div><div class="kv"><span>Zone</span><strong id="propertyZone">Afventer planopslag</strong></div><div class="kv"><span>Servitutter</span><strong id="propertyServitutter">Ikke hentet fra Tingbogen</strong></div><div class="kv"><span>DAR-adgangspunkt</span><strong id="propertyAccessPoint">Afventer adresseopslag</strong></div></div></section></div>
-<div class="lower tabpanel hidden" data-panel="planer"><section class="card"><div class="cardhead"><h2>Planforhold</h2></div><div class="cardbody"><div class="kv"><span>Lokalplan</span><strong>Afventer Plandata</strong></div><div class="kv"><span>Kommuneplanramme</span><strong>Afventer Plandata</strong></div><div class="kv"><span>Byzone / landzone</span><strong>Ikke verificeret</strong></div><div class="kv"><span>Byggelinjer / byggefelter</span><strong>Ikke undersøgt</strong></div></div></section><section class="card"><div class="cardhead"><h2>Planmæssig tjekliste</h2></div><div class="cardbody"><p>○ Find gældende lokalplan og tillæg</p><p>○ Læs anvendelsesbestemmelser</p><p>○ Kontrollér bebyggelsesprocent, højde og etager</p><p>○ Kontrollér afstande og byggelinjer</p></div></section><section class="card"><div class="cardhead"><h2>Officielle kilder</h2></div><div class="cardbody"><p><a href="https://www.plandata.dk/" target="_blank" rel="noreferrer">Plandata.dk ↗</a></p><p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Bygningsreglementet ↗</a></p></div></section></div>
+<div class="lower tabpanel hidden" data-panel="planer"><section class="card"><div class="cardhead"><h2>Planforhold</h2><span class="tag" id="planCardStatus">Afventer opslag</span></div><div class="cardbody">
+<div class="kv"><span>Lokalplan</span><strong id="planCardLocalPlan">Afventer opslag</strong></div>
+<div class="kv"><span>Kommuneplanramme</span><strong id="planCardMunicipalFrame">Afventer opslag</strong></div>
+<div class="kv"><span>Byzone / landzone</span><strong id="planCardZone">Afventer opslag</strong></div>
+<div class="kv"><span>Byggelinjer / byggefelter</span><strong id="planCardBuildingFields">Afventer opslag</strong></div>
+<div id="planCardDetails" class="plan-card-details"></div>
+<div id="planCardNotice" class="warning" role="status" aria-live="polite">Vælg en konkret adresse for at hente plandata.</div>
+</div></section><section class="card"><div class="cardhead"><h2>Planmæssig tjekliste</h2></div><div class="cardbody"><p>○ Find gældende lokalplan og tillæg</p><p>○ Læs anvendelsesbestemmelser</p><p>○ Kontrollér bebyggelsesprocent, højde og etager</p><p>○ Kontrollér afstande og byggelinjer</p></div></section><section class="card"><div class="cardhead"><h2>Officielle kilder</h2></div><div class="cardbody"><p><a href="https://www.plandata.dk/" target="_blank" rel="noreferrer">Plandata.dk ↗</a></p><p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Bygningsreglementet ↗</a></p></div></section></div>
 <div class="lower tabpanel hidden" data-panel="krav"><section class="card"><div class="cardhead"><h2>Byggeregler og krav</h2></div><div class="cardbody"><p>○ Planforhold og byggetilladelse</p><p>○ Bebyggelsesprocent og etageareal</p><p>○ Brandforhold og redningsberedskab</p><p>○ Konstruktioner og dokumentation</p><p>○ Energi og klimaskærm</p><p>○ Fugt, ventilation og indeklima</p><p>○ Tilgængelighed</p><p>○ Vand, afløb og regnvand</p><div class="warning">Faglig tjekliste, ikke juridisk konklusion. Krav afhænger af projekt og gældende regler.</div></div></section><section class="card"><div class="cardhead"><h2>Dokumentation</h2></div><div class="cardbody"><p>Situationsplan, snit, facader, brand- og konstruktionsdokumentation kan være relevante afhængigt af projektet.</p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Åbn BR18 ↗</a></div></section><section class="card"><div class="cardhead"><h2>Status</h2></div><div class="cardbody">Ingen krav verificeret for en konkret ejendom.</div></section></div>
 <div class="lower tabpanel hidden" data-panel="miljo"><section class="card"><div class="cardhead"><h2>Miljø og natur</h2></div><div class="cardbody"><div class="source"><span>Jordforurening V1/V2</span><em>Afventer opslag</em></div><div class="source"><span>Grundvand</span><em>Afventer opslag</em></div><div class="source"><span>Natura 2000 / §3-natur</span><em>Afventer opslag</em></div><div class="source"><span>Oversvømmelse / klimatilpasning</span><em>Afventer opslag</em></div><div class="source"><span>Støj</span><em>Afventer opslag</em></div></div></section><section class="card"><div class="cardhead"><h2>Hvorfor det er vigtigt</h2></div><div class="cardbody"><p>Kan påvirke fundering, udgravning, myndighedstilladelser, afvanding og projektøkonomi.</p><a href="https://arealinformation.miljoeportal.dk/" target="_blank" rel="noreferrer">Danmarks Arealinformation ↗</a></div></section><section class="card"><div class="cardhead"><h2>Status</h2></div><div class="cardbody">Miljøstatus er ikke kontrolleret.</div></section></div>
 <div class="lower tabpanel hidden" data-panel="infrastruktur"><section class="card"><div class="cardhead"><h2>Forsyning og adgang</h2></div><div class="cardbody"><div class="source"><span>Vejadgang</span><em>Ikke undersøgt</em></div><div class="source"><span>Vand og spildevand</span><em>Ikke undersøgt</em></div><div class="source"><span>Regnvand / nedsivning</span><em>Ikke undersøgt</em></div><div class="source"><span>Ledninger i jord</span><em>LER-forespørgsel relevant</em></div></div></section><section class="card"><div class="cardhead"><h2>Eksterne opslag</h2></div><div class="cardbody"><p><a href="https://ler.dk/" target="_blank" rel="noreferrer">Ledningsejerregistret ↗</a></p></div></section><section class="card"><div class="cardhead"><h2>Mobilitet</h2></div><div class="cardbody">Afstande er ikke beregnet.</div></section></div>
@@ -1644,8 +1666,72 @@ function renderAreaHistory(data){
 }
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
+
+function setPlanCardLoadingState(){
+ const spinner='<span class="inline-data-spinner" role="status" aria-label="Henter plandata"></span>';
+ ['planCardLocalPlan','planCardMunicipalFrame','planCardZone','planCardBuildingFields'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=spinner;});
+ const status=document.getElementById('planCardStatus');if(status)status.textContent='Henter data';
+ const details=document.getElementById('planCardDetails');if(details)details.innerHTML='';
+ const notice=document.getElementById('planCardNotice');if(notice)notice.textContent='Søger i Plandata.dk omkring adressens officielle adgangspunkt…';
+}
+function setPlanCardState(data,errorMessage=null){
+ const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+ const status=document.getElementById('planCardStatus');
+ const details=document.getElementById('planCardDetails');
+ const notice=document.getElementById('planCardNotice');
+ const localPlans=data?.localPlans||[],frames=data?.municipalFrames||[],zones=data?.zoneMap||[];
+ const fields=data?.buildingFields||[],subAreas=data?.subAreas||[];
+ const errors=data?.errors||{};
+ const radius=Number(data?.searchWindowsMeters?.exact||60);
+ if(errorMessage){
+  set('planCardLocalPlan','Kunne ikke hentes');
+  set('planCardMunicipalFrame','Kunne ikke hentes');
+  set('planCardZone','Ikke verificeret');
+  set('planCardBuildingFields','Kunne ikke hentes');
+  if(status)status.textContent='Opslag fejlede';
+  if(details)details.innerHTML='';
+  if(notice)notice.textContent='Plandata kunne ikke hentes: '+String(errorMessage).slice(0,220);
+  return;
+ }
+ set('planCardLocalPlan',localPlans.length?localPlans.length+' fundet':(errors.localPlansError?'Kilde svarede ikke':'Ingen fund i '+radius+' m'));
+ set('planCardMunicipalFrame',frames.length?frames.length+' fundet':(errors.municipalFramesError?'Kilde svarede ikke':'Ingen fund i '+radius+' m'));
+ const zoneProps=zones[0]?.properties||{};
+ const zoneName=zoneProps.zonestatus||localPlans.map(item=>item.properties?.zonestatus).find(Boolean)||null;
+ set('planCardZone',zoneName||(zones.length?'Zonepost fundet':'Ikke verificeret'));
+ set('planCardBuildingFields',fields.length?fields.length+' fundet':(errors.buildingFieldsError?'Kilde svarede ikke':'0 i '+radius+' m-søgningen'));
+ if(status)status.textContent=Object.keys(errors).length?'Delvist svar':'Data hentet';
+ const safeLink=raw=>{
+  try{const u=new URL(String(raw||''));return u.protocol==='https:'&&u.hostname==='dokument.plandata.dk'?u.href:null;}catch{return null;}
+ };
+ const makeItem=(title,subtitle,url)=>{
+  const link=safeLink(url);
+  return '<div class="plan-result-item"><div class="plan-result-copy"><strong>'+escapeHtml(title)+'</strong><small>'+escapeHtml(subtitle)+'</small></div>'+(link?'<a href="'+escapeHtml(link)+'" target="_blank" rel="noopener noreferrer">Planbilag ↗</a>':'')+'</div>';
+ };
+ const planItems=localPlans.slice(0,5).map(item=>{
+  const p=item.properties||{};
+  const number=p.plannr?'Lokalplan '+p.plannr:(p.planid?'Plan-ID '+p.planid:'Lokalplan');
+  const subtitle=[p.plannavn,p.anvendelsegenerel,p.zonestatus].filter(Boolean).join(' · ');
+  return makeItem(number,subtitle||'Registreret i Plandata WFS',p.doklink);
+ });
+ const frameItems=frames.slice(0,6).map(item=>{
+  const p=item.properties||{};
+  const number=p.plannr?'Ramme '+p.plannr:(p.planid?'Ramme-ID '+p.planid:'Kommuneplanramme');
+  const subtitle=[p.plannavn,p.anvendelsegenerel,p.maxbygnhjd!==null&&p.maxbygnhjd!==undefined?'Maks. højde '+p.maxbygnhjd+' m':null].filter(Boolean).join(' · ');
+  return makeItem(number,subtitle||'Registreret i Plandata WFS',p.doklink);
+ });
+ if(details)details.innerHTML=[
+  planItems.length?'<div class="plan-result-group"><div class="plan-result-heading">Lokalplaner i søgevinduet</div>'+planItems.join('')+'</div>':'',
+  frameItems.length?'<div class="plan-result-group"><div class="plan-result-heading">Kommuneplanrammer i søgevinduet</div>'+frameItems.join('')+'</div>':''
+ ].join('');
+ if(notice){
+  const errorCount=Object.keys(errors).length;
+  notice.textContent='Plandata.dk WFS · '+localPlans.length+' lokalplan(er), '+frames.length+' kommuneplanramme(r), '+zones.length+' zonepost(er), '+subAreas.length+' delområde(r), '+fields.length+' byggefelt(er). Søgningen dækker '+radius+' m omkring adressens DAR-adgangspunkt; nærhedsresultater skal kontrolleres mod planens geometri og originale bestemmelser.'+(errorCount?' '+errorCount+' datalag meldte fejl.':'');
+ }
+}
+
 async function loadPlansForCoordinates(coords){
  window.__measInfoPlanLookup=null;
+ setPlanCardLoadingState();
  const nameEl=document.getElementById('planName'),useEl=document.getElementById('planUse'),coverageEl=document.getElementById('planCoverage'),frameEl=document.getElementById('planFrame'),zoneEl=document.getElementById('planZone'),noticeEl=document.getElementById('planNotice');
  if(!coords||!Number.isFinite(Number(coords.x))||!Number.isFinite(Number(coords.y))){
   nameEl.textContent='Position ikke tilgængelig';useEl.textContent='Afventer opslag';coverageEl.textContent='Se planbestemmelser';frameEl.textContent='Afventer opslag';zoneEl.textContent='Afventer opslag';
@@ -1665,17 +1751,18 @@ async function loadPlansForCoordinates(coords){
   const plans=data.localPlans||[],subAreas=data.subAreas||[],fields=data.buildingFields||[],frames=data.municipalFrames||[],zones=data.zoneMap||[];
   const errors=data.errors||{};
   renderAreaHistory(data);
+  setPlanCardState(data);
   const first=plans[0],p=first?.properties||{};
   const planNo=p.plannr||p.plannummer||p.planid||p.lokalplanid||p.plan_id||first?.id;
   const planTitle=p.plannavn||p.plannavnkort||p.plantitel||p.titel||p.navn;
   nameEl.textContent=plans.length?String(planNo&&planTitle?planNo+' · '+planTitle:(planNo||planTitle||'Vedtaget lokalplan fundet')):'Ingen match i søgevinduet';
-  const use=p.anvendelse||p.anvendelseskategori||p.generelanvendelse||p.anvgen||p.plananvendelse||p.anvendelsekategori;
+  const use=p.anvendelsegenerel||p.anvendelse||p.anvendelseskategori||p.generelanvendelse||p.anvgen||p.plananvendelse||p.anvendelsekategori;
   useEl.textContent=use?String(use):(plans.length?'Se original plan':'Ikke fundet');
-  const coverage=p.bebyggelsesprocent||p.bebygprocent||p.bebyggelsesgrad||p.maxbebyggelse;
+  const coverage=p.bebygpct??p.bebyggelsesprocent??p.bebygprocent??p.bebyggelsesgrad??p.maxbebyggelse;
   coverageEl.textContent=coverage?String(coverage):'Se planbestemmelser';
   const frameProps=frames[0]?.properties||{},frameName=frameProps.rammenavn||frameProps.rammebetegnelse||frameProps.rammenummer||frameProps.rammenr||frameProps.plannavn||frameProps.plannr||frameProps.planid;
   frameEl.textContent=frameName?String(frameName):(frames.length?frames.length+' ramme(r) fundet':'Ikke fundet i søgevinduet');
-  const zoneProps=zones[0]?.properties||{},zoneName=zoneProps.zonetype||zoneProps.zone||zoneProps.zonenavn||zoneProps.zonebetegnelse||zoneProps.status;
+  const zoneProps=zones[0]?.properties||{},zoneName=zoneProps.zonestatus||zoneProps.zonetype||zoneProps.zone||zoneProps.zonenavn||zoneProps.zonebetegnelse||plans.map(item=>item.properties?.zonestatus).find(Boolean)||zoneProps.status;
   zoneEl.textContent=zoneName?String(zoneName):(zones.length?zones.length+' zonefeature(s) fundet':'Ikke fundet i søgevinduet');
   const propertyZoneEl=document.getElementById('propertyZone');
   if(propertyZoneEl)propertyZoneEl.textContent=zoneName?String(zoneName):(zones.length?'Zonekortdata fundet · se planfanen':'Ikke fundet i Plandata-søgevinduet');
@@ -1687,6 +1774,7 @@ async function loadPlansForCoordinates(coords){
   nameEl.textContent='Plandata kunne ikke hentes';useEl.textContent='Ikke verificeret';coverageEl.textContent='Se original plan';frameEl.textContent='Ikke verificeret';zoneEl.textContent='Ikke verificeret';
   const propertyZoneEl=document.getElementById('propertyZone');if(propertyZoneEl)propertyZoneEl.textContent='Plandata kunne ikke hentes';
   noticeEl.textContent='Fejl ved Plandata WFS: '+String(e.message||'ukendt fejl').slice(0,180);
+  setPlanCardState(null,String(e.message||'Plandata-fejl'));
   return {ok:false,error:String(e.message||'Plandata-fejl')};
  }
 }
