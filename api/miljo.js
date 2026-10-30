@@ -3,8 +3,7 @@ const SR = 25832;
 const LAYERS = {
   soilV1: { id: 30, fields: "Lokalitetsnr,Lokalitetetsadresse,Lokalitetetsforureningsstatus,Regionsnavn,Kortlaegningsdato,SenesteInddateringsdato" },
   soilV2: { id: 31, fields: "Lokalitetsnr,Lokalitetetsadresse,Lokalitetetsforureningsstatus,Regionsnavn,Kortlaegningsdato,SenesteInddateringsdato" },
-  soilUnresolved: { id: 26, fields: "Lokalitetsnr,Lokalitetetsadresse,Lokalitetetsforureningsstatus,Regionsnavn,Kortlaegningsdato,SenesteInddateringsdato" },
-  soilNuanced: { id: 27, fields: "Lokalitetsnr,Lokalitetetsadresse,Lokalitetetsforureningsstatus,Regionsnavn,Kortlaegningsdato,SenesteInddateringsdato" },
+  soilNuanced: { id: 27, fields: "Lokalitetsnr,Lokalitetetsadresse,Lokalitetetsforureningsstatus,Regionsnavn,Kortlaegningsdato,SenesteInddateringsdato,Nuanceringsstatus" },
   protectedNature: { id: 3, fields: "Temanavn,Natyp_navn,Natyp_kode,Status,Link,DatoForHentning" },
   naturaHabitat: { id: 10, fields: "Temanavn,Objektnavn,Loc_ident,Site_ident,Link,DatoForHentning" },
   naturaBirds: { id: 9, fields: "Temanavn,Objektnavn,Loc_ident,Site_ident,Link,DatoForHentning" },
@@ -69,7 +68,7 @@ export default async function handler(req, res) {
 
   const startedAt = new Date().toISOString();
   const [soil, nature, groundwater] = await Promise.all([
-    settleLayers(["soilV1", "soilV2", "soilUnresolved", "soilNuanced"], x, y, radius),
+    settleLayers(["soilV1", "soilV2", "soilNuanced"], x, y, radius),
     settleLayers(["protectedNature", "naturaHabitat", "naturaBirds"], x, y, radius),
     settleLayers(["groundwaterAgreement", "groundwaterPlans", "bnbo"], x, y, radius)
   ]);
@@ -89,7 +88,7 @@ export default async function handler(req, res) {
         summary: soilItems.length ? soilItems.length + " registrering(er) i søgeområdet" : "Ingen registreringer returneret i søgeområdet",
         v1: soil.soilV1.items.length,
         v2: soil.soilV2.items.length,
-        unresolved: soil.soilUnresolved.items.length,
+        unresolved: 0,
         nuanced: soil.soilNuanced.items.length,
         items: soilItems.slice(0, 20),
         errors: Object.fromEntries(Object.entries(soil).filter(([,v]) => !v.ok).map(([k,v]) => [k,v.error]))
