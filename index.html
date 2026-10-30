@@ -715,7 +715,7 @@ button.btn.primary.search-submit.geo-search-submit:active{
    <p class="tiny" id="envSoilSummary">Søger efter V1-, V2- og øvrige DKJord-registreringer inden for 100 m af DAR-adressepunktet.</p>
    <div class="source"><span>V1 · mistanke om forurening</span><em id="envSoilV1">—</em></div>
    <div class="source"><span>V2 · dokumenteret forurening</span><em id="envSoilV2">—</em></div>
-   <div class="source"><span>Uafklaret / nuanceret</span><em id="envSoilOther">—</em></div>
+   <div class="source"><span>Nuanceret forureningskategori (F0/F1/F2)</span><em id="envSoilOther">—</em></div>
    <div id="envSoilItems" class="env-results"><span class="tiny">Vælg en adresse for at starte opslaget.</span></div>
    <p class="tiny env-source-note">Kilde: Danmarks Miljøportal / DKJord. Nærhedssøgning er screening og ikke en jordforureningsattest.</p>
   </div>
@@ -755,7 +755,7 @@ button.btn.primary.search-submit.geo-search-submit:active{
   <div class="cardbody">
    <p id="envNoiseSummary">Støj er ikke slået op automatisk. Der er endnu ikke tilsluttet en verificeret, offentlig punkt-API for vej-, jernbane- og virksomhedsstøj.</p>
    <div class="env-link-list"><a href="https://mst.dk/" target="_blank" rel="noopener noreferrer">Miljøstyrelsen · støj og vejledning ↗</a></div>
-   <p class="tiny env-source-note">Et fravær af et automatisk opslag må ikke læses som dokumentation for lave støjniveauer.</p>
+   <div class="source"><span>Vejstøj · dag (Lden)</span><em id="envNoiseDay">—</em></div><div class="source"><span>Vejstøj · nat (Ln)</span><em id="envNoiseNight">—</em></div><p class="tiny env-source-note">Kilde: Vejdirektoratets statsvejs-kortlægning 2022. Dækker ikke alle kommunale veje, jernbaner, virksomheder eller lufthavne. Et tomt resultat er ikke dokumentation for lave støjniveauer.</p>
   </div>
  </section>
  <section class="card env-card">
@@ -2174,10 +2174,10 @@ async function loadEnvironmentData(coords){
   const data=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(data.error||('Miljøopslag fejlede (HTTP '+response.status+')'));
   if(token!==environmentLookupSequence)return;
-  const soil=data.checks?.soil||{},nature=data.checks?.nature||{},gw=data.checks?.groundwater||{};
-  envSetStatus('envSoilStatus',soil.status);envSetStatus('envNatureStatus',nature.status);envSetStatus('envGroundwaterStatus',gw.status);
+  const soil=data.checks?.soil||{},nature=data.checks?.nature||{},gw=data.checks?.groundwater||{},noise=data.checks?.noise||{};
+  envSetStatus('envSoilStatus',soil.status);envSetStatus('envNatureStatus',nature.status);envSetStatus('envGroundwaterStatus',gw.status);envSetStatus('envNoiseStatus',noise.status);
   envSetText('envSoilSummary',soil.summary);
-  envSetText('envSoilV1',soil.v1+' fundet');envSetText('envSoilV2',soil.v2+' fundet');envSetText('envSoilOther',(Number(soil.unresolved||0)+Number(soil.nuanced||0))+' fundet');
+  envSetText('envSoilV1',soil.v1+' fundet');envSetText('envSoilV2',soil.v2+' fundet');envSetText('envSoilOther',Number(soil.nuanced||0)+' fundet');
   envRenderItems('envSoilItems',soil.items,'soil');
   envSetText('envNatureSummary',nature.summary);
   envSetText('envNatureProtected',envCount(nature.protectedNature)+' fundet');
@@ -2196,7 +2196,7 @@ async function loadEnvironmentData(coords){
   envSetText('envLocationNote','EPSG:25832 · radius '+(data.location?.radiusMeters||100)+' m');
   envSetText('envCaveat',data.caveat||'Screening fra adressepunkt. Resultater er ikke en attest eller myndighedsafgørelse.');
   if(hasError){
-   const errors=[soil.errors,nature.errors,gw.errors].flatMap(obj=>Object.values(obj||{}));
+   const errors=[soil.errors,nature.errors,gw.errors,noise.errors].flatMap(obj=>Object.values(obj||{}));
    envSetText('envSoilSummary',(soil.summary||'')+(errors.length?' · Fejl: '+errors.slice(0,2).join(' / '):''));
   }
  }catch(error){
