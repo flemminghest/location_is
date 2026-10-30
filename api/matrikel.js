@@ -1,7 +1,7 @@
 export default async function handler(req,res){
  if(req.method!=="GET"){res.setHeader("Allow","GET");return res.status(405).json({error:"Method not allowed"});}
  const bfe=String(req.query.bfe||req.query.q||"").trim();
- if(!/^\\d{1,20}$/.test(bfe))return res.status(400).json({error:"Indtast et numerisk BFE-nummer. Matrikelbetegnelse skal kombineres med ejerlav."});
+ if(!/^\d{1,20}$/.test(bfe))return res.status(400).json({error:"Indtast et numerisk BFE-nummer. Matrikelbetegnelse skal kombineres med ejerlav."});
  const key=process.env.DATAFORDELER_API_KEY;if(!key)return res.status(503).json({error:"DATAFORDELER_API_KEY mangler.",setup:true});
  try{
   const url=new URL(process.env.DATAFORDELER_GRAPHQL_URL||"https://graphql.datafordeler.dk/flexible/v3");url.searchParams.set("apiKey",key);
