@@ -2210,7 +2210,8 @@ async function loadEnvironmentData(coords){
   envSetText('envCaveat',String(error?.message||error)+' Miljøopslag påvirker ikke BBR- eller matrikelresultaterne.');
  }
 }
-\nasync function loadPropertyData(){
+
+async function loadPropertyData(){
  const id=chosenAddress?.id;
  if(!id||chosenAddress?.source!=='official-dar'){
   setLookupStep('address','error','Adresse-ID mangler','Der blev ikke sendt et konkret officielt adresse-ID.');
