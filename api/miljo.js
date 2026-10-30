@@ -1,5 +1,6 @@
 const SERVICE = "https://kort.vd.dk/server/rest/services/Vejkort/Danmarks_Milj%C3%B8_Portal/MapServer";
 const SR = 25832;
+const NOISE_SERVICE = "https://kort.vd.dk/server/rest/services/Stoej_luft/St%C3%B8jkortl%C3%A6gning_af_statsveje_2022/MapServer";
 const LAYERS = {
   soilV1: { id: 30, fields: "Lokalitetsnr,Lokalitetetsadresse,Lokalitetetsforureningsstatus,Regionsnavn,Kortlaegningsdato,SenesteInddateringsdato" },
   soilV2: { id: 31, fields: "Lokalitetsnr,Lokalitetetsadresse,Lokalitetetsforureningsstatus,Regionsnavn,Kortlaegningsdato,SenesteInddateringsdato" },
@@ -9,7 +10,9 @@ const LAYERS = {
   naturaBirds: { id: 9, fields: "Temanavn,Objektnavn,Loc_ident,Site_ident,Link,DatoForHentning" },
   groundwaterAgreement: { id: 16, fields: "Temanavn,Resttyp,Afttyp,Aftalestatus,Tinglyst,Link,DatoForHentning" },
   groundwaterPlans: { id: 19, fields: "Temanavn,Indsatsplan,Dato_pol_vedt,Revisionsdato,Link,DatoForHentning" },
-  bnbo: { id: 24, fields: "Temanavn,Status_bnbo,Status,Dgunr,Kommunenav,Datoaend,Link,DatoForHentning" }
+  bnbo: { id: 24, fields: "Temanavn,Status_bnbo,Status,Dgunr,Kommunenav,Datoaend,Link,DatoForHentning" },
+  noiseDay: { id: 2, fields: "Isov1,Isov2" },
+  noiseNight: { id: 3, fields: "Isov1,Isov2" }
 };
 
 function withTimeout(promise, ms) {
@@ -67,7 +70,7 @@ export default async function handler(req, res) {
   if (!Number.isFinite(radius) || radius < 0 || radius > 1000) return res.status(400).json({ error: "Radius skal være mellem 0 og 1000 meter." });
 
   const startedAt = new Date().toISOString();
-  const [soil, nature, groundwater] = await Promise.all([
+  const [soil, nature, groundwater, noise] = await Promise.all([
     settleLayers(["soilV1", "soilV2", "soilNuanced"], x, y, radius),
     settleLayers(["protectedNature", "naturaHabitat", "naturaBirds"], x, y, radius),
     settleLayers(["groundwaterAgreement", "groundwaterPlans", "bnbo"], x, y, radius)
@@ -76,10 +79,10 @@ export default async function handler(req, res) {
   const combine = group => Object.values(group).flatMap(result => result.items || []);
   const failed = group => Object.values(group).some(result => !result.ok);
   const soilItems = combine(soil), natureItems = combine(nature), groundwaterItems = combine(groundwater);
-  const allOk = !failed(soil) && !failed(nature) && !failed(groundwater);
+  const noiseItems = combine(noise);\n  const allOk = !failed(soil) && !failed(nature) && !failed(groundwater) && !failed(noise);
 
   return res.status(200).json({
-    source: "Danmarks Miljøportal / Vejdirektoratets ArcGIS REST-kopi af DAI og DKJord",
+    source: "Danmarks Miljøportal / Vejdirektoratet ArcGIS REST: DAI, DKJord og statsvejs-støjkort 2022",
     fetchedAt: startedAt,
     location: { x, y, srid: SR, radiusMeters: radius, method: "adressepunkt med afstandsforespørgsel; ikke matrikelpolygon" },
     checks: {
