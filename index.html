@@ -1001,7 +1001,8 @@ function renderInfrastructureData(data){
  setInfrastructureText('infrastructureRainwater',rainwater);
  setInfrastructureText('infrastructureHeating',b?code(b.byg056Varmeinstallation,heatLabels):'Ingen BBR-hovedbygning returneret');
  setInfrastructureText('infrastructureUtilities','Ikke forespurgt i LER');
- setInfrastructureText('infrastructureStatus',hasPoint&&b?'DAR + BBR kontrolleret':(hasAddress?'Delvist registerdata':'Ingen verificeret adresse'));
+ const supplyFieldsComplete=Boolean(b&&b.byg030Vandforsyning!=null&&b.byg031Afloebsforhold!=null);
+ setInfrastructureText('infrastructureStatus',hasPoint&&b?(supplyFieldsComplete?'DAR + BBR kontrolleret':'Delvist BBR-data'):(hasAddress?'Delvist registerdata':'Ingen verificeret adresse'));
  const coordinateText=hasPoint
   ?'E '+Number(coords.x).toLocaleString('da-DK',{maximumFractionDigits:2})+' · N '+Number(coords.y).toLocaleString('da-DK',{maximumFractionDigits:2})+' (EPSG:25832)'
   :'Ingen koordinat returneret fra DAR';
