@@ -737,9 +737,9 @@ button.btn.primary.search-submit.geo-search-submit:active{
    <p class="tiny" id="envGroundwaterSummary">Søger efter BNBO, indsatsplaner og aftalearealer i nærheden.</p>
    <div class="source"><span>BNBO-status</span><em id="envGroundwaterBnbo">—</em></div>
    <div class="source"><span>Indsatsplaner</span><em id="envGroundwaterPlans">—</em></div>
-   <div class="source"><span>Aftalearealer</span><em id="envGroundwaterAgreements">—</em></div>
-   <div id="envGroundwaterItems" class="env-results"><span class="tiny">Vælg en adresse for at starte opslaget.</span></div>
-   <p class="tiny env-source-note">Dette er beskyttelses- og planudpegninger – ikke målinger af grundvandsstand eller vandkvalitet. GEUS/Jupiter-boringer er endnu ikke koblet på.</p>
+   <div class="source"><span>Aftalearealer</span><em id="envGroundwaterAgreements">—</em></div><div class="source"><span>GEUS/Jupiter · boringer</span><em id="envGroundwaterWells">—</em></div>
+   <div id="envGroundwaterItems" class="env-results"><span class="tiny">Vælg en adresse for at starte opslaget.</span></div><div id="envGroundwaterWellsItems" class="env-results"></div>
+   <p class="tiny env-source-note">BNBO og indsatsplaner er beskyttelsesudpegninger. GEUS/Jupiter viser nærliggende boringer; der vises ikke automatisk grundvandsstand eller vandkvalitet uden konkrete måleserier.</p>
   </div>
  </section>
  <section class="card env-card">
@@ -2142,7 +2142,9 @@ function envRenderItems(id,items,kind){
     ?([props.Natyp_navn,props.Temanavn,props.Objektnavn,props.Site_ident].find(Boolean)||'Natur-/Natura 2000-registrering')
     :kind==='flood'
      ?(props._scenario||'Oversvømmelseszone')
-     :([props.Status_bnbo,props.Indsatsplan,props.Aftalestatus,props.Resttyp,props.Temanavn].find(Boolean)||'Grundvandsbeskyttelsesområde');
+     :kind==='well'
+      ?(props.DGU_NR||props.DGUnr||props.dgunr||props.dgu_nr?'DGU '+(props.DGU_NR||props.DGUnr||props.dgunr||props.dgu_nr):'Jupiter-boring')
+      :([props.Status_bnbo,props.Indsatsplan,props.Aftalestatus,props.Resttyp,props.Temanavn].find(Boolean)||'Grundvandsbeskyttelsesområde');
   card.append(title);
   const detail=document.createElement('span');
   const parts=kind==='soil'
@@ -2151,7 +2153,9 @@ function envRenderItems(id,items,kind){
     ?[props.Status,props.Natyp_navn,props.Loc_ident,props.Gyldig_fra&&props.Gyldig_til?'Gyldig '+props.Gyldig_fra+'–'+props.Gyldig_til:null]
     :kind==='flood'
      ?['Kystplanlægger · '+props._year,'Polygon i 100-års scenarie']
-     :[props.Aarsag,props.Dgunr?'DGU '+props.Dgunr:null,props.Kommunenav,props.Dato_pol_vedt?'Vedt. '+props.Dato_pol_vedt:null];
+     :kind==='well'
+      ?[props.BORINGSDYBDE?'Dybde '+props.BORINGSDYBDE+' m':null,props._distanceMeters!==null?'Afstand '+Math.round(props._distanceMeters)+' m':null]
+      :[props.Aarsag,props.Dgunr?'DGU '+props.Dgunr:null,props.Kommunenav,props.Dato_pol_vedt?'Vedt. '+props.Dato_pol_vedt:null];
   detail.textContent=parts.filter(Boolean).join(' · ');
   if(detail.textContent)card.append(detail);
   if(props.Link&&/^https:\/\//i.test(props.Link)){
@@ -2192,7 +2196,9 @@ async function loadEnvironmentData(coords){
   envSetText('envGroundwaterBnbo',envCount(gw.bnbo)+' fundet');
   envSetText('envGroundwaterPlans',envCount(gw.actionPlans)+' fundet');
   envSetText('envGroundwaterAgreements',envCount(gw.agreements)+' fundet');
+  envSetText('envGroundwaterWells',envCount(gw.wells)+' fundet');
   envRenderItems('envGroundwaterItems',[...(gw.bnbo||[]),...(gw.actionPlans||[]),...(gw.agreements||[])],'groundwater');
+  envRenderItems('envGroundwaterWellsItems',gw.wells,'well');
   envSetText('envFloodSummary',flood.summary||'Oversvømmelseskilden returnerede ikke et resultat.');
   envRenderItems('envFloodItems',flood.items,'flood');
   const highestNoiseBand=items=>{const valid=(items||[]).filter(item=>Number.isFinite(Number(item.Isov1))&&Number.isFinite(Number(item.Isov2)));if(!valid.length)return 'Intet match';const top=valid.reduce((a,b)=>Number(b.Isov2)>Number(a.Isov2)?b:a);return Number(top.Isov1)===Number(top.Isov2)?'≥ '+top.Isov1+' dB':top.Isov1+'–'+top.Isov2+' dB';};
