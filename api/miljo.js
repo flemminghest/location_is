@@ -141,7 +141,7 @@ export default async function handler(req, res) {
   const allOk = !failed(soil) && !failed(nature) && !groundwaterFailed && !failed(noise) && !floodFailed;
 
   return res.status(200).json({
-    source: "Danmarks Miljøportal / Vejdirektoratet ArcGIS REST samt GEUS Jupiter WFS",
+    source: "Danmarks Miljøportal (DKJord/DAI), Vejdirektoratet, Kystplanlægger/Miljøstyrelsen og GEUS/Jupiter WFS",
     fetchedAt: startedAt,
     location: { x, y, srid: SR, radiusMeters: radius, method: "adressepunkt med afstandsforespørgsel; ikke matrikelpolygon" },
     checks: {
