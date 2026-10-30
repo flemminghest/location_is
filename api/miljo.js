@@ -25,7 +25,8 @@ function withTimeout(promise, ms) {
 
 async function queryLayer(name, x, y, radius) {
   const layer = LAYERS[name];
-  const url = new URL(SERVICE + "/" + layer.id + "/query");
+  const base = name === "noiseDay" || name === "noiseNight" ? NOISE_SERVICE : SERVICE;
+  const url = new URL(base + "/" + layer.id + "/query");
   const params = {
     where: "1=1",
     geometry: JSON.stringify({ x, y, spatialReference: { wkid: SR } }),
@@ -73,13 +74,15 @@ export default async function handler(req, res) {
   const [soil, nature, groundwater, noise] = await Promise.all([
     settleLayers(["soilV1", "soilV2", "soilNuanced"], x, y, radius),
     settleLayers(["protectedNature", "naturaHabitat", "naturaBirds"], x, y, radius),
-    settleLayers(["groundwaterAgreement", "groundwaterPlans", "bnbo"], x, y, radius)
+    settleLayers(["groundwaterAgreement", "groundwaterPlans", "bnbo"], x, y, radius),
+    settleLayers(["noiseDay", "noiseNight"], x, y, radius)
   ]);
 
   const combine = group => Object.values(group).flatMap(result => result.items || []);
   const failed = group => Object.values(group).some(result => !result.ok);
   const soilItems = combine(soil), natureItems = combine(nature), groundwaterItems = combine(groundwater);
-  const noiseItems = combine(noise);\n  const allOk = !failed(soil) && !failed(nature) && !failed(groundwater) && !failed(noise);
+  const noiseItems = combine(noise);
+  const allOk = !failed(soil) && !failed(nature) && !failed(groundwater) && !failed(noise);
 
   return res.status(200).json({
     source: "Danmarks Miljøportal / Vejdirektoratet ArcGIS REST: DAI, DKJord og statsvejs-støjkort 2022",
@@ -113,7 +116,7 @@ export default async function handler(req, res) {
         errors: Object.fromEntries(Object.entries(groundwater).filter(([,v]) => !v.ok).map(([k,v]) => [k,v.error]))
       },
       flood: { status: "not_queried", summary: "Ikke forespurgt i denne punktservice. De officielle oversvømmelsesdata udstilles primært som WMS/WMTS og modelleret grid; de kan ikke fortolkes som en præcis ejendomsafgørelse." },
-      noise: { status: "not_queried", summary: "Ingen verificeret offentlig punkt-API til støj er tilsluttet i denne version." }
+      noise: { status: resultStatus(noiseItems, failed(noise)), summary: noiseItems.length ? noiseItems.length + " støjpolygon(er) fra Vejdirektoratets statsvejs-kortlægning 2022 inden for søgeområdet" : "Ingen statsvejs-støjpolygoner returneret i søgeområdet", day: noise.noiseDay.items, night: noise.noiseNight.items, errors: Object.fromEntries(Object.entries(noise).filter(([,v]) => !v.ok).map(([k,v]) => [k,v.error])) }
     },
     complete: allOk,
     caveat: "Et tomt resultat betyder ingen match i de forespurgte kortlag inden for radius – ikke dokumentation for at ejendommen er fri for miljømæssige bindinger. Adressepunktets nærhedssøgning er screening, ikke matrikelattest eller myndighedsafgørelse."
