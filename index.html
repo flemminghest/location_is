@@ -697,7 +697,39 @@ button.btn.primary.search-submit.geo-search-submit:active{
 </div></section><section class="card"><div class="cardhead"><h2>Planmæssig tjekliste</h2></div><div class="cardbody"><p>○ Find gældende lokalplan og tillæg</p><p>○ Læs anvendelsesbestemmelser</p><p>○ Kontrollér bebyggelsesprocent, højde og etager</p><p>○ Kontrollér afstande og byggelinjer</p></div></section><section class="card"><div class="cardhead"><h2>Officielle kilder</h2></div><div class="cardbody"><p><a href="https://www.plandata.dk/" target="_blank" rel="noreferrer">Plandata.dk ↗</a></p><p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Bygningsreglementet ↗</a></p></div></section></div>
 <div class="lower tabpanel hidden" data-panel="krav"><section class="card"><div class="cardhead"><h2>Byggeregler og krav</h2></div><div class="cardbody"><p>○ Planforhold og byggetilladelse</p><p>○ Bebyggelsesprocent og etageareal</p><p>○ Brandforhold og redningsberedskab</p><p>○ Konstruktioner og dokumentation</p><p>○ Energi og klimaskærm</p><p>○ Fugt, ventilation og indeklima</p><p>○ Tilgængelighed</p><p>○ Vand, afløb og regnvand</p><div class="warning">Faglig tjekliste, ikke juridisk konklusion. Krav afhænger af projekt og gældende regler.</div></div></section><section class="card"><div class="cardhead"><h2>Dokumentation</h2></div><div class="cardbody"><p>Situationsplan, snit, facader, brand- og konstruktionsdokumentation kan være relevante afhængigt af projektet.</p><a href="https://www.bygningsreglementet.dk/" target="_blank" rel="noreferrer">Åbn BR18 ↗</a></div></section><section class="card"><div class="cardhead"><h2>Status</h2></div><div class="cardbody">Ingen krav verificeret for en konkret ejendom.</div></section></div>
 <div class="lower tabpanel hidden" data-panel="miljo"><section class="card"><div class="cardhead"><h2>Miljø og natur</h2></div><div class="cardbody"><div class="source"><span>Jordforurening V1/V2</span><em>Afventer opslag</em></div><div class="source"><span>Grundvand</span><em>Afventer opslag</em></div><div class="source"><span>Natura 2000 / §3-natur</span><em>Afventer opslag</em></div><div class="source"><span>Oversvømmelse / klimatilpasning</span><em>Afventer opslag</em></div><div class="source"><span>Støj</span><em>Afventer opslag</em></div></div></section><section class="card"><div class="cardhead"><h2>Hvorfor det er vigtigt</h2></div><div class="cardbody"><p>Kan påvirke fundering, udgravning, myndighedstilladelser, afvanding og projektøkonomi.</p><a href="https://arealinformation.miljoeportal.dk/" target="_blank" rel="noreferrer">Danmarks Arealinformation ↗</a></div></section><section class="card"><div class="cardhead"><h2>Status</h2></div><div class="cardbody">Miljøstatus er ikke kontrolleret.</div></section></div>
-<div class="lower tabpanel hidden" data-panel="infrastruktur"><section class="card"><div class="cardhead"><h2>Forsyning og adgang</h2></div><div class="cardbody"><div class="source"><span>Vejadgang</span><em>Ikke undersøgt</em></div><div class="source"><span>Vand og spildevand</span><em>Ikke undersøgt</em></div><div class="source"><span>Regnvand / nedsivning</span><em>Ikke undersøgt</em></div><div class="source"><span>Ledninger i jord</span><em>LER-forespørgsel relevant</em></div></div></section><section class="card"><div class="cardhead"><h2>Eksterne opslag</h2></div><div class="cardbody"><p><a href="https://ler.dk/" target="_blank" rel="noreferrer">Ledningsejerregistret ↗</a></p></div></section><section class="card"><div class="cardhead"><h2>Mobilitet</h2></div><div class="cardbody">Afstande er ikke beregnet.</div></section></div>
+<div class="lower tabpanel hidden" data-panel="infrastruktur">
+<section class="card">
+ <div class="cardhead"><h2>Forsyning og adgang</h2><span class="tag" id="infrastructureStatus">Afventer opslag</span></div>
+ <div class="cardbody">
+  <div class="source"><span>DAR-adressepunkt</span><em id="infrastructureAccess">Afventer opslag</em></div>
+  <div class="source"><span>Vandforsyning (BBR)</span><em id="infrastructureWater">Afventer opslag</em></div>
+  <div class="source"><span>Spildevand / afløb (BBR)</span><em id="infrastructureDrain">Afventer opslag</em></div>
+  <div class="source"><span>Regnvand / nedsivning (BBR)</span><em id="infrastructureRainwater">Afventer opslag</em></div>
+  <div class="source"><span>Varmeinstallation (BBR)</span><em id="infrastructureHeating">Afventer opslag</em></div>
+  <div class="source"><span>Ledninger i jord (LER)</span><em id="infrastructureUtilities">Afventer opslag</em></div>
+  <p class="tiny" id="infrastructureAccessDetail">Oplysningerne vises, når en konkret DAR-adresse er valgt.</p>
+  <div class="warning" id="infrastructureNotice" role="status" aria-live="polite">Vælg en konkret adresse for at hente registrerede forsyningsoplysninger.</div>
+ </div>
+</section>
+<section class="card">
+ <div class="cardhead"><h2>Eksterne opslag</h2></div>
+ <div class="cardbody">
+  <p><a href="https://ler.dk/" target="_blank" rel="noopener noreferrer">Ledningsejerregistret (LER) ↗</a></p>
+  <p><a href="https://graveinfo.ler.dk/" target="_blank" rel="noopener noreferrer">Se graveforespørgsler i Graveinfo ↗</a></p>
+  <p><a href="https://bbr.dk/kodelister" target="_blank" rel="noopener noreferrer">Officielle BBR-kodelister ↗</a></p>
+  <p class="tiny">LER-ledningsoplysninger er ikke hentet automatisk. En konkret forespørgsel foretages i LER med den nødvendige identifikation.</p>
+ </div>
+</section>
+<section class="card">
+ <div class="cardhead"><h2>Mobilitet</h2><span class="tag" id="infrastructureMobilityStatus">Afventer adresse</span></div>
+ <div class="cardbody">
+  <div class="source"><span>Adresseposition</span><em id="infrastructureCoordinates">Afventer opslag</em></div>
+  <p id="infrastructureMobilityNote">Rutevejledning kan åbnes, når adressen er identificeret.</p>
+  <p><a id="infrastructureRouteLink" class="hidden" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Åbn rutevejledning til adressen ↗</a></p>
+  <p class="tiny">Ruteafstand og rejsetid beregnes af korttjenesten, ikke af MeasLookUp.</p>
+ </div>
+</section>
+</div>
 <div class="lower tabpanel hidden" data-panel="naeromraade"><section class="card"><div class="cardhead"><h2>Faciliteter</h2></div><div class="cardbody"><div class="source"><span>Skole og daginstitution</span><em>Ikke beregnet</em></div><div class="source"><span>Indkøb og sundhed</span><em>Ikke beregnet</em></div><div class="source"><span>Offentlig transport</span><em>Ikke beregnet</em></div><div class="source"><span>Rekreative områder</span><em>Ikke beregnet</em></div></div></section><section class="card"><div class="cardhead"><h2>Områdeprofil</h2></div><div class="cardbody">Afstande og lokale forhold kræver verificeret adresse og geografiske data.</div></section><section class="card"><div class="cardhead"><h2>Datastatus</h2></div><div class="cardbody">Ingen liveopslag.</div></section></div>
 
 <div class="lower tabpanel hidden" data-panel="historik">
@@ -886,7 +918,121 @@ function setTextIfPresent(id,value){
  const element=document.getElementById(id);
  if(element)element.textContent=value;
 }
+function setInfrastructureText(id,value){
+ const el=document.getElementById(id);
+ if(el)el.textContent=value;
+}
+function setInfrastructureLoadingState(){
+ setInfrastructureText('infrastructureStatus','Henter data');
+ ['infrastructureAccess','infrastructureWater','infrastructureDrain','infrastructureRainwater','infrastructureHeating','infrastructureUtilities','infrastructureCoordinates'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.innerHTML='<span class="inline-data-spinner" role="status" aria-label="Henter data"></span>';
+ });
+ setInfrastructureText('infrastructureMobilityStatus','Henter data');
+ setInfrastructureText('infrastructureAccessDetail','Venter på officielt adresse- og BBR-opslag.');
+ setInfrastructureText('infrastructureNotice','Henter DAR- og BBR-oplysninger. Ledningsoplysninger kræver separat LER-forespørgsel.');
+ setInfrastructureText('infrastructureMobilityNote','Henter adressens DAR-adgangspunkt.');
+ const route=document.getElementById('infrastructureRouteLink');
+ if(route)route.classList.add('hidden');
+}
+function setInfrastructureFailureState(message){
+ setInfrastructureText('infrastructureStatus','Opslag fejlede');
+ ['infrastructureAccess','infrastructureWater','infrastructureDrain','infrastructureRainwater','infrastructureHeating','infrastructureCoordinates'].forEach(id=>setInfrastructureText(id,'Kunne ikke hentes'));
+ setInfrastructureText('infrastructureUtilities','Ikke forespurgt i LER');
+ setInfrastructureText('infrastructureAccessDetail','Fejl i adresse-/ejendomsopslaget: '+String(message||'Ukendt fejl').slice(0,180));
+ setInfrastructureText('infrastructureNotice','DAR/BBR-data kunne ikke hentes. Der vises derfor ingen antagelser om forsyning eller adgang.');
+ setInfrastructureText('infrastructureMobilityStatus','Ikke tilgængelig');
+ setInfrastructureText('infrastructureMobilityNote','Der kan ikke dannes en rute uden en verificeret adresse.');
+ const route=document.getElementById('infrastructureRouteLink');
+ if(route)route.classList.add('hidden');
+}
+function renderInfrastructureData(data){
+ const house=data?.house||null,coords=data?.coordinates||null,b=data?.bbr||null;
+ const designation=data?.address?.designation||house?.designation||'';
+ const code=(value,labels)=>{
+  if(value===null||value===undefined||value==='')return 'Ingen værdi registreret i BBR';
+  const key=String(value);
+  return (labels[key]||('BBR-kode '+key))+' · kode '+key;
+ };
+ const waterLabels={
+  '1':'Alment vandforsyningsanlæg','2':'Privat vandforsyningsanlæg',
+  '3':'Enkeltindvindingsanlæg (egen boring)','4':'Brønd',
+  '6':'Ikke-alment vandforsyningsanlæg','7':'Blandet vandforsyning','9':'Ingen vandforsyning'
+ };
+ const drainLabels={
+  '1':'Fælleskloakeret · spildevand og tag-/overfladevand',
+  '2':'Fælleskloakeret · delvist tag-/overfladevand',
+  '3':'Fælleskloakeret · spildevand',
+  '4':'Fælleskloakeret · tag-/overfladevand',
+  '5':'Separatkloakeret · spildevand og tag-/overfladevand',
+  '6':'Separatkloakeret · delvist tag-/overfladevand',
+  '7':'Separatkloakeret · spildevand',
+  '8':'Separatkloakeret · tag-/overfladevand',
+  '9':'Spildevandskloakeret','10':'Afløb til offentligt kloaksystem',
+  '11':'Afløb til fællesprivat kloaksystem',
+  '12':'Fællesprivat kloak med tilslutning til offentligt system',
+  '20':'Samletank','21':'Samletank for toiletvand og rensning af øvrigt spildevand',
+  '29':'Mekanisk rensning med nedsivningsanlæg (med tilladelse)',
+  '30':'Mekanisk rensning med nedsivningsanlæg (uden tilladelse)',
+  '31':'Mekanisk rensning med direkte udledning','32':'Mekanisk og biologisk rensning',
+  '70':'Udledning uden rensning','80':'Anden type afløb','90':'Ingen udledning',
+  '701':'Intet afløb','75':'Blandet afløbsforhold på ejendommen'
+ };
+ const heatLabels={
+  '1':'Fjernvarme/blokvarme','2':'Centralvarme fra eget anlæg',
+  '3':'Ovn til fast eller flydende brændsel','5':'Varmepumpe',
+  '6':'Centralvarme med to fyringsenheder','7':'Elvarme',
+  '8':'Gasradiator','9':'Ingen varmeinstallation','99':'Blandet varmeinstallation'
+ };
+ const hasAddress=Boolean(house?.id&&designation);
+ const hasPoint=Boolean(coords&&Number.isFinite(Number(coords.x))&&Number.isFinite(Number(coords.y)));
+ setInfrastructureText('infrastructureAccess',hasPoint?'DAR-adgangspunkt verificeret':(hasAddress?'DAR-adresse verificeret · adgangspunkt mangler':'Ingen DAR-adresse returneret'));
+ setInfrastructureText('infrastructureWater',b?code(b.byg030Vandforsyning,waterLabels):'Ingen BBR-hovedbygning returneret');
+ setInfrastructureText('infrastructureDrain',b?code(b.byg031Afloebsforhold,drainLabels):'Ingen BBR-hovedbygning returneret');
+ const drainCode=b?.byg031Afloebsforhold;
+ const drainKey=drainCode===null||drainCode===undefined?'':String(drainCode);
+ let rainwater='Afløbskode ikke registreret i BBR';
+ if(drainKey){
+  const label=drainLabels[drainKey]||('BBR-afløbskode '+drainKey);
+  if(['1','2','4','5','6','8'].includes(drainKey))rainwater=label;
+  else if(['29','30','104','106','107','503'].includes(drainKey))rainwater=label+' · nedsivning registreret i koden';
+  else rainwater=label+' · ingen særskilt regnvandsregistrering udledt';
+ }
+ setInfrastructureText('infrastructureRainwater',rainwater);
+ setInfrastructureText('infrastructureHeating',b?code(b.byg056Varmeinstallation,heatLabels):'Ingen BBR-hovedbygning returneret');
+ setInfrastructureText('infrastructureUtilities','Ikke forespurgt i LER');
+ setInfrastructureText('infrastructureStatus',hasPoint&&b?'DAR + BBR kontrolleret':(hasAddress?'Delvist registerdata':'Ingen verificeret adresse'));
+ const coordinateText=hasPoint
+  ?'E '+Number(coords.x).toLocaleString('da-DK',{maximumFractionDigits:2})+' · N '+Number(coords.y).toLocaleString('da-DK',{maximumFractionDigits:2})+' (EPSG:25832)'
+  :'Ingen koordinat returneret fra DAR';
+ setInfrastructureText('infrastructureCoordinates',coordinateText);
+ setInfrastructureText('infrastructureAccessDetail',hasAddress
+  ?designation+' · Husnummer-ID '+house.id+(house.buildingId?' · koblet til BBR-bygning':'')
+  :'Ingen konkret DAR-adresse/husnummer i opslaget.');
+ const bbrDate=b?.byg094Revisionsdato?new Date(b.byg094Revisionsdato).toLocaleDateString('da-DK'):'ikke oplyst';
+ const missing=[];
+ if(!b)missing.push('ingen hovedbygning fra BBR');
+ else{
+  if(b.byg030Vandforsyning==null)missing.push('vandforsyning mangler registrering i BBR');
+  if(b.byg031Afloebsforhold==null)missing.push('afløbsforhold mangler registrering i BBR');
+ }
+ setInfrastructureText('infrastructureNotice',
+  (b?'BBR-oplysningerne gælder den DAR-linkede hovedbygning; seneste BBR-revisionsdato: '+bbrDate+'. ':'')+
+  (missing.length?'Manglende felter: '+missing.join('; ')+'. ':'')+
+  'BBR-data dokumenterer ikke i sig selv den faktiske placering eller kapacitet af forsyningsledninger. Ledninger i jord skal afklares gennem en særskilt LER-forespørgsel.');
+ setInfrastructureText('infrastructureMobilityStatus',hasPoint?'DAR-position fundet':'Afventer adresseposition');
+ setInfrastructureText('infrastructureMobilityNote',hasAddress
+  ?'Rutevejledning til '+designation+'. Vælg selv transportform hos korttjenesten.'
+  :'Der kan ikke dannes en rute uden en verificeret adresse.');
+ const route=document.getElementById('infrastructureRouteLink');
+ if(route&&hasAddress){
+  route.href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(designation);
+  route.classList.remove('hidden');
+ }else if(route)route.classList.add('hidden');
+}
+
 function setOverviewLoadingState(){
+ setInfrastructureLoadingState();
  const spinner='<span class="inline-data-spinner" role="status" aria-label="Henter data"></span>';
  ['areaGround','areaFootprint','areaResidential','areaBasement','statGround','statFootprint','statResidential','statCoverage','bbrBuildingCount','bbrMaterials','bbrHeating','bbrUnitCount','propertyMatrikelnummer','propertyEjerlav','propertyKommune','propertyZone','propertyAccessPoint','addressId','bbrNumber','matrikelId','buildingUse','buildYear'].forEach(id=>{
   const el=document.getElementById(id);if(el)el.innerHTML=spinner;
@@ -910,6 +1056,7 @@ function setOverviewFailureState(message){
  ['bbrBuildingCount','bbrMaterials','bbrHeating','bbrUnitCount','propertyMatrikelnummer','propertyEjerlav','propertyKommune','propertyZone','propertyAccessPoint','addressId','bbrNumber','matrikelId','buildingUse','buildYear'].forEach(id=>set(id,'Kunne ikke hentes'));
  set('areaReportTag','Opslag fejlede');set('profileDataStatusTag','Delvist data');
  setOverviewDiagnostic(safeMessage);
+ setInfrastructureFailureState(safeMessage);
  searchStatus.textContent='Ejendomsopslaget fejlede: '+safeMessage;
 }
 
@@ -1948,7 +2095,7 @@ const propertyPromise=timedSource('bbr','Slår op','Henter adresse-, BBR- og mat
  const propOutcomePromise=propertyPromise.then(outcome=>{
   if(!outcome.ok){setOverviewFailureState(outcome.error);return outcome;}
   const data=outcome.result;
-  currentPropertyData=data;updateDrawingButton();renderBuildingChangeReport(data);
+  currentPropertyData=data;updateDrawingButton();renderBuildingChangeReport(data);renderInfrastructureData(data);
   const addressOk=Boolean(data.completeness?.address||data.completeness?.house||data.house);
   const bbrOk=Boolean(data.completeness?.bbr||data.bbrBuildings?.length||data.bbr?.id_lokalId);
   const matOk=Boolean(data.completeness?.cadastral||data.cadastral);
