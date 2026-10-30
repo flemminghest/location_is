@@ -38,7 +38,7 @@ async function queryLayer(name, x, y, radius) {
     spatialRel: "esriSpatialRelIntersects",
     distance: String(radius),
     units: "esriSRUnit_Meter",
-    outFields: layer.fields,
+    outFields: "*",
     returnGeometry: "false",
     resultRecordCount: "15",
     orderByFields: "OBJECTID",
