@@ -2189,8 +2189,12 @@ async function loadEnvironmentData(coords){
   envSetText('envGroundwaterPlans',envCount(gw.actionPlans)+' fundet');
   envSetText('envGroundwaterAgreements',envCount(gw.agreements)+' fundet');
   envRenderItems('envGroundwaterItems',[...(gw.bnbo||[]),...(gw.actionPlans||[]),...(gw.agreements||[])],'groundwater');
-  envSetStatus('envFloodStatus','not_queried');envSetStatus('envNoiseStatus','not_queried');
-  const hasError=[soil,nature,gw].some(item=>item.status==='error');
+  envSetStatus('envFloodStatus','not_queried');
+  const day=noise.day?.[0],night=noise.night?.[0];
+  envSetText('envNoiseDay',day?(day.Isov1+'–'+day.Isov2+' dB'):'Intet match');
+  envSetText('envNoiseNight',night?(night.Isov1+'–'+night.Isov2+' dB'):'Intet match');
+  envSetText('envNoiseSummary',noise.summary||'Støjkortet returnerede ikke et resultat.');
+  const hasError=[soil,nature,gw,noise].some(item=>item.status==='error');
   envSetText('envOverallStatus',hasError?'Delvist gennemført':'GIS-opslag gennemført');
   envSetText('envFetchedAt',new Date(data.fetchedAt||Date.now()).toLocaleString('da-DK'));
   envSetText('envLocationNote','EPSG:25832 · radius '+(data.location?.radiusMeters||100)+' m');
