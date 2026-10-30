@@ -9,8 +9,8 @@ const LAYERS = {
   naturaHabitat: { id: 10, fields: "Temanavn,Objektnavn,Loc_ident,Site_ident,Link,DatoForHentning" },
   naturaBirds: { id: 9, fields: "Temanavn,Objektnavn,Loc_ident,Site_ident,Link,DatoForHentning" },
   groundwaterAgreement: { id: 16, fields: "Temanavn,Resttyp,Afttyp,Aftalestatus,Tinglyst,Link,DatoForHentning" },
-  groundwaterPlans: { id: 19, fields: "Temanavn,Link,DatoForHentning" },
-  bnbo: { id: 24, fields: "Temanavn,Status,Link,DatoForHentning" }
+  groundwaterPlans: { id: 19, fields: "Temanavn,Indsatsplan,Dato_pol_vedt,Revisionsdato,Link,DatoForHentning" },
+  bnbo: { id: 24, fields: "Temanavn,Status_bnbo,Status,Dgunr,Kommunenav,Datoaend,Link,DatoForHentning" }
 };
 
 function withTimeout(promise, ms) {
@@ -42,7 +42,7 @@ async function queryLayer(name, x, y, radius) {
   const response = await withTimeout(fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(6500) }), 7000);
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.error) throw new Error(payload.error?.message || "GIS-kilden svarede med HTTP " + response.status);
-  return (payload.features || []).map(feature => feature.attributes || {});
+  return (payload.features || []).map(feature => ({ ...(feature.attributes || {}), _layer: name }));
 }
 
 function resultStatus(items, failed, emptyText) {
