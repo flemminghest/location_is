@@ -2144,7 +2144,7 @@ function envRenderItems(id,items,kind){
   card.append(title);
   const detail=document.createElement('span');
   const parts=kind==='soil'
-   ?[props.Lokalitetetsforureningsstatus,props.Regionsnavn,props.Kortlaegningsdato?'Kortlagt '+props.Kortlaegningsdato:null,props._layer]
+   ?[props.Lokalitetetsforureningsstatus,props.Nuanceringsstatus,props.Regionsnavn,props.Kortlaegningsdato?'Kortlagt '+props.Kortlaegningsdato:null,props._layer]
    :kind==='nature'
     ?[props.Status,props.Natyp_navn,props.Loc_ident,props.Gyldig_fra&&props.Gyldig_til?'Gyldig '+props.Gyldig_fra+'–'+props.Gyldig_til:null]
     :[props.Aarsag,props.Dgunr?'DGU '+props.Dgunr:null,props.Kommunenav,props.Dato_pol_vedt?'Vedt. '+props.Dato_pol_vedt:null];
