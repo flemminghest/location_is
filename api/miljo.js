@@ -125,19 +125,23 @@ export default async function handler(req, res) {
     settleLayers(["protectedNature", "naturaHabitat", "naturaBirds"], x, y, radius),
     settleLayers(["groundwaterAgreement", "groundwaterPlans", "bnbo"], x, y, radius),
     settleLayers(["noiseDay", "noiseNight"], x, y, radius),
-    Promise.all(FLOOD_SCENARIOS.map(async scenario => { try { return { ok: true, scenario, items: await queryFloodScenario(scenario, x, y, radius) }; } catch (error) { return { ok: false, scenario, items: [], error: String(error.message || error).slice(0,220) }; } }))
+    Promise.all(FLOOD_SCENARIOS.map(async scenario => { try { return { ok: true, scenario, items: await queryFloodScenario(scenario, x, y, radius) }; } catch (error) { return { ok: false, scenario, items: [], error: String(error.message || error).slice(0,220) }; } })),
+    queryJupiterWells(x, y, radius).then(items => ({ ok: true, items })).catch(error => ({ ok: false, items: [], error: String(error.message || error).slice(0,220) }))
   ]);
 
   const combine = group => Object.values(group).flatMap(result => result.items || []);
   const failed = group => Object.values(group).some(result => !result.ok);
-  const soilItems = combine(soil), natureItems = combine(nature), groundwaterItems = combine(groundwater);
+  const soilItems = combine(soil), natureItems = combine(nature);
+  const jupiterWells = jupiterWellsResult.items || [];
+  const groundwaterItems = combine(groundwater).concat(jupiterWells);
+  const groundwaterFailed = failed(groundwater) || !jupiterWellsResult.ok;
   const noiseItems = combine(noise);
   const floodItems = floodResults.flatMap(result => result.items || []);
   const floodFailed = floodResults.some(result => !result.ok);
   const allOk = !failed(soil) && !failed(nature) && !groundwaterFailed && !failed(noise) && !floodFailed;
 
   return res.status(200).json({
-    source: "Danmarks Miljøportal / Vejdirektoratet ArcGIS REST: DAI, DKJord og statsvejs-støjkort 2022",
+    source: "Danmarks Miljøportal / Vejdirektoratet ArcGIS REST samt GEUS Jupiter WFS",
     fetchedAt: startedAt,
     location: { x, y, srid: SR, radiusMeters: radius, method: "adressepunkt med afstandsforespørgsel; ikke matrikelpolygon" },
     checks: {
@@ -160,8 +164,10 @@ export default async function handler(req, res) {
         errors: Object.fromEntries(Object.entries(nature).filter(([,v]) => !v.ok).map(([k,v]) => [k,v.error]))
       },
       groundwater: {
-        status: resultStatus(groundwaterItems, failed(groundwater)),
-        summary: groundwaterItems.length ? groundwaterItems.length + " grundvandsbeskyttelses-/planregistrering(er) i søgeområdet" : "Ingen registreringer returneret i de forespurgte beskyttelseslag",
+        status: resultStatus(groundwaterItems, groundwaterFailed),
+        summary: groundwaterItems.length ? groundwaterItems.length + " grundvandsbeskyttelses-/planregistrering(er) og boring(er) i søgeområdet" : "Ingen registreringer eller boringer returneret i søgeområdet",
+        wells: jupiterWells,
+        wellsError: jupiterWellsResult.error || null,
         agreements: groundwater.groundwaterAgreement.items,
         actionPlans: groundwater.groundwaterPlans.items,
         bnbo: groundwater.bnbo.items,
